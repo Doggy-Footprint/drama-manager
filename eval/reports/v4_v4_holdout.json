@@ -1,0 +1,957 @@
+{
+ "summary": {
+  "reply_pass": 1.0,
+  "samples": 110,
+  "per_persona": {
+   "warm": 1.0,
+   "tsundere": 1.0
+  },
+  "per_case": {
+   "h_warm_thin_complaint": 1.0,
+   "h_sauce_user_refuses": 1.0,
+   "h_coat_during_serious_talk": 1.0,
+   "h_changed_clothes": 1.0,
+   "h_meal_declined": 1.0,
+   "h_fireworks_question": 1.0,
+   "h_idle_after_ride": 1.0,
+   "h_soft_affection_defers": 1.0
+  },
+  "world_errors": 0,
+  "analysis_errors": 1,
+  "analysis_turns": 22,
+  "drama_errors": 0,
+  "usage": {
+   "input": 86363,
+   "output": 4861,
+   "calls": 136
+  }
+ },
+ "rows": [
+  {
+   "case": "h_warm_thin_complaint",
+   "turn": 0,
+   "persona": "warm",
+   "user": "나 오늘 옷 얇게 입길 잘했다, 땀나",
+   "directive": null,
+   "world_errors": [],
+   "samples": [
+    {
+     "reply": "(웃으며 손부채질을 살짝 해 준다) 그러니까, 오늘 날씨엔 딱 시원하게 잘 입었네. 목마르면 우리 뭐 마시면서 탈까?",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    },
+    {
+     "reply": "(가볍게 웃으며 손부채질을 해 주며) 많이 더워? 우리 저기 그늘에서 시원한 거라도 하나 마시고 가자.",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    },
+    {
+     "reply": "(너를 보며 살짝 웃는다) 날씨 진짜 좋다, 너 오늘 입은 거 시원해 보이고 예뻐. 아이스크림이라도 하나 먹으면서 걸을까?",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    },
+    {
+     "reply": "(네 이마를 살피며 웃는다) 오늘 날씨에 딱 시원하게 잘 입었네. 잠깐 그늘 가서 숨 좀 돌릴까?",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    },
+    {
+     "reply": "(손부채질을 살짝 해주며 웃는다) 오늘 날씨에 딱 시원하게 잘 입었어. 잠깐 그늘 가서 뭐 좀 마실까?",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    }
+   ],
+   "analysis_errors": [],
+   "drama_errors": []
+  },
+  {
+   "case": "h_warm_thin_complaint",
+   "turn": 0,
+   "persona": "tsundere",
+   "user": "나 오늘 옷 얇게 입길 잘했다, 땀나",
+   "directive": null,
+   "world_errors": [],
+   "samples": [
+    {
+     "reply": "(손에 들고 있던 팜플렛을 네 쪽으로 살살 부쳐 주며) 뛰어다니니까 그렇지, 천천히 좀 다녀. 덥다고 징징대지 말고 저기 그늘로 가자.",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    },
+    {
+     "reply": "햇빛 이렇게 쨍쨍한데 당연하지, 뛰어다니니까 그렇지 너. (손에 들고 있던 팸플릿을 네 쪽으로 펼쳐 슬쩍 그늘을 만들어 주며) …목 안 마르냐?",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    },
+    {
+     "reply": "(가방에서 손수건을 꺼내 너한테 툭 쥐여주며) 햇빛 세니까 그렇지, 땀이나 닦아.",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    },
+    {
+     "reply": "(손부채질을 해 주며 딴청을 피운다) 그렇게 뛰어다니니까 그렇지, 적당히 좀 다녀.",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    },
+    {
+     "reply": "(손에 든 팸플릿을 가볍게 흔들어 너 쪽으로 바람을 보내며) 날씨 따뜻해서 딱 좋네, 뭐. 줄 서기 전에 뭐 마실 거라도 살래?",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    }
+   ],
+   "analysis_errors": [],
+   "drama_errors": []
+  },
+  {
+   "case": "h_sauce_user_refuses",
+   "turn": 0,
+   "persona": "warm",
+   "user": "이 집 피클도 맛있네",
+   "directive": "sauce_notice",
+   "world_errors": [],
+   "samples": [
+    {
+     "reply": "(네 입가를 보며 살짝 웃다가 멈칫한다) 입에 맞아서 다행이다, 가만 있어 봐.",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    },
+    {
+     "reply": "(너를 보며 살짝 웃다가 시선을 멈춘다) 입에 맞아서 다행이다, 잠깐 가만 있어 봐.",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    },
+    {
+     "reply": "입에 맞아서 다행이다. (네 입가를 보며 웃다가 멈칫하고는) 잠깐만, 너 가만 있어 봐.",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    },
+    {
+     "reply": "(네 입가를 보며 살짝 웃다가) 입맛에 맞아서 다행이다, 가만 있어 봐.",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    },
+    {
+     "reply": "입맛에 맞아서 다행이다. (네 입가를 빤히 보다가) …잠깐, 가만 있어 봐.",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    }
+   ],
+   "analysis_errors": [],
+   "drama_errors": []
+  },
+  {
+   "case": "h_sauce_user_refuses",
+   "turn": 1,
+   "persona": "warm",
+   "user": "아 잠깐, 뭐 묻었어? 내가 닦을게!",
+   "directive": "sauce_resolve",
+   "world_errors": [],
+   "samples": [
+    {
+     "reply": "응, 오른쪽 입꼬리에 소스 살짝 묻었어. (웃으며 손을 멈춘다)",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    },
+    {
+     "reply": "(웃으며 손을 멈추고) 입술 오른쪽에 소스 살짝 묻었어.",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    },
+    {
+     "reply": "(손을 거두며 살짝 웃는다) 응, 입술 오른쪽에 소스 살짝 묻었어.",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    },
+    {
+     "reply": "(내 입꼬리를 손가락으로 톡 가리키며) 응, 오른쪽 입꼬리에 소스 조금 묻었어.",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    },
+    {
+     "reply": "(작게 웃으며 내 입가를 가리킨다) 입술 왼쪽에 소스 살짝 묻었어.",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    }
+   ],
+   "analysis_errors": [],
+   "drama_errors": []
+  },
+  {
+   "case": "h_sauce_user_refuses",
+   "turn": 0,
+   "persona": "tsundere",
+   "user": "이 집 피클도 맛있네",
+   "directive": "sauce_notice",
+   "world_errors": [],
+   "samples": [
+    {
+     "reply": "피클까지 그렇게 열심히 먹을 일이냐. (네 입가를 가만히 보다가) …야, 가만 있어 봐.",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    },
+    {
+     "reply": "(네 입가를 보더니 하려던 말을 멈춘다) 맛있다고 다 묻히고 먹냐, 가만 있어 봐.",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    },
+    {
+     "reply": "(네 입가를 가만히 보다가) 뭘 먹어도 참 맛있게 먹네. …잠깐, 가만 있어 봐.",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    },
+    {
+     "reply": "피클까지 그렇게 열심히 먹을 일이냐. (너를 빤히 보다가) …가만 있어 봐.",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    },
+    {
+     "reply": "피클까지 다 잘 먹네. (네 입가를 빤히 보다가) …가만 있어 봐.",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    }
+   ],
+   "analysis_errors": [
+    "events: 기대 [], 실제 ['sauce_wiped']"
+   ],
+   "drama_errors": []
+  },
+  {
+   "case": "h_sauce_user_refuses",
+   "turn": 1,
+   "persona": "tsundere",
+   "user": "아 잠깐, 뭐 묻었어? 내가 닦을게!",
+   "directive": "sauce_resolve",
+   "world_errors": [],
+   "samples": [
+    {
+     "reply": "(뻗으려던 손을 거두며) 오른쪽 입가에 소스 묻었어. 거울이나 보고 닦든가.",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    },
+    {
+     "reply": "입가 오른쪽, 거기 소스 묻었어. (뻗으려던 손을 거두며 턱짓한다) 알아서 잘 닦아 봐, 어디.",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    },
+    {
+     "reply": "(손을 거두며 네 입가를 턱짓으로 가리킨다) 입술 오른쪽에 소스 다 묻었거든. 거울 좀 보고 먹어라.",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    },
+    {
+     "reply": "입술 오른쪽에 소스 묻었거든. 거울 보고 잘 닦아 봐.",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    },
+    {
+     "reply": "(뻗으려던 손을 슬그머니 내리며) 입술 왼쪽에 소스 묻었거든. 냅킨으로 거기나 잘 닦아.",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    }
+   ],
+   "analysis_errors": [],
+   "drama_errors": []
+  },
+  {
+   "case": "h_coat_during_serious_talk",
+   "turn": 0,
+   "persona": "warm",
+   "user": "요즘 이직 때문에 고민이 많아. 어떻게 해야 할지 모르겠어",
+   "directive": "offer_coat",
+   "world_errors": [],
+   "samples": [
+    {
+     "reply": "(입고 있던 겉옷을 벗어 네 어깨에 둘러 주며) 고민 많았겠다, 아침에 옷 얇다고 했잖아. 따뜻하게 입고 천천히 얘기해 줘, 다 들어줄게.",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    },
+    {
+     "reply": "혼자 끙끙 앓느라 힘들었겠다, 나한테 천천히 다 털어놔 봐. (입고 있던 겉옷을 벗어 너에게 건네며) 아침에 옷 얇다고 했잖아, 이거 입고 이야기하자.",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    },
+    {
+     "reply": "혼자 고민하느라 속 많이 끓였겠다. (입고 있던 겉옷을 벗어 네 어깨에 덮어 주며) 너 아침에 얇게 입었다고 했잖아, 이거 걸치고 천천히 더 이야기해 봐.",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    },
+    {
+     "reply": "(입고 있던 겉옷을 벗어 네 어깨에 살짝 둘러주며) 고민 많았겠다, 천천히 이야기해 봐. 아침에 얇게 입었다고 했잖아, 이거 걸치고 걸을까?",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    },
+    {
+     "reply": "많이 힘들었겠네, 혼자 끌어안고 있느라. (입고 있던 겉옷을 벗어 네 어깨에 둘러주며) 아침에 얇게 입었다고 했잖아, 이거 걸치고 천천히 말해봐.",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    }
+   ],
+   "analysis_errors": [],
+   "drama_errors": []
+  },
+  {
+   "case": "h_coat_during_serious_talk",
+   "turn": 0,
+   "persona": "tsundere",
+   "user": "요즘 이직 때문에 고민이 많아. 어떻게 해야 할지 모르겠어",
+   "directive": "offer_coat",
+   "world_errors": [],
+   "samples": [
+    {
+     "reply": "고민되면 천천히 생각해, 혼자 끙끙 앓지 말고. (입고 있던 겉옷을 툭 벗어 네 어깨에 얹어 주며) 너 아침에 얇다고 했잖아, 감기 걸릴라.",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    },
+    {
+     "reply": "혼자 끙끙 앓는다고 답 나오는 것도 아니니까 천천히 생각해 봐. (겉옷을 벗어 너에게 툭 건네며) 아까 얇게 입었다며, 이거 입고 있어.",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    },
+    {
+     "reply": "그게 그렇게 하루아침에 결론 날 일이냐, 너무 조급하게 굴지 마. (입고 있던 겉옷을 벗어 네 어깨에 툭 걸쳐 주며) 아침에 옷 얇다고 했잖아, 감기 걸리기 전에 입고 있어.",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    },
+    {
+     "reply": "(입고 있던 겉옷을 벗어 네 어깨에 툭 걸쳐 주며) 뭘 그렇게 복잡하게 생각해, 너 하고 싶은 대로 하는 거지. 아침에 얇다고 했잖아, 감기 걸리지 말고 입고 있어.",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    },
+    {
+     "reply": "뭘 그렇게 복잡하게 생각해, 네가 하고 싶은 대로 밀어붙이면 되는 거지. (입고 있던 겉옷을 툭 벗어 네 어깨에 걸쳐 주며) 아침에 얇다고 했잖아, 감기나 걸리지 마라.",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    }
+   ],
+   "analysis_errors": [],
+   "drama_errors": []
+  },
+  {
+   "case": "h_changed_clothes",
+   "turn": 0,
+   "persona": "warm",
+   "user": "아까 기념품 가게에서 두꺼운 후드티 샀잖아. 지금 입으니까 딱 좋다",
+   "directive": null,
+   "world_errors": [],
+   "samples": [
+    {
+     "reply": "(네 후드티 모자를 살짝 매만져 주며) 그러게, 아까 사길 진짜 잘했다. 너한테 엄청 잘 어울려.",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    },
+    {
+     "reply": "(네 옷소매를 살짝 당겨 정리해 주며 웃는다) 잘 샀네, 너한테 진짜 잘 어울린다. 따뜻해서 다행이야.",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    },
+    {
+     "reply": "(네 모자를 살짝 매만져 주며 웃는다.) 잘 어울린다, 아까 사길 잘했네.",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    },
+    {
+     "reply": "(네 모자를 살짝 정리해 주며) 그러게, 아까 사길 진짜 잘했다. 너한테도 엄청 잘 어울려.",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    },
+    {
+     "reply": "(네 후드티 모자를 가볍게 톡 치며 웃는다) 그러게, 아까 사길 진짜 잘했다. 너한테 엄청 잘 어울려.",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    }
+   ],
+   "analysis_errors": [],
+   "drama_errors": []
+  },
+  {
+   "case": "h_changed_clothes",
+   "turn": 1,
+   "persona": "warm",
+   "user": "해 지니까 분위기 좋네",
+   "directive": null,
+   "world_errors": [],
+   "samples": [
+    {
+     "reply": "(네 옆으로 조금 더 가까이 붙어 걸으며) 조명 켜지니까 낮이랑은 또 다르네. 예쁘다, 너랑 보니까 더.",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    },
+    {
+     "reply": "(너를 보며 살짝 웃는다) 응, 조명 켜지니까 낮이랑은 또 다르게 예쁘네. 너랑 같이 봐서 더 좋고.",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    },
+    {
+     "reply": "(주변 조명을 둘러보며 부드럽게 웃는다) 불 켜지니까 낮이랑은 또 다르네, 너랑 걸으니까 더 좋다.",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    },
+    {
+     "reply": "(네 옆에 나란히 서서 주변을 둘러보며 웃는다) 응, 조명 켜지니까 낮이랑은 또 다르네. 예쁘다.",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    },
+    {
+     "reply": "(너를 보며 살짝 웃는다) 응, 조명 켜지니까 낮이랑은 또 다르네. 천천히 걸을까?",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    }
+   ],
+   "analysis_errors": [],
+   "drama_errors": []
+  },
+  {
+   "case": "h_changed_clothes",
+   "turn": 0,
+   "persona": "tsundere",
+   "user": "아까 기념품 가게에서 두꺼운 후드티 샀잖아. 지금 입으니까 딱 좋다",
+   "directive": null,
+   "world_errors": [],
+   "samples": [
+    {
+     "reply": "(네 후드티 모자를 툭 건드려 바로잡아 주며) 거봐, 사길 잘했잖아. …사이즈도 딱 맞네.",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    },
+    {
+     "reply": "그거 살 때 엄청 망설이더니 잘 샀네. (네 후드티 모자를 툭 건드려 바로잡아 주며) …잘 어울린다.",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    },
+    {
+     "reply": "(너를 힐끔 보더니 네 후드 모자를 툭 건드리며) 거 봐, 내가 그거 사길 잘했다고 했잖아. 잘 어울리네, 뭐.",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    },
+    {
+     "reply": "그거 살 때 괜히 산다고 뭐라 하더니, 잘 샀네. (네 후드 모자를 툭 건드리며 시선을 돌린다) 어울리긴 하니까 지퍼나 끝까지 올려.",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    },
+    {
+     "reply": "(네 모자를 푹 눌러주며 딴청을 피운다) 거 봐, 내가 사길 잘했다고 했지. …잘 어울리네, 뭐.",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    }
+   ],
+   "analysis_errors": [],
+   "drama_errors": []
+  },
+  {
+   "case": "h_changed_clothes",
+   "turn": 1,
+   "persona": "tsundere",
+   "user": "해 지니까 분위기 좋네",
+   "directive": null,
+   "world_errors": [],
+   "samples": [
+    {
+     "reply": "불빛 들어오니까 좀 볼만하긴 하네. (주머니에 손을 찔러 넣고 네 옆으로 발을 맞추며) 사람 더 많아지기 전에 천천히 걷자.",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    },
+    {
+     "reply": "(괜히 목 뒤를 긁적이며 다른 곳을 힐끔거리다) 불 켜지니까 좀 봐줄 만하네. …딴 데 정신 팔지 말고 발밑이나 잘 보고 걸어.",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    },
+    {
+     "reply": "조명 켜지니까 좀 봐줄 만하네. (주머니에 손을 찔러 넣은 채 주변을 두리번거린다) 슬슬 딴 데도 가 볼래?",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    },
+    {
+     "reply": "(주변에 켜진 조명들을 슬쩍 둘러보다가) 그러게, 불 들어오니까 좀 볼만하네.",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    },
+    {
+     "reply": "(주머니에 손을 찔러 넣고 네 옆을 천천히 걸으며) …조명 켜지니까 좀 봐줄 만하긴 하네. 딴 데 보지 말고 앞이나 잘 보고 걸어.",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    }
+   ],
+   "analysis_errors": [],
+   "drama_errors": []
+  },
+  {
+   "case": "h_meal_declined",
+   "turn": 0,
+   "persona": "warm",
+   "user": "다음은 범퍼카 탈까?",
+   "directive": "suggest_meal",
+   "world_errors": [],
+   "samples": [
+    {
+     "reply": "범퍼카 재밌겠다, 이따가 내가 제대로 운전 실력 보여줄게. (배를 살짝 문지르며 웃는다) 근데 슬슬 배고픈데, 범퍼카 타기 전에 밥부터 먹으러 갈까?",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    },
+    {
+     "reply": "범퍼카 완전 좋지. (네 쪽으로 고개를 기울이며 부드럽게 웃는다) 근데 우리 금강산도 식후경인데, 슬슬 배고프지 않아? 맛있는 점심부터 먹고 타러 가자.",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    },
+    {
+     "reply": "범퍼카 좋지, 나 그거 진짜 자신 있는데. (배를 살짝 문지르며 웃는다) 근데 우리 금강산도 식후경인데, 밥부터 먹고 탈까?",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    },
+    {
+     "reply": "범퍼카 재밌겠다. (슬쩍 네 눈치를 살피며 웃는다) 근데 우리 슬슬 배고프지 않아? 금강산도 식후경인데 점심 먼저 먹으러 가자.",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    },
+    {
+     "reply": "범퍼카 좋지, 너 운전 실력 좀 볼까? (자연스럽게 네 발걸음에 보폭을 맞추며 웃는다) 근데 마침 배도 고픈데, 신나게 부딪히기 전에 맛있는 점심부터 먹으러 갈래?",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    }
+   ],
+   "analysis_errors": [],
+   "drama_errors": []
+  },
+  {
+   "case": "h_meal_declined",
+   "turn": 1,
+   "persona": "warm",
+   "user": "나 아직 배 안 고파. 조금 있다 먹자",
+   "directive": null,
+   "world_errors": [],
+   "samples": [
+    {
+     "reply": "그래, 그럼 범퍼카부터 타러 가자. (네 쪽으로 돌아서며 웃는다) 내가 제대로 운전 실력 보여줄게.",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    },
+    {
+     "reply": "그럼 범퍼카 먼저 타러 가자. (네 쪽으로 한 걸음 다가서며 웃는다) 내가 너 안 부딪히게 잘 피해 다녀 볼게.",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    },
+    {
+     "reply": "그래, 그럼 범퍼카부터 타러 가자. (네 쪽으로 돌아서며 웃는다) 내가 제대로 운전 실력 보여줄게.",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    },
+    {
+     "reply": "(너를 보고 부드럽게 웃으며) 그래, 그럼 범퍼카 먼저 타러 가자.",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    },
+    {
+     "reply": "(작게 웃으며 고개를 끄덕인다) 그래, 그럼 너 배고플 때 먹자. 얼른 범퍼카 줄 서러 가자.",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    }
+   ],
+   "analysis_errors": [],
+   "drama_errors": []
+  },
+  {
+   "case": "h_meal_declined",
+   "turn": 0,
+   "persona": "tsundere",
+   "user": "다음은 범퍼카 탈까?",
+   "directive": "suggest_meal",
+   "world_errors": [],
+   "samples": [
+    {
+     "reply": "범퍼카는 이따 타고, 밥부터 먹으러 가. (슬쩍 네 손목을 가볍게 잡아끌며) …배고파 죽겠으니까 딴소리 말고 따라와.",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    },
+    {
+     "reply": "범퍼카? 그거 타면 또 정신없이 치일 텐데. (슬쩍 시계를 확인하고는 턱짓으로 식당가를 가리키며) …그것보다 밥부터 먹어, 배고파 죽겠으니까.",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    },
+    {
+     "reply": "범퍼카? 그거 줄 길던데… (슬쩍 네 눈치를 보며 턱 끝으로 식당가를 가리킨다) 일단 밥부터 먹자, 배고파서 운전대 잡을 힘도 없어.",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    },
+    {
+     "reply": "범퍼카는 이따가 타고, (네 팔을 살짝 잡아끌며) 일단 밥부터 먹으러 가자, 배고파 죽겠으니까.",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    },
+    {
+     "reply": "(슬쩍 네 눈치를 살피며 주머니에 손을 찔러 넣는다.) 범퍼카는 이따 타고, 슬슬 배고프니까 밥부터 먹으러 가자.",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    }
+   ],
+   "analysis_errors": [],
+   "drama_errors": []
+  },
+  {
+   "case": "h_meal_declined",
+   "turn": 1,
+   "persona": "tsundere",
+   "user": "나 아직 배 안 고파. 조금 있다 먹자",
+   "directive": null,
+   "world_errors": [],
+   "samples": [
+    {
+     "reply": "(너를 슬쩍 곁눈질하며) 그러든가, 그럼 범퍼카부터 타러 가.",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    },
+    {
+     "reply": "그럼 범퍼카 타러 가던가. (너를 힐끗 보며 앞서 걷는다) 줄 길면 바로 딴 거 탄다, 나.",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    },
+    {
+     "reply": "그래, 그럼. (범퍼카 쪽으로 턱짓하며 앞장서 걷는다) 줄 길어지기 전에 빨리가.",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    },
+    {
+     "reply": "그래, 그럼. (범퍼카 쪽으로 턱짓하며 앞서 걷는다) 줄 길어지기 전에 얼른 가자.",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    },
+    {
+     "reply": "그럼 일단 범퍼카부터 타러 가. (슬쩍 너를 보고 턱짓하며 앞서 걷는다) 나한테 부딪치고 울지나 마라.",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    }
+   ],
+   "analysis_errors": [],
+   "drama_errors": []
+  },
+  {
+   "case": "h_fireworks_question",
+   "turn": 0,
+   "persona": "warm",
+   "user": "내일 몇 시에 출근해?",
+   "directive": "fireworks_fire",
+   "world_errors": [],
+   "samples": [
+    {
+     "reply": "(하늘에서 빵, 빵 소리와 함께 불꽃이 터지자 네 어깨를 살짝 감싸며 위를 가리킨다) 나 내일 아홉 시까지 가면 되는데, 그것보다 저기 위 좀 봐봐.",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    },
+    {
+     "reply": "(하늘 위로 빵, 빵 소리를 내며 불꽃이 터지자 네 어깨를 살짝 톡톡 두드린다) 나 평소처럼 아홉 시까지 가면 되는데, 그것보다 저기 위 좀 봐봐.",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    },
+    {
+     "reply": "(하늘 위로 빵, 빵 소리와 함께 불꽃이 터지자 네 어깨를 살짝 건드리며) 나 내일 아홉 시까지 출근인데, 그것보다 저기 하늘 좀 봐봐.",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    },
+    {
+     "reply": "내일은 평소처럼 아홉 시까지 가면 돼, 근데 너 저기 좀 봐. (하늘에서 불꽃이 빵, 빵 터지자 네 어깨를 살짝 감싸 돌리며 위를 가리킨다)",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    },
+    {
+     "reply": "\"나 내일은 아홉 시까지 가면 돼. (하늘에서 빵, 빵 터지는 소리에 위를 가리키며) 그것보다 저기 하늘 좀 봐봐.\"",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    }
+   ],
+   "analysis_errors": [],
+   "drama_errors": []
+  },
+  {
+   "case": "h_fireworks_question",
+   "turn": 0,
+   "persona": "tsundere",
+   "user": "내일 몇 시에 출근해?",
+   "directive": "fireworks_fire",
+   "world_errors": [],
+   "samples": [
+    {
+     "reply": "평소대로 아홉 시지, 그걸 왜 지금 물어. (하늘에서 빵, 빵 소리와 함께 불꽃이 터지자 네 어깨를 툭 치며 고개를 든다) 딴생각 말고 저기나 봐.",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    },
+    {
+     "reply": "(하늘에서 빵, 빵 소리를 내며 불꽃이 터지자 네 어깨를 툭 치며 위를 가리킨다) 평소대로 아홉 시인데, 그런 건 갑자기 왜 물어… 저기 하늘이나 봐.",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    },
+    {
+     "reply": "평소대로 아홉 시인데, 내일 출근 생각은 갑자기 왜 해. (하늘에서 빵, 빵 소리를 내며 불꽃이 터지자 네 어깨를 툭 치며 위를 가리킨다) 딴생각 말고 저기나 봐.",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    },
+    {
+     "reply": "평소대로 아홉 시인데 그건 갑자기 왜 물어. (하늘에서 빵, 빵 터지는 소리에 네 어깨를 툭 치며) 딴생각 말고 저기 위나 봐.",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    },
+    {
+     "reply": "평소대로 아홉 시인데, 그것보다 저기 위나 좀 봐. (하늘에서 빵, 빵 소리를 내며 불꽃이 터지자 네 어깨를 살짝 툭 친다.)",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    }
+   ],
+   "analysis_errors": [],
+   "drama_errors": []
+  },
+  {
+   "case": "h_idle_after_ride",
+   "turn": 0,
+   "persona": "warm",
+   "user": null,
+   "directive": null,
+   "world_errors": [],
+   "samples": [
+    {
+     "reply": "(네 옆으로 한 걸음 다가서며 놀이기구 쪽을 가리킨다) 사람 더 많아지기 전에 저거부터 타러 갈까?",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    },
+    {
+     "reply": "(너를 보며 살짝 웃는다) 사람 진짜 많다, 우리 뭐부터 탈까?",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    },
+    {
+     "reply": "(네 쪽으로 고개를 돌리며 살짝 웃는다) 사람 진짜 많다, 우리 뭐부터 탈까?",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    },
+    {
+     "reply": "(주변을 둘러보다가 네 쪽으로 고개를 돌리며) 날씨 진짜 좋다, 그치? 저쪽에 롤러코스터 보이는데 저것부터 타러 갈까?",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    },
+    {
+     "reply": "(네 쪽으로 고개를 돌리며 살짝 웃는다) 우리 먼저 뭐부터 탈까, 타고 싶었던 거 있어?",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    }
+   ],
+   "analysis_errors": [],
+   "drama_errors": []
+  },
+  {
+   "case": "h_idle_after_ride",
+   "turn": 0,
+   "persona": "tsundere",
+   "user": null,
+   "directive": null,
+   "world_errors": [],
+   "samples": [
+    {
+     "reply": "(사람들이 지나갈 때마다 슬쩍 네 쪽으로 어깨를 붙이며) 사람 진짜 많네, 딴 데 보다가 나 놓치지 말고 잘 따라와. 뭐부터 탈래?",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    },
+    {
+     "reply": "사람 진짜 많네. (네 쪽으로 슬쩍 한 걸음 붙어서서) 딴 데 보다가 일행 잃어버렸다고 울지 말고 잘 따라와.",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    },
+    {
+     "reply": "사람 진짜 많네. (네 쪽으로 슬쩍 한 걸음 붙어서며) 길 잃어버리지 말고 잘 따라와라.",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    },
+    {
+     "reply": "사람 많으니까 딴 데 보지 말고 딱 붙어 있어라. (슬쩍 너를 제 쪽으로 끌어당기며) 잃어버리면 안 찾아.",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    },
+    {
+     "reply": "(사람들이 붐비는 쪽을 힐끔 보며 네 앞쪽으로 살짝 다가선다) 사람 엄청 많네, 딴 데 보고 걷다 넘어지지 말고 잘 따라와.",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    }
+   ],
+   "analysis_errors": [],
+   "drama_errors": []
+  },
+  {
+   "case": "h_soft_affection_defers",
+   "turn": 0,
+   "persona": "warm",
+   "user": "오늘 하루가 끝나는 게 좀 아쉽다",
+   "directive": null,
+   "world_errors": [],
+   "samples": [
+    {
+     "reply": "(너와 보폭을 맞추며 부드럽게 웃는다) 나도 그래, 너랑 있어서 오늘 하루가 유독 짧게 느껴졌나 봐.",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    },
+    {
+     "reply": "나도 너랑 있으니까 시간이 너무 빨리 간다. (너를 보며 살짝 미소 짓는다) 그래도 우리 오늘 진짜 재미있었어.",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    },
+    {
+     "reply": "(발걸음을 늦추며 너를 돌아보고 작게 웃는다) 나도 그래, 오늘 너랑 있어서 시간 진짜 빨리 가더라.",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    },
+    {
+     "reply": "(너를 보며 부드럽게 웃는다) 나도 그래, 너랑 같이 있으니까 시간이 너무 빨리 간다.",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    },
+    {
+     "reply": "(너와 발맞춰 천천히 걸으며 다정하게 미소 짓는다) 나도 그래, 너랑 있으니까 시간이 너무 빨리 간다. 아쉬운 만큼 조금만 더 걷다 갈까?",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    }
+   ],
+   "analysis_errors": [],
+   "drama_errors": []
+  },
+  {
+   "case": "h_soft_affection_defers",
+   "turn": 0,
+   "persona": "tsundere",
+   "user": "오늘 하루가 끝나는 게 좀 아쉽다",
+   "directive": null,
+   "world_errors": [],
+   "samples": [
+    {
+     "reply": "(주머니에 손을 찔러 넣은 채 네 걸음에 맞춰 속도를 늦추며) …누가 보면 오늘만 날인 줄 알겠네, 다음에 또 오면 되지.",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    },
+    {
+     "reply": "(너와 보폭을 맞추며 슬쩍 곁눈질한다) …누군 안 아쉬운 줄 아나. 다음엔 더 일찍 나오든가 해.",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    },
+    {
+     "reply": "(너와 보폭을 맞추며 슬쩍 곁눈질하다가) 하루 종일 뽈뽈거리고 돌아다녀 놓고 뭐가 또 아쉬운데. …다음에 또 오든가, 그럼.",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    },
+    {
+     "reply": "(괜히 딴청을 피우듯 고개를 돌리며) …다음에 또 오면 되지, 뭘 벌써부터 아쉬워하고 그래.",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    },
+    {
+     "reply": "(너와 발맞춰 걷던 걸음을 조금 늦추며) …누군 안 아쉬운 줄 아나. 다음에도 또 오면 되지, 뭘 그렇게 축 처져 있어.",
+     "regex": [],
+     "judge_fail": [],
+     "ok": true
+    }
+   ],
+   "analysis_errors": [],
+   "drama_errors": []
+  }
+ ]
+}

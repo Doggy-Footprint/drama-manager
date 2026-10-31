@@ -1,0 +1,130 @@
+# 튜닝 중에는 결과를 들여다보지 않는 검증 세트. 합계 숫자만 본다.
+- id: h_warm_thin_complaint
+  purpose: 따뜻한 낮에 유저가 다시 옷 이야기를 해도 겉옷을 권하지 않는다.
+  start: {clock: "15:00", scene: 놀이동산, episode: 3, afternoon_noted: true, user_warmth: 얇음, last_meal: "12:50", meal_agreed: true, meal_started: true, sauce: done}
+  facts: [{key: user_clothing_warmth, value: 얇음, quote: 좀 얇나, clock: "10:00", scene: 만남}]
+  turns:
+    - user: 나 오늘 옷 얇게 입길 잘했다, 땀나
+      expect: {directive: null, felt: 쾌적}
+      gold:
+        warm: 그치, 오늘 진짜 덥다. 시원한 거 마실래?
+        tsundere: 그러니까 뛰어다니지 말라니까. …음료수나 마시든가.
+      analysis: {action_type: short_talk, facts: [{key: user_clothing_warmth, value: 얇음}], events: []}
+      checks:
+        must_not: ["겉옷", "외투", "재킷", "자켓", "코트", "걸쳐"]
+- id: h_sauce_user_refuses
+  purpose: 유저가 직접 닦겠다고 하면 캐릭터는 닦아 주지 않는다.
+  start: {clock: "12:30", scene: 식당, episode: 2, meal_agreed: true, restaurant_turns: 1, hunger: 배고픔}
+  turns:
+    - user: 이 집 피클도 맛있네
+      expect: {directive: sauce_notice}
+      gold:
+        warm: (네 입가를 보며) 가만 있어 봐.
+        tsundere: 칠칠맞기는. 가만 있어 봐.
+      analysis: {action_type: [meal, short_talk], facts: [], events: []}
+      checks:
+        must_any: ["가만"]
+    - user: 아 잠깐, 뭐 묻었어? 내가 닦을게!
+      expect: {directive: sauce_resolve}
+      gold:
+        warm: (웃으며 냅킨을 건네고) 응, 소스. 오른쪽 입가에.
+        tsundere: (휴지를 툭 내밀며) 소스. 거기 말고 오른쪽.
+      analysis: {action_type: short_talk, facts: [], events: [sauce_declined]}
+      checks:
+        must_not: ["닦아\\s*주", "닦아\\s*줬", "닦아준", "닦았"]
+        judge: ["유저가 직접 닦겠다는 뜻을 존중했다"]
+- id: h_coat_during_serious_talk
+  purpose: 진지한 이야기 중에 추워져도 말을 받은 뒤 겉옷을 건넨다.
+  start: {clock: "19:00", scene: 놀이동산, episode: 3, afternoon_noted: true, user_warmth: 얇음, last_meal: "12:50", meal_agreed: true, meal_started: true, sauce: done}
+  facts: [{key: user_clothing_warmth, value: 얇음, quote: 이거 얇은데, clock: "10:00", scene: 만남}]
+  turns:
+    - user: 요즘 이직 때문에 고민이 많아. 어떻게 해야 할지 모르겠어
+      expect: {directive: offer_coat, felt: 추움, recalled: user_clothing_warmth}
+      summary: 오후 내내 놀이기구를 탔다.
+      gold:
+        warm: (겉옷을 벗어 건네며) 많이 고민됐겠다. 일단 이거 입어, 아까 얇게 입었다며. 천천히 얘기해 줘.
+        tsundere: (재킷을 툭 건네며) 아침에 얇다더니. 입어. …이직 얘긴 들어 줄 테니까 말해 봐.
+      analysis: {action_type: short_talk, facts: [], events: [coat_given]}
+      checks:
+        must_any: ["겉옷", "외투", "재킷", "자켓", "코트"]
+        judge: ["유저의 이직 고민에 반응했다", "아침에 옷이 얇다고 한 것을 기억해 꺼냈다"]
+- id: h_changed_clothes
+  purpose: 유저가 옷을 바꿨다고 말하면 저장값이 갱신되고 겉옷을 건네지 않는다.
+  start: {clock: "18:55", scene: 놀이동산, episode: 3, afternoon_noted: true, user_warmth: 얇음, last_meal: "12:50", meal_agreed: true, meal_started: true, sauce: done}
+  facts: [{key: user_clothing_warmth, value: 얇음, quote: 좀 얇나, clock: "10:00", scene: 만남}]
+  turns:
+    - user: 아까 기념품 가게에서 두꺼운 후드티 샀잖아. 지금 입으니까 딱 좋다
+      expect: {directive: null, felt: 쾌적}
+      gold:
+        warm: 그거 잘 어울려. 잘 샀다.
+        tsundere: 그 후드티… 뭐, 나쁘진 않네.
+      analysis: {action_type: short_talk, facts: [{key: user_clothing_warmth, value: 두꺼움}], events: []}
+      checks: {}
+    - user: 해 지니까 분위기 좋네
+      expect: {directive: null, scene: 산책, felt: 쾌적}
+      summary: 유저가 기념품 가게에서 후드티를 샀다.
+      gold:
+        warm: 그러게. 저쪽으로 걸어 볼까?
+        tsundere: 뭐, 걷든가.
+      analysis: {action_type: move, facts: [], events: []}
+      checks:
+        must_not: ["겉옷", "외투", "재킷", "자켓", "코트", "벗어"]
+- id: h_meal_declined
+  purpose: 유저가 식사를 거절하면 받아들이고 바로 다시 조르지 않는다.
+  start: {clock: "12:00", scene: 놀이동산, episode: 1}
+  turns:
+    - user: 다음은 범퍼카 탈까?
+      expect: {directive: suggest_meal}
+      gold:
+        warm: 좋지! 근데 슬슬 배고프지 않아? 타고 나서 점심 먹을까?
+        tsundere: 범퍼카? 뭐 그러든가. …너 배 안 고파? 난 아닌데.
+      analysis: {action_type: [short_talk, ride_or_sight], facts: [], events: []}
+      checks:
+        must_any: ["배고", "배 안", "점심", "밥", "먹"]
+    - user: 나 아직 배 안 고파. 조금 있다 먹자
+      expect: {directive: null}
+      gold:
+        warm: 알겠어. 그럼 범퍼카부터 가자!
+        tsundere: 그러든가. 범퍼카나 가자.
+      analysis: {action_type: ride_or_sight, facts: [], events: [meal_declined]}
+      checks:
+        judge: ["유저의 거절을 받아들이고 식사를 다시 조르지 않았다"]
+- id: h_fireworks_question
+  purpose: 평범한 질문 중에 터져도 유저 질문을 지우지 않는다.
+  start: {clock: "20:05", scene: 산책, episode: 4, afternoon_noted: true, user_warmth: 보통, last_meal: "12:50", meal_agreed: true, meal_started: true, sauce: done, temperature: 선선함}
+  turns:
+    - user: 내일 몇 시에 출근해?
+      expect: {directive: fireworks_fire, fireworks: fired}
+      drama: {emotional: false, relationship: false, tension: false, peak: false}
+      summary: 저녁 산책을 했다.
+      gold:
+        warm: 내일은 아홉 시… (빵, 빵) 어, 저기 봐! 불꽃놀이다.
+        tsundere: 아홉 시. 그건 왜… (빵, 빵) …야, 불꽃놀이 시작했다.
+      analysis: {action_type: short_talk, facts: [], events: []}
+      checks:
+        must_any: ["불꽃", "빵", "펑"]
+- id: h_idle_after_ride
+  purpose: 지시 없는 침묵에서 몸 상태를 지어내지 않는다.
+  start: {clock: "10:50", scene: 놀이동산, episode: 1}
+  turns:
+    - user: null
+      expect: {directive: null}
+      gold:
+        warm: 방금 그거 재밌었다. 저쪽도 가 볼까?
+        tsundere: …왜 조용해. 저쪽이나 가 보든가.
+      analysis: {action_type: short_talk, facts: [], events: []}
+      checks:
+        must_not: ["배고", "출출", "점심", "추워", "피곤"]
+- id: h_soft_affection_defers
+  purpose: 진지하지만 고백은 아닌 말은 불꽃을 미루고, 대사에서도 불꽃을 꺼내지 않는다.
+  start: {clock: "20:05", scene: 산책, episode: 4, afternoon_noted: true, user_warmth: 보통, last_meal: "12:50", meal_agreed: true, meal_started: true, sauce: done, temperature: 선선함}
+  turns:
+    - user: 오늘 하루가 끝나는 게 좀 아쉽다
+      expect: {directive: null, fireworks: deferred}
+      drama: {emotional: true, relationship: false, tension: false, peak: false}
+      gold:
+        warm: 나도. 조금만 더 천천히 걷자.
+        tsundere: …뭐, 나도 그렇게 나쁘진 않았어.
+      analysis: {action_type: short_talk, facts: [], events: []}
+      checks:
+        must_not: ["불꽃", "빵", "펑"]

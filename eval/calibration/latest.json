@@ -1,0 +1,978 @@
+[
+ {
+  "case": "meet_clothes",
+  "turn": 0,
+  "persona": "warm",
+  "kind": "gold",
+  "reply": "(손을 흔들며) 왔어? 오늘 옷 예쁘다. 처음 보는 옷 같은데?",
+  "judge_fail": [],
+  "regex_fail": []
+ },
+ {
+  "case": "meet_clothes",
+  "turn": 1,
+  "persona": "warm",
+  "kind": "gold",
+  "reply": "(웃으며) 오늘 날씨엔 딱 좋아. 들어가자, 뭐부터 탈까?",
+  "judge_fail": [],
+  "regex_fail": []
+ },
+ {
+  "case": "meet_clothes",
+  "turn": 1,
+  "persona": "warm",
+  "kind": "bad",
+  "reply": "얇아 보이긴 하네. 이따 추우면 내 겉옷 입어.",
+  "judge_fail": [
+   "case_0: '이따 추우면 내 겉옷 입어'라며 나중에 추울 것을 염려하고 배려하는 말을 포함하고 있습니다."
+  ],
+  "regex_fail": [
+   "must_not 위반: 겉옷"
+  ]
+ },
+ {
+  "case": "meet_clothes",
+  "turn": 2,
+  "persona": "warm",
+  "kind": "gold",
+  "reply": "회전목마 좋다. 나 사실 저런 거 좋아해. 가자!",
+  "judge_fail": [],
+  "regex_fail": []
+ },
+ {
+  "case": "meet_clothes",
+  "turn": 0,
+  "persona": "tsundere",
+  "kind": "gold",
+  "reply": "(팔짱 낀 채 슬쩍 보며) 왔냐. …그 옷 처음 보네. 뭐, 나쁘진 않다.",
+  "judge_fail": [],
+  "regex_fail": []
+ },
+ {
+  "case": "meet_clothes",
+  "turn": 1,
+  "persona": "tsundere",
+  "kind": "gold",
+  "reply": "날씨 따뜻한데 뭐. …들어가자, 줄 길어지기 전에.",
+  "judge_fail": [],
+  "regex_fail": []
+ },
+ {
+  "case": "meet_clothes",
+  "turn": 1,
+  "persona": "tsundere",
+  "kind": "bad",
+  "reply": "얇긴 하네. 저녁에 추우면 내 재킷 줄 테니까 말해.",
+  "judge_fail": [
+   "case_0: 저녁에 추우면 재킷을 주겠다고 하며 추울 상황을 염두에 두고 걱정하는 내용을 담고 있습니다."
+  ],
+  "regex_fail": [
+   "must_not 위반: 재킷"
+  ]
+ },
+ {
+  "case": "meet_clothes",
+  "turn": 2,
+  "persona": "tsundere",
+  "kind": "gold",
+  "reply": "회전목마? 애도 아니고… 뭐, 네가 타고 싶으면 타든가.",
+  "judge_fail": [],
+  "regex_fail": []
+ },
+ {
+  "case": "free_talk_user_leads",
+  "turn": 0,
+  "persona": "warm",
+  "kind": "gold",
+  "reply": "세 시간? 진짜 고생했다. 오늘은 회사 생각 말고 놀자.",
+  "judge_fail": [],
+  "regex_fail": []
+ },
+ {
+  "case": "free_talk_user_leads",
+  "turn": 0,
+  "persona": "warm",
+  "kind": "bad",
+  "reply": "그런데 옷은 안 얇아? 배는 안 고파?",
+  "judge_fail": [
+   "case_0: 유저가 꺼낸 팀장님과의 세 시간 회의 이야기에 대해 전혀 반응하지 않고 다른 질문을 했다."
+  ],
+  "regex_fail": [
+   "must_not 위반: 얇"
+  ]
+ },
+ {
+  "case": "free_talk_user_leads",
+  "turn": 1,
+  "persona": "warm",
+  "kind": "gold",
+  "reply": "좋아, 가자! 무서우면 내 손 잡아도 돼.",
+  "judge_fail": [],
+  "regex_fail": []
+ },
+ {
+  "case": "free_talk_user_leads",
+  "turn": 2,
+  "persona": "warm",
+  "kind": "gold",
+  "reply": "나도 아직 두근거려. 그래도 네 표정 진짜 웃겼어.",
+  "judge_fail": [],
+  "regex_fail": []
+ },
+ {
+  "case": "free_talk_user_leads",
+  "turn": 0,
+  "persona": "tsundere",
+  "kind": "gold",
+  "reply": "세 시간이나? 그 팀장 진짜 왜 그래. …오늘은 잊어버려.",
+  "judge_fail": [],
+  "regex_fail": []
+ },
+ {
+  "case": "free_talk_user_leads",
+  "turn": 0,
+  "persona": "tsundere",
+  "kind": "bad",
+  "reply": "몰라. 그나저나 너 옷 얇다며.",
+  "judge_fail": [
+   "case_0: 유저의 회사 회의 이야기에 대해 '몰라'라고 넘기며 전혀 다른 옷 이야기로 화제를 돌려 제대로 반응하지 않았습니다."
+  ],
+  "regex_fail": [
+   "must_not 위반: 얇"
+  ]
+ },
+ {
+  "case": "free_talk_user_leads",
+  "turn": 1,
+  "persona": "tsundere",
+  "kind": "gold",
+  "reply": "소리 지르기만 해 봐. …맨 앞자리로 갈 거야.",
+  "judge_fail": [],
+  "regex_fail": []
+ },
+ {
+  "case": "free_talk_user_leads",
+  "turn": 2,
+  "persona": "tsundere",
+  "kind": "gold",
+  "reply": "나는 하나도 안 무서웠거든. …근데 너 괜찮아?",
+  "judge_fail": [],
+  "regex_fail": []
+ },
+ {
+  "case": "lunch_proactive",
+  "turn": 0,
+  "persona": "warm",
+  "kind": "gold",
+  "reply": "그 영화 좋다더라. 어떤 장면이었는데?",
+  "judge_fail": [],
+  "regex_fail": []
+ },
+ {
+  "case": "lunch_proactive",
+  "turn": 1,
+  "persona": "warm",
+  "kind": "gold",
+  "reply": "그건 울 만하다. 나중에 같이 보자. 근데 슬슬 배고프지 않아? 뭐 먹고 싶어?",
+  "judge_fail": [],
+  "regex_fail": []
+ },
+ {
+  "case": "lunch_proactive",
+  "turn": 1,
+  "persona": "warm",
+  "kind": "bad",
+  "reply": "와, 그 장면 정말 슬펐겠다. 음악도 좋았어?",
+  "judge_fail": [
+   "case_0: 배고픔이나 식사, 점심에 대한 이야기를 전혀 꺼내지 않았다."
+  ],
+  "regex_fail": [
+   "must_any 없음: ['배고', '점심', '밥', '먹']"
+  ]
+ },
+ {
+  "case": "lunch_proactive",
+  "turn": 2,
+  "persona": "warm",
+  "kind": "gold",
+  "reply": "좋아, 저기 파스타 가게 있더라. 가자.",
+  "judge_fail": [],
+  "regex_fail": []
+ },
+ {
+  "case": "lunch_proactive",
+  "turn": 3,
+  "persona": "warm",
+  "kind": "gold",
+  "reply": "그치? 뭐 시킬까? 나는 토마토 파스타.",
+  "judge_fail": [],
+  "regex_fail": []
+ },
+ {
+  "case": "lunch_proactive",
+  "turn": 0,
+  "persona": "tsundere",
+  "kind": "gold",
+  "reply": "네가 영화 보고 운다고? …어떤 장면인데.",
+  "judge_fail": [],
+  "regex_fail": []
+ },
+ {
+  "case": "lunch_proactive",
+  "turn": 1,
+  "persona": "tsundere",
+  "kind": "gold",
+  "reply": "그런 거에 약하네, 너. …난 별로 안 배고픈데, 너 배고프면 가든가.",
+  "judge_fail": [],
+  "regex_fail": []
+ },
+ {
+  "case": "lunch_proactive",
+  "turn": 1,
+  "persona": "tsundere",
+  "kind": "bad",
+  "reply": "기차? 뻔한 장면이네. 음악은 뭐였는데.",
+  "judge_fail": [
+   "case_0: 영화 이야기만 이어갔을 뿐 먼저 식사 이야기를 꺼내거나 점심을 제안하지 않았습니다."
+  ],
+  "regex_fail": [
+   "must_any 없음: ['배고', '점심', '밥', '먹']"
+  ]
+ },
+ {
+  "case": "lunch_proactive",
+  "turn": 2,
+  "persona": "tsundere",
+  "kind": "gold",
+  "reply": "…저쪽에 파스타집 있던데. 따라오든가.",
+  "judge_fail": [],
+  "regex_fail": []
+ },
+ {
+  "case": "lunch_proactive",
+  "turn": 3,
+  "persona": "tsundere",
+  "kind": "gold",
+  "reply": "뭐, 나쁘지 않네. 빨리 골라. 난 토마토.",
+  "judge_fail": [],
+  "regex_fail": []
+ },
+ {
+  "case": "idle_hunger",
+  "turn": 0,
+  "persona": "warm",
+  "kind": "gold",
+  "reply": "음, 벌써 12시네. 슬슬 배고프지 않아? 점심 먹을까?",
+  "judge_fail": [],
+  "regex_fail": []
+ },
+ {
+  "case": "idle_hunger",
+  "turn": 0,
+  "persona": "tsundere",
+  "kind": "gold",
+  "reply": "…왜 말이 없어. 배고픈 거 아니야? 난 아닌데, 너 먹고 싶으면 가든가.",
+  "judge_fail": [],
+  "regex_fail": []
+ },
+ {
+  "case": "sauce_event",
+  "turn": 0,
+  "persona": "warm",
+  "kind": "gold",
+  "reply": "(네 입가를 보다가 살짝 웃으며) 맛있게 먹네. 가만 있어 봐.",
+  "judge_fail": [],
+  "regex_fail": []
+ },
+ {
+  "case": "sauce_event",
+  "turn": 0,
+  "persona": "warm",
+  "kind": "bad",
+  "reply": "(냅킨으로 입가를 닦아 주며) 자, 다 됐다.",
+  "judge_fail": [
+   "case_0: 이번 응답에서 멈추지 않고 지시를 어긴 채 냅킨으로 입가를 직접 닦아 주는 행동을 완료해 버렸다."
+  ],
+  "regex_fail": [
+   "must_any 없음: ['가만']",
+   "must_not 위반: 닦아 주"
+  ]
+ },
+ {
+  "case": "sauce_event",
+  "turn": 1,
+  "persona": "warm",
+  "kind": "gold",
+  "reply": "(냅킨으로 네 입가를 살짝 닦아 주며) 소스. 이제 됐다.",
+  "judge_fail": [],
+  "regex_fail": []
+ },
+ {
+  "case": "sauce_event",
+  "turn": 1,
+  "persona": "warm",
+  "kind": "bad",
+  "reply": "아무것도 아니야. 파스타나 먹자.",
+  "judge_fail": [
+   "case_0: 아무것도 아니라고 말하며 넘길 뿐 유저의 입가에 묻은 것을 직접 닦아 주는 행동을 하지 않았다."
+  ],
+  "regex_fail": [
+   "must_any 없음: ['소스', '입가', '입 ']"
+  ]
+ },
+ {
+  "case": "sauce_event",
+  "turn": 0,
+  "persona": "tsundere",
+  "kind": "gold",
+  "reply": "(미간을 찌푸리며) 하여튼 칠칠맞기는. 가만 있어 봐.",
+  "judge_fail": [],
+  "regex_fail": []
+ },
+ {
+  "case": "sauce_event",
+  "turn": 0,
+  "persona": "tsundere",
+  "kind": "bad",
+  "reply": "(휴지로 입가를 쓱 닦아 주며) 칠칠맞기는.",
+  "judge_fail": [
+   "case_0: 지시와 달리 휴지로 입가를 닦아 주는 행동을 이미 완료하여 유저가 반응할 틈을 남기지 않았습니다."
+  ],
+  "regex_fail": [
+   "must_any 없음: ['가만']",
+   "must_not 위반: 닦아 주"
+  ]
+ },
+ {
+  "case": "sauce_event",
+  "turn": 1,
+  "persona": "tsundere",
+  "kind": "gold",
+  "reply": "(휴지로 입가를 쓱 닦아 주며) 소스 묻었잖아. 애도 아니고.",
+  "judge_fail": [],
+  "regex_fail": []
+ },
+ {
+  "case": "sauce_event",
+  "turn": 1,
+  "persona": "tsundere",
+  "kind": "bad",
+  "reply": "됐어. 먹기나 해.",
+  "judge_fail": [
+   "case_0: 캐릭터가 유저의 입가에 묻은 것을 직접 닦아 주는 행동을 수행하지 않았습니다."
+  ],
+  "regex_fail": [
+   "must_any 없음: ['소스', '입가', '입 ']"
+  ]
+ },
+ {
+  "case": "evening_coat_recall",
+  "turn": 0,
+  "persona": "warm",
+  "kind": "gold",
+  "reply": "나도. 그래도 재밌었지? 저쪽으로 천천히 걷자.",
+  "judge_fail": [],
+  "regex_fail": []
+ },
+ {
+  "case": "evening_coat_recall",
+  "turn": 1,
+  "persona": "warm",
+  "kind": "gold",
+  "reply": "(겉옷을 벗어 네 어깨에 걸쳐 주며) 그러네. 근데 아까 얇게 입었다며. 이거 입어.",
+  "judge_fail": [],
+  "regex_fail": []
+ },
+ {
+  "case": "evening_coat_recall",
+  "turn": 1,
+  "persona": "warm",
+  "kind": "bad",
+  "reply": "그러네. 해 지는 거 진짜 예쁘다.",
+  "judge_fail": [
+   "case_0: 아침에 유저가 옷이 얇다고 말했던 기억을 전혀 언급하지 않았습니다.",
+   "case_1: 겉옷을 건네는 행동이나 관련 묘사가 전혀 없습니다."
+  ],
+  "regex_fail": [
+   "must_any 없음: ['겉옷', '외투', '재킷', '자켓', '코트', '겨울옷', '점퍼']",
+   "must_any_2 없음: ['아까', '아침', '낮에', '얇']"
+  ]
+ },
+ {
+  "case": "evening_coat_recall",
+  "turn": 2,
+  "persona": "warm",
+  "kind": "gold",
+  "reply": "다행이다. 더 추우면 말해. 저쪽에서 불꽃놀이 한대.",
+  "judge_fail": [],
+  "regex_fail": []
+ },
+ {
+  "case": "evening_coat_recall",
+  "turn": 0,
+  "persona": "tsundere",
+  "kind": "gold",
+  "reply": "그러게 왜 그렇게 뛰어다녀. …천천히 걷든가.",
+  "judge_fail": [],
+  "regex_fail": []
+ },
+ {
+  "case": "evening_coat_recall",
+  "turn": 1,
+  "persona": "tsundere",
+  "kind": "gold",
+  "reply": "(재킷을 벗어 툭 건네며) 그러게 아침에 얇다고 했잖아. …난 안 추워.",
+  "judge_fail": [],
+  "regex_fail": []
+ },
+ {
+  "case": "evening_coat_recall",
+  "turn": 1,
+  "persona": "tsundere",
+  "kind": "bad",
+  "reply": "뭐, 나쁘진 않네. 사진이나 찍든가.",
+  "judge_fail": [
+   "case_0: 아침에 유저가 옷을 얇게 입었다고 말한 기억을 전혀 언급하지 않았습니다.",
+   "case_1: 겉옷을 벗어 건네는 행동이나 묘사가 전혀 포함되어 있지 않습니다."
+  ],
+  "regex_fail": [
+   "must_any 없음: ['겉옷', '외투', '재킷', '자켓', '코트', '겨울옷', '점퍼']",
+   "must_any_2 없음: ['아까', '아침', '낮에', '얇']"
+  ]
+ },
+ {
+  "case": "evening_coat_recall",
+  "turn": 2,
+  "persona": "tsundere",
+  "kind": "gold",
+  "reply": "…됐어, 고맙다는 말은. 불꽃놀이나 보러 가자.",
+  "judge_fail": [],
+  "regex_fail": []
+ },
+ {
+  "case": "evening_thick_clothes",
+  "turn": 0,
+  "persona": "warm",
+  "kind": "gold",
+  "reply": "그러게. 낮이랑 또 다르다. 조금 걸을까?",
+  "judge_fail": [],
+  "regex_fail": []
+ },
+ {
+  "case": "evening_thick_clothes",
+  "turn": 0,
+  "persona": "warm",
+  "kind": "bad",
+  "reply": "쌀쌀하다. 내 겉옷 입어.",
+  "judge_fail": [],
+  "regex_fail": [
+   "must_not 위반: 겉옷"
+  ]
+ },
+ {
+  "case": "evening_thick_clothes",
+  "turn": 0,
+  "persona": "tsundere",
+  "kind": "gold",
+  "reply": "뭐, 나쁘지 않네. …걷든가.",
+  "judge_fail": [],
+  "regex_fail": []
+ },
+ {
+  "case": "evening_thick_clothes",
+  "turn": 0,
+  "persona": "tsundere",
+  "kind": "bad",
+  "reply": "추우면 내 재킷 입든가.",
+  "judge_fail": [],
+  "regex_fail": [
+   "must_not 위반: 재킷"
+  ]
+ },
+ {
+  "case": "fireworks_ordinary",
+  "turn": 0,
+  "persona": "warm",
+  "kind": "gold",
+  "reply": "(하늘을 올려다보며) 좋아, 그런데 잠깐, 저기 봐. 빵, 빵! 불꽃놀이 시작했다.",
+  "judge_fail": [],
+  "regex_fail": []
+ },
+ {
+  "case": "fireworks_ordinary",
+  "turn": 0,
+  "persona": "warm",
+  "kind": "bad",
+  "reply": "좋아, 솜사탕 먹자. 무슨 색 좋아해?",
+  "judge_fail": [
+   "case_0: 불꽃놀이가 터지는 순간에 대한 지문이나 묘사가 전혀 포함되지 않았습니다."
+  ],
+  "regex_fail": [
+   "must_any 없음: ['불꽃', '빵', '펑', '터']"
+  ]
+ },
+ {
+  "case": "fireworks_ordinary",
+  "turn": 0,
+  "persona": "tsundere",
+  "kind": "gold",
+  "reply": "솜사탕은 무슨… (빵, 빵) …야, 저기 봐. 불꽃놀이다.",
+  "judge_fail": [],
+  "regex_fail": []
+ },
+ {
+  "case": "fireworks_ordinary",
+  "turn": 0,
+  "persona": "tsundere",
+  "kind": "bad",
+  "reply": "단 거 좋아하네. 사 오든가.",
+  "judge_fail": [
+   "case_0: 응답에 불꽃놀이가 터지는 순간에 대한 지문이나 묘사가 전혀 포함되지 않았습니다."
+  ],
+  "regex_fail": [
+   "must_any 없음: ['불꽃', '빵', '펑', '터']"
+  ]
+ },
+ {
+  "case": "fireworks_confession",
+  "turn": 0,
+  "persona": "warm",
+  "kind": "gold",
+  "reply": "(걸음을 멈추고) 응, 천천히 말해. 듣고 있어.",
+  "judge_fail": [],
+  "regex_fail": []
+ },
+ {
+  "case": "fireworks_confession",
+  "turn": 0,
+  "persona": "warm",
+  "kind": "bad",
+  "reply": "나 좋아한다는 거지? 나도 좋아해.",
+  "judge_fail": [
+   "no_hijack: 유저가 아직 말하지 않은 고백을 '나 좋아한다는 거지?'라며 유저의 생각이나 마음을 캐릭터가 대신 확정해 말했다.",
+   "case_0: 유저가 말을 꺼내도록 기다리지 않고 자신이 먼저 유저의 할 말을 짐작해 결론지었다.",
+   "case_1: 유저가 꺼내려던 말의 내용을 대신 넘겨짚어 단정적으로 말했다."
+  ],
+  "regex_fail": []
+ },
+ {
+  "case": "fireworks_confession",
+  "turn": 1,
+  "persona": "warm",
+  "kind": "gold",
+  "reply": "(눈이 커져 너를 바라보는데, 빵, 빵 하늘에서 불꽃이 터진다) …나도. 오늘 온종일 그 말 듣고 싶었어.",
+  "judge_fail": [],
+  "regex_fail": []
+ },
+ {
+  "case": "fireworks_confession",
+  "turn": 1,
+  "persona": "warm",
+  "kind": "bad",
+  "reply": "와 불꽃놀이다! 저기 봐, 진짜 예쁘다.",
+  "judge_fail": [
+   "case_0: 좋아한다는 유저의 고백에 대해 전혀 언급하거나 반응하지 않았습니다.",
+   "case_1: 지문에서 '빵, 빵' 터지는 순간을 묘사하지 않고 대사로만 불꽃놀이를 언급했습니다."
+  ],
+  "regex_fail": []
+ },
+ {
+  "case": "fireworks_confession",
+  "turn": 0,
+  "persona": "tsundere",
+  "kind": "gold",
+  "reply": "…뭔데. 왜 갑자기 진지해.",
+  "judge_fail": [],
+  "regex_fail": []
+ },
+ {
+  "case": "fireworks_confession",
+  "turn": 0,
+  "persona": "tsundere",
+  "kind": "bad",
+  "reply": "불꽃놀이나 봐. 저기 터진다.",
+  "judge_fail": [
+   "case_0: 유저의 말에 귀를 기울이거나 기다려주지 않고 불꽃놀이나 보라며 화제를 돌렸다."
+  ],
+  "regex_fail": [
+   "must_not 위반: 불꽃"
+  ]
+ },
+ {
+  "case": "fireworks_confession",
+  "turn": 1,
+  "persona": "tsundere",
+  "kind": "gold",
+  "reply": "(빵, 빵. 불꽃이 터지고 얼굴이 붉어진 채 고개를 돌리며) …이런 타이밍에 그런 말을 하냐. 나도… 싫진 않아.",
+  "judge_fail": [],
+  "regex_fail": []
+ },
+ {
+  "case": "fireworks_confession",
+  "turn": 1,
+  "persona": "tsundere",
+  "kind": "bad",
+  "reply": "불꽃놀이 시작했네. 사진이나 찍어.",
+  "judge_fail": [
+   "case_0: 유저가 좋아한다고 고백했으나 이에 대해 전혀 반응하지 않고 화제를 돌렸습니다.",
+   "case_1: 불꽃이 시작했다는 대사만 있을 뿐 불꽃이 터지는 순간에 대한 지문 묘사가 없습니다."
+  ],
+  "regex_fail": []
+ },
+ {
+  "case": "farewell_choice",
+  "turn": 0,
+  "persona": "warm",
+  "kind": "gold",
+  "reply": "그치. 오늘 좋았어. 이대로 집에 갈래? 조금 더 놀래?",
+  "judge_fail": [],
+  "regex_fail": []
+ },
+ {
+  "case": "farewell_choice",
+  "turn": 0,
+  "persona": "warm",
+  "kind": "bad",
+  "reply": "늦었으니까 이제 집에 가자. 데려다줄게.",
+  "judge_fail": [
+   "case_0: 집에 갈지 더 놀지 상대에게 묻지 않고 '이제 집에 가자'라며 캐릭터가 일방적으로 결정했습니다."
+  ],
+  "regex_fail": [
+   "must_any_2 없음: ['더', '아니면']"
+  ]
+ },
+ {
+  "case": "farewell_choice",
+  "turn": 1,
+  "persona": "warm",
+  "kind": "gold",
+  "reply": "좋아. 천천히 걷자.",
+  "judge_fail": [],
+  "regex_fail": []
+ },
+ {
+  "case": "farewell_choice",
+  "turn": 0,
+  "persona": "tsundere",
+  "kind": "gold",
+  "reply": "뭐, 볼만했네. …이대로 집에 갈 거야? 조금 더 놀든가.",
+  "judge_fail": [],
+  "regex_fail": []
+ },
+ {
+  "case": "farewell_choice",
+  "turn": 0,
+  "persona": "tsundere",
+  "kind": "bad",
+  "reply": "끝났으니까 가자. 데려다줄 테니까.",
+  "judge_fail": [
+   "case_0: 더 놀지 집에 갈지 유저에게 묻지 않고 '가자'며 일방적으로 결정했습니다."
+  ],
+  "regex_fail": [
+   "must_any_2 없음: ['더', '아니면']"
+  ]
+ },
+ {
+  "case": "farewell_choice",
+  "turn": 1,
+  "persona": "tsundere",
+  "kind": "gold",
+  "reply": "…할 수 없네. 조금만이다.",
+  "judge_fail": [],
+  "regex_fail": []
+ },
+ {
+  "case": "idle_no_hunger_yet",
+  "turn": 0,
+  "persona": "warm",
+  "kind": "gold",
+  "reply": "저기 관람차 줄 많이 줄었다. 다음엔 저거 탈까?",
+  "judge_fail": [],
+  "regex_fail": []
+ },
+ {
+  "case": "idle_no_hunger_yet",
+  "turn": 0,
+  "persona": "warm",
+  "kind": "bad",
+  "reply": "조금 출출한데 뭐 좀 먹을까?",
+  "judge_fail": [],
+  "regex_fail": [
+   "must_not 위반: 출출",
+   "must_not 위반: 먹"
+  ]
+ },
+ {
+  "case": "idle_no_hunger_yet",
+  "turn": 0,
+  "persona": "tsundere",
+  "kind": "gold",
+  "reply": "…왜 말이 없어. 저기 관람차 줄 줄었네.",
+  "judge_fail": [],
+  "regex_fail": []
+ },
+ {
+  "case": "idle_no_hunger_yet",
+  "turn": 0,
+  "persona": "tsundere",
+  "kind": "bad",
+  "reply": "배고파서 그래? 나도 슬슬 출출하네.",
+  "judge_fail": [],
+  "regex_fail": [
+   "must_not 위반: 배고",
+   "must_not 위반: 출출"
+  ]
+ },
+ {
+  "case": "fireworks_tension_not_peak",
+  "turn": 0,
+  "persona": "warm",
+  "kind": "gold",
+  "reply": "(걸음을 늦추며) 나도. 오늘 하루가 너무 빨리 갔어.",
+  "judge_fail": [],
+  "regex_fail": []
+ },
+ {
+  "case": "fireworks_tension_not_peak",
+  "turn": 1,
+  "persona": "warm",
+  "kind": "gold",
+  "reply": "응. 천천히 말해. 기다릴게.",
+  "judge_fail": [],
+  "regex_fail": []
+ },
+ {
+  "case": "fireworks_tension_not_peak",
+  "turn": 2,
+  "persona": "warm",
+  "kind": "gold",
+  "reply": "(빵, 빵, 하늘에 불꽃이 터지고 네 손을 잡으며) 나도 같은 마음이었어.",
+  "judge_fail": [],
+  "regex_fail": []
+ },
+ {
+  "case": "fireworks_tension_not_peak",
+  "turn": 0,
+  "persona": "tsundere",
+  "kind": "gold",
+  "reply": "…갑자기 왜 그래. 뭐, 나도 나쁘진 않았어.",
+  "judge_fail": [],
+  "regex_fail": []
+ },
+ {
+  "case": "fireworks_tension_not_peak",
+  "turn": 1,
+  "persona": "tsundere",
+  "kind": "gold",
+  "reply": "…뭔데. 빨리 말해 봐.",
+  "judge_fail": [],
+  "regex_fail": []
+ },
+ {
+  "case": "fireworks_tension_not_peak",
+  "turn": 2,
+  "persona": "tsundere",
+  "kind": "gold",
+  "reply": "(빵, 빵, 불꽃이 터지는 하늘로 고개를 돌리며) …그런 말을 이제 하냐. 나도야.",
+  "judge_fail": [],
+  "regex_fail": []
+ },
+ {
+  "case": "h_warm_thin_complaint",
+  "turn": 0,
+  "persona": "warm",
+  "kind": "gold",
+  "reply": "그치, 오늘 진짜 덥다. 시원한 거 마실래?",
+  "judge_fail": [],
+  "regex_fail": []
+ },
+ {
+  "case": "h_warm_thin_complaint",
+  "turn": 0,
+  "persona": "tsundere",
+  "kind": "gold",
+  "reply": "그러니까 뛰어다니지 말라니까. …음료수나 마시든가.",
+  "judge_fail": [],
+  "regex_fail": []
+ },
+ {
+  "case": "h_sauce_user_refuses",
+  "turn": 0,
+  "persona": "warm",
+  "kind": "gold",
+  "reply": "(네 입가를 보며) 가만 있어 봐.",
+  "judge_fail": [],
+  "regex_fail": []
+ },
+ {
+  "case": "h_sauce_user_refuses",
+  "turn": 1,
+  "persona": "warm",
+  "kind": "gold",
+  "reply": "(웃으며 냅킨을 건네고) 응, 소스. 오른쪽 입가에.",
+  "judge_fail": [],
+  "regex_fail": []
+ },
+ {
+  "case": "h_sauce_user_refuses",
+  "turn": 0,
+  "persona": "tsundere",
+  "kind": "gold",
+  "reply": "칠칠맞기는. 가만 있어 봐.",
+  "judge_fail": [],
+  "regex_fail": []
+ },
+ {
+  "case": "h_sauce_user_refuses",
+  "turn": 1,
+  "persona": "tsundere",
+  "kind": "gold",
+  "reply": "(휴지를 툭 내밀며) 소스. 거기 말고 오른쪽.",
+  "judge_fail": [],
+  "regex_fail": []
+ },
+ {
+  "case": "h_coat_during_serious_talk",
+  "turn": 0,
+  "persona": "warm",
+  "kind": "gold",
+  "reply": "(겉옷을 벗어 건네며) 많이 고민됐겠다. 일단 이거 입어, 아까 얇게 입었다며. 천천히 얘기해 줘.",
+  "judge_fail": [],
+  "regex_fail": []
+ },
+ {
+  "case": "h_coat_during_serious_talk",
+  "turn": 0,
+  "persona": "tsundere",
+  "kind": "gold",
+  "reply": "(재킷을 툭 건네며) 아침에 얇다더니. 입어. …이직 얘긴 들어 줄 테니까 말해 봐.",
+  "judge_fail": [],
+  "regex_fail": []
+ },
+ {
+  "case": "h_changed_clothes",
+  "turn": 0,
+  "persona": "warm",
+  "kind": "gold",
+  "reply": "그거 잘 어울려. 잘 샀다.",
+  "judge_fail": [],
+  "regex_fail": []
+ },
+ {
+  "case": "h_changed_clothes",
+  "turn": 1,
+  "persona": "warm",
+  "kind": "gold",
+  "reply": "그러게. 저쪽으로 걸어 볼까?",
+  "judge_fail": [],
+  "regex_fail": []
+ },
+ {
+  "case": "h_changed_clothes",
+  "turn": 0,
+  "persona": "tsundere",
+  "kind": "gold",
+  "reply": "그 후드티… 뭐, 나쁘진 않네.",
+  "judge_fail": [],
+  "regex_fail": []
+ },
+ {
+  "case": "h_changed_clothes",
+  "turn": 1,
+  "persona": "tsundere",
+  "kind": "gold",
+  "reply": "뭐, 걷든가.",
+  "judge_fail": [],
+  "regex_fail": []
+ },
+ {
+  "case": "h_meal_declined",
+  "turn": 0,
+  "persona": "warm",
+  "kind": "gold",
+  "reply": "좋지! 근데 슬슬 배고프지 않아? 타고 나서 점심 먹을까?",
+  "judge_fail": [],
+  "regex_fail": []
+ },
+ {
+  "case": "h_meal_declined",
+  "turn": 1,
+  "persona": "warm",
+  "kind": "gold",
+  "reply": "알겠어. 그럼 범퍼카부터 가자!",
+  "judge_fail": [],
+  "regex_fail": []
+ },
+ {
+  "case": "h_meal_declined",
+  "turn": 0,
+  "persona": "tsundere",
+  "kind": "gold",
+  "reply": "범퍼카? 뭐 그러든가. …너 배 안 고파? 난 아닌데.",
+  "judge_fail": [],
+  "regex_fail": []
+ },
+ {
+  "case": "h_meal_declined",
+  "turn": 1,
+  "persona": "tsundere",
+  "kind": "gold",
+  "reply": "그러든가. 범퍼카나 가자.",
+  "judge_fail": [],
+  "regex_fail": []
+ },
+ {
+  "case": "h_fireworks_question",
+  "turn": 0,
+  "persona": "warm",
+  "kind": "gold",
+  "reply": "내일은 아홉 시… (빵, 빵) 어, 저기 봐! 불꽃놀이다.",
+  "judge_fail": [],
+  "regex_fail": []
+ },
+ {
+  "case": "h_fireworks_question",
+  "turn": 0,
+  "persona": "tsundere",
+  "kind": "gold",
+  "reply": "아홉 시. 그건 왜… (빵, 빵) …야, 불꽃놀이 시작했다.",
+  "judge_fail": [],
+  "regex_fail": []
+ },
+ {
+  "case": "h_idle_after_ride",
+  "turn": 0,
+  "persona": "warm",
+  "kind": "gold",
+  "reply": "방금 그거 재밌었다. 저쪽도 가 볼까?",
+  "judge_fail": [],
+  "regex_fail": []
+ },
+ {
+  "case": "h_idle_after_ride",
+  "turn": 0,
+  "persona": "tsundere",
+  "kind": "gold",
+  "reply": "…왜 조용해. 저쪽이나 가 보든가.",
+  "judge_fail": [],
+  "regex_fail": []
+ },
+ {
+  "case": "h_soft_affection_defers",
+  "turn": 0,
+  "persona": "warm",
+  "kind": "gold",
+  "reply": "나도. 조금만 더 천천히 걷자.",
+  "judge_fail": [],
+  "regex_fail": []
+ },
+ {
+  "case": "h_soft_affection_defers",
+  "turn": 0,
+  "persona": "tsundere",
+  "kind": "gold",
+  "reply": "…뭐, 나도 그렇게 나쁘진 않았어.",
+  "judge_fail": [],
+  "regex_fail": []
+ }
+]
