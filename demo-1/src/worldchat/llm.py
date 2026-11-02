@@ -39,7 +39,7 @@ class GeminiLLM:
         from dotenv import load_dotenv
         from google import genai
 
-        load_dotenv(Path(__file__).resolve().parents[2] / ".env")
+        load_dotenv(Path(__file__).resolve().parents[3] / ".env")  # 저장소 루트의 .env
         key = os.environ.get("GEMINI_API_KEY")
         if not key:
             raise RuntimeError(".env에 GEMINI_API_KEY가 없습니다")
