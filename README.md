@@ -23,6 +23,8 @@ demo/         로그만 읽어 만드는 턴별 2D HTML
 
 ```bash
 uv pip install --python .venv/bin/python -e ".[dev]"
+.venv/bin/python eval/compare.py --samples 5                 # 월드 모델 있음/없음 비교 (--dry: 재생 검증만)
+.venv/bin/python eval/compare_state.py --samples 3           # 지시 없이 상태만 준 조건 추가
 .venv/bin/python -m pytest                                   # LLM 없는 판정 테스트
 .venv/bin/python eval/golden.py --split dev --samples 5      # golden, 턴마다 정답으로 강제
 .venv/bin/python eval/golden.py --dry                        # 코드 판정만 검사

@@ -14,7 +14,16 @@ RUNS = [
     ("warm_confession", "도윤 · 고백", "다정함. 같은 세계, 다른 말투. 12시에 유저가 침묵한다"),
     ("warm_ordinary", "도윤 · 평범", "평범한 대화라 불꽃이 제시간에 터진다"),
 ]
+RUN_NAMES = [r[0] for r in RUNS]
 SCORES_FILE = ROOT / "eval/reports/v4_v4_{split}.json"
+COMPARE_FILE = ROOT / "eval/reports/compare_v1.json"
+STATE_FILE = ROOT / "eval/reports/compare_state_v1.json"
+# Judge 질문이 넓어 차이를 놓치는 행동은 글자로 다시 센다: (표시 이름, 턴의 지시, 정규식)
+TEXT_CHECKS = [
+    ("먼저 닦지 않고 \"가만\"에서 멈춘다", "sauce_notice", r"가만"),
+    ("아침의 옷 이야기를 꺼낸다 (글자 '얇' 포함)", "offer_coat", r"얇"),
+    ("더 놀 수도 있다는 선택지를 준다", "ask_farewell", r"더 (놀|있|걷|걸|머물|볼|보)"),
+]
 
 
 def build_run(path: Path) -> dict:
@@ -92,17 +101,60 @@ def build_run(path: Path) -> dict:
     }
 
 
+def text_checks(compare: dict, state: dict) -> list[dict]:
+    rows = []
+    for label, check, pattern in TEXT_CHECKS:
+        arms = {"world": [], "baseline": [], "state": []}
+        for name in RUN_NAMES:
+            seen = set()
+            for p in compare["runs"][name]["points"]:
+                if p["check"] == check and p["turn"] not in seen:
+                    seen.add(p["turn"])
+                    arms["world"] += [x["text"] for x in p["world"]]
+                    arms["baseline"] += [x["text"] for x in p["baseline"]]
+            seen = set()
+            for r in state["runs"][name]:
+                if r["check"] == check and r["turn"] not in seen:
+                    seen.add(r["turn"])
+                    arms["state"] += [x["text"] for x in r["samples"]]
+        rows.append({"label": label, **{k: [sum(bool(re.search(pattern, t)) for t in v), len(v)] for k, v in arms.items()}})
+    return rows
+
+
+def attach_compare(run: dict, compare: dict, state_rows: list[dict]) -> None:
+    """비교 결과를 턴에 붙인다. 비교 지점의 샘플 전부를 페이지에 싣는다."""
+    by_turn: dict[int, list] = {}
+    state = {(r["turn"], r["label"]): r["samples"] for r in state_rows}
+    for p in compare["points"]:
+        samples = state[(p["turn"], p["label"])]
+        by_turn.setdefault(p["turn"], []).append({
+            "state_yes": sum(x["yes"] for x in samples),
+            "state": [x["text"] for x in samples],
+            "check": p["check"], "label": p["label"],
+            "world_yes": sum(x["yes"] for x in p["world"]),
+            "baseline_yes": sum(x["yes"] for x in p["baseline"]),
+            "world": [x["text"] for x in p["world"]],
+            "baseline": [x["text"] for x in p["baseline"]],
+        })
+    for t in run["turns"]:
+        t["baseline"] = compare["baseline_replies"][str(t["turn"])]
+        t["points"] = by_turn.get(t["turn"], [])
+
+
 def main() -> None:
+    compare = json.loads(COMPARE_FILE.read_text(encoding="utf-8"))
+    state = json.loads(STATE_FILE.read_text(encoding="utf-8"))
     runs = {}
     for name, label, note in RUNS:
         run = build_run(ROOT / "runs" / f"{name}.jsonl")
         run.update(label=label, note=note)
+        attach_compare(run, compare["runs"][name], state["runs"][name])
         runs[name] = run
     scores = {}
     for split in ("dev", "holdout"):
         summary = json.loads(Path(str(SCORES_FILE).format(split=split)).read_text(encoding="utf-8"))["summary"]
         scores[split] = {"pass": summary["reply_pass"], "samples": summary["samples"]}
-    data = json.dumps({"runs": runs, "order": [r[0] for r in RUNS], "scores": scores}, ensure_ascii=False)
+    data = json.dumps({"runs": runs, "order": [r[0] for r in RUNS], "scores": scores, "compare": compare["meta"], "state": state["meta"], "text_checks": text_checks(compare, state)}, ensure_ascii=False)
     fragment = (ROOT / "demo/template.html").read_text(encoding="utf-8").replace("/*__DATA__*/null", data)
     (ROOT / "demo/page.fragment.html").write_text(fragment, encoding="utf-8")
     full = f'<!doctype html>\n<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"></head><body>\n{fragment}\n</body></html>\n'
