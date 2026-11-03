@@ -13,7 +13,15 @@ PYTHONPATH=src .venv/bin/python -m park        # http://127.0.0.1:8765 시연 �
 
 `.env`에 `OPENAI_API_KEY`가 필요하다. 모델은 `RP_MODEL`(기본 `gpt-6-luna`. `gpt-6.1-luna`는 이 키로 404),
 드라마 매니저 추론 강도는 `RP_DM_EFFORT`(기본 `low`, 턴당 약 15초. `medium`은 판단이 조금 깊지만 턴당 20~35초).
-턴마다의 판단 전체는 `runs/park/<시각>.jsonl`에 남는다.
+턴마다의 판단 전체는 `runs/park/<시각>.jsonl`에 남고, 화면 헤더의 로그 선택(또는 `/?run=<파일>`)으로 읽기 전용으로 다시 볼 수 있다.
+
+터미널에서도 같은 로그를 남기며 진행할 수 있다(에이전트끼리 시험할 때 쓴다).
+
+```bash
+PYTHONPATH=src .venv/bin/python -m park.cli new 이름 [--baseline]   # 새 세션 + 시작 턴. 로그는 runs/park/<시각>_<이름>.jsonl
+PYTHONPATH=src .venv/bin/python -m park.cli say 이름 "말 (행동)"     # 한 턴. 기본은 유저에게 보이는 것만, --verbose면 DM 판단까지
+PYTHONPATH=src .venv/bin/python -m park.cli log 이름
+```
 
 ## 한 턴의 흐름
 

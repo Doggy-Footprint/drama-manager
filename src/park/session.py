@@ -114,7 +114,7 @@ def usage(calls: list[dict]) -> dict:
 # ---------------- 세션 ----------------
 
 class Session:
-    def __init__(self, *, baseline: bool = False, seed: int | None = None, llm: LLM | None = None) -> None:
+    def __init__(self, *, baseline: bool = False, seed: int | None = None, llm: LLM | None = None, tag: str | None = None) -> None:
         self.llm = llm or LLM()
         self.world = World.fresh()
         self.details = Details.fresh()
@@ -130,12 +130,25 @@ class Session:
         self.baseline_messages: list[dict] = []
         self.started = False
         stamp = datetime.now().strftime("%m%d_%H%M%S")
-        self.record = ROOT / "runs" / "park" / f"{stamp}.jsonl"
+        self.record = ROOT / "runs" / "park" / f"{stamp}{'_' + tag if tag else ''}.jsonl"
         self.record.parent.mkdir(parents=True, exist_ok=True)
 
     @property
     def name(self) -> str:
         return self.character.name
+
+    # CLI가 턴 사이에 세션을 파일로 들고 있도록. LLM 클라이언트는 빼고, 호출 기록만 남긴다
+    def __getstate__(self) -> dict:
+        state = dict(self.__dict__)
+        state["_calls"] = self.llm.calls
+        del state["llm"]
+        return state
+
+    def __setstate__(self, state: dict) -> None:
+        calls = state.pop("_calls", [])
+        self.__dict__.update(state)
+        self.llm = LLM()
+        self.llm.calls = calls
 
     # ---- 한 턴 ----
     def turn(self, user_text: str | None, emit: Callable[[dict], None] = lambda e: None) -> dict:
@@ -199,7 +212,7 @@ class Session:
         trace["clock_after"] = self.world.clock
         emit({"type": "done", "n": n, "calls": trace["calls"], "state": self.snapshot()})
         with self.record.open("a", encoding="utf-8") as f:
-            f.write(json.dumps({"entry": entry, "trace": trace}, ensure_ascii=False) + "\n")
+            f.write(json.dumps({"entry": entry, "trace": trace, "state": self.snapshot()}, ensure_ascii=False, default=str) + "\n")
         return entry
 
     # ---- 검색기 ----

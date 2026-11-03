@@ -208,3 +208,17 @@ def test_scene_fact_from_suah_is_kept_and_retrieved_not_broadcast(runs):
     llm.facts, llm.dm = [fid], dm(show_facts=[fid], retire_facts=[{"id": fid, "why": "둘이 앉았다"}])
     s.turn("여기 앉자")
     assert "남은 벤치는 하나뿐" in llm.docs["drama-manager"] and not s.world.active_facts()
+
+
+def test_session_survives_pickle_between_cli_turns(runs, monkeypatch):
+    import json
+    import pickle
+    s = session_mod.Session(llm=FakeLLM(dm(), SAY), tag="cli")
+    s.turn(None)
+    monkeypatch.setattr(session_mod, "LLM", lambda: FakeLLM(dm(), SAY))
+    s2 = pickle.loads(pickle.dumps(s))
+    assert len(s2.llm.calls) == len(s.llm.calls) and s2.world.clock == s.world.clock
+    s2.turn("가자")
+    rows = [json.loads(x) for x in s2.record.read_text(encoding="utf-8").splitlines()]
+    assert s2.record.name.endswith("_cli.jsonl") and [r["trace"]["n"] for r in rows] == [1, 2]
+    assert rows[-1]["state"]["n"] == 2   # 웹 로그 뷰어가 마지막 줄의 state로 화면을 그린다
