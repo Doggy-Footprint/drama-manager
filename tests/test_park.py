@@ -87,7 +87,7 @@ def test_character_update_touches_dynamic_only():
     c = Character.fresh()
     core = dict(c.data["core"])
     c.update({"mood": "서운함", "attitude": None, "want": None, "grievances": [{"id": "always_waiting", "intensity": 9}],
-              "new_grievance": None, "consistency": ""}, 1)
+              "new_grievance": None}, 1)
     assert c.data["core"] == core and c.data["dynamic"]["mood"] == "서운함"
     assert c.data["dynamic"]["grievances"][0]["intensity"] == 3
     assert c.open_secret("lost_child", 2)[0] and not c.open_secret("lost_child", 3)[0]
@@ -114,11 +114,11 @@ class FakeLLM:
         self.docs[label] = user
         self.calls.append({"label": label, "input": 1, "cached": 0, "output": 1, "seconds": 0})
         if label == "retrieve-world":
-            return {"picks": [], "facts": [{"id": f, "why": ""} for f in self.facts]}
+            return {"picks": [], "facts": [{"id": f} for f in self.facts]}
         if label == "extract-facts":
             return {"items": []}
         if label == "retrieve-details":
-            return {"need": "", "picks": []}
+            return getattr(self, "detail_picks", None) or {"need": "", "picks": []}
         if label == "drama-manager":
             return dict(self.dm)
         if label == "character":
@@ -132,7 +132,7 @@ def dm(**over):
     base = {"scene_read": "", "minutes": 2, "minutes_why": "", "user_location": None, "character_location": None,
             "together": True, "channel": "face", "character_phone_use": "idle", "phone_charging": False, "offscreen": None, "beat": "setup",
             "tension": 2, "events": [], "details": [], "reveal": [], "directive": "",
-            "character_update": {"mood": None, "attitude": None, "want": None, "grievances": [], "new_grievance": None, "consistency": ""},
+            "character_update": {"mood": None, "attitude": None, "want": None, "grievances": [], "new_grievance": None},
             "goal_updates": [], "world_additions": [], "show_facts": [], "retire_facts": [],
             "user_facts": [], "narration": None}
     return {**base, **over}
@@ -197,6 +197,14 @@ def test_detail_left_to_suah_counts_only_if_she_uses_it(runs, monkeypatch):
     assert s.details.get("battery")["status"] == "planted"
 
 
+def test_detail_use_as_must_be_one_of_its_affordances(runs):
+    s = session_mod.Session(llm=FakeLLM(dm(), SAY))
+    aff = s.details.get("battery")["affordances"][0]
+    s.llm.detail_picks = {"need": "", "picks": [{"id": "battery", "use_as": aff}, {"id": "hill_bench", "use_as": "숨긴 마음을 털어놓게"}]}
+    out = s._retrieve_details("안녕", 1)
+    assert [p["use_as"] for p in out["picks"]] == [aff, ""]      # 목록에 없는 해석은 DM에게 가지 않는다
+
+
 def test_scene_fact_from_suah_is_kept_and_retrieved_not_broadcast(runs):
     add = {"source": "수아", "kind": "fact", "name": "", "text": "언덕에 남은 벤치는 하나뿐이다.", "near": "hill",
            "accept": True, "why": "", "event_text": "", "affordances": []}
@@ -209,7 +217,7 @@ def test_scene_fact_from_suah_is_kept_and_retrieved_not_broadcast(runs):
     s.turn("앉자")
     assert "남은 벤치는 하나뿐" not in llm.docs["drama-manager"]       # 검색되지 않으면 DM에게도 가지 않는다
     assert "남은 벤치는 하나뿐" not in llm.docs["character"]
-    llm.facts, llm.dm = [fid], dm(show_facts=[fid], retire_facts=[{"id": fid, "why": "둘이 앉았다"}])
+    llm.facts, llm.dm = [fid], dm(show_facts=[fid], retire_facts=[{"id": fid}])
     s.turn("여기 앉자")
     assert "남은 벤치는 하나뿐" in llm.docs["drama-manager"] and not s.world.active_facts()
 

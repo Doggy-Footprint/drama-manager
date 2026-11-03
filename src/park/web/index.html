@@ -120,6 +120,12 @@ table.calls th { color: var(--faint); font-weight: 500; }
 .start { margin: auto; text-align: center; color: var(--muted); padding: 40px 20px; }
 .start h2 { color: var(--text); font-weight: 650; }
 .start .scenario { border: 1px solid var(--line, #2a3449); border-radius: 10px; padding: 14px 18px; margin: 0 auto 14px; max-width: 520px; }
+.ideas { display: grid; gap: 10px; }
+.idea { background: var(--panel2); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; }
+.idea b { color: var(--gold); }
+.idea ul { margin: 6px 0 0; padding-left: 18px; color: var(--muted); }
+.idea li { margin: 3px 0; }
+.idea code { font-size: 12px; color: var(--cyan); }
 @media (max-width: 980px) { .app { grid-template-columns: 1fr; height: auto; } .chat { height: 80vh; } .panel { grid-template-columns: 1fr; } }
 </style>
 </head>
@@ -167,6 +173,7 @@ table.calls th { color: var(--faint); font-weight: 500; }
         <button data-tab="character">캐릭터 특성</button>
         <button data-tab="memory">기억</button>
         <button data-tab="usage">호출 합계</button>
+        <button data-tab="ideas">다음 방향</button>
       </div>
       <div id="tabBody"></div>
     </div>
@@ -425,9 +432,9 @@ function renderTrace() {
   parts.push(step(1, "검색기 둘 + 사실 추출기 (병렬)", !r, r ? `
     <div class="kv">
       <div class="k">이벤트</div><div>후보 ${r.event_candidates.length}개 (지금 장소·시간 창으로 코드가 거름) → 고름 ${r.events.length}개
-        <ul class="items">${r.events.map(p => `<li><span class="id">${esc(p.id)}</span> ${esc(p.why)}</li>`).join("") || "<li class='empty'>없음</li>"}</ul></div>
+        <ul class="items">${r.events.map(p => `<li><span class="id">${esc(p.id)}</span> ${esc(eventText(p.id))}${p.why ? ` <span style="color:var(--faint)">${esc(p.why)}</span>` : ""}</li>`).join("") || "<li class='empty'>없음</li>"}</ul></div>
       <div class="k">장면 사실</div><div>${(r.fact_candidates || []).length ? `후보 ${r.fact_candidates.length}개 (유효한 사실 전부) → 고름 ${r.facts.length}개
-        <ul class="items">${r.facts.map(p => `<li><span class="id">${esc(p.id)}</span> ${esc(factText(p.id))} <span style="color:var(--faint)">${esc(p.why)}</span></li>`).join("") || "<li class='empty'>없음</li>"}</ul>` : "<span class='empty'>아직 없음</span>"}</div>
+        <ul class="items">${r.facts.map(p => `<li><span class="id">${esc(p.id)}</span> ${esc(factText(p.id))}${p.why ? ` <span style="color:var(--faint)">${esc(p.why)}</span>` : ""}</li>`).join("") || "<li class='empty'>없음</li>"}</ul>` : "<span class='empty'>아직 없음</span>"}</div>
       <div class="k">새 사실 추출</div><div>${(r.extracted || []).length ? `<ul class="items">${r.extracted.map(x => `<li><span class="badge">${esc(x.source)}</span> ${esc(x.kind)}: ${esc(x.name ? x.name + " — " : "")}${esc(x.text)}</li>`).join("")}</ul>` : "<span class='empty'>없음</span>"} <span style="color:var(--faint);font-size:12px">지난 ${esc(NAME())} 말 + 이번 입력에서. 받을지는 DM이 판단</span></div>
       <div class="k">떡밥</div><div><i style="color:var(--muted)">필요: ${esc(r.details.need)}</i>
         <ul class="items">${r.details.picks.map(p => `<li><span class="id">${esc(p.id)}</span> ${esc(p.use_as)}</li>`).join("") || "<li class='empty'>없음</li>"}</ul></div>
@@ -437,7 +444,7 @@ function renderTrace() {
   if (d) {
     const cu = d.character_update || {};
     const cuItems = [cu.mood && `기분 → ${esc(cu.mood)}`, cu.attitude && `태도 → ${esc(cu.attitude)}`, cu.want && `원하는 것 → ${esc(cu.want)}`,
-      ...(cu.grievances || []).map(g => `서운함 <span class="id">${esc(g.id)}</span> → ${g.intensity} <span style="color:var(--faint)">${esc(g.why)}</span>`),
+      ...(cu.grievances || []).map(g => `서운함 <span class="id">${esc(g.id)}</span> → ${g.intensity} ${g.why ? `<span style="color:var(--faint)">${esc(g.why)}</span>` : ""}`),
       cu.new_grievance && `새 서운함: ${esc(cu.new_grievance)}`].filter(Boolean);
     parts.push(step(2, "드라마 매니저", false, `
       <div class="kv">
@@ -449,12 +456,12 @@ function renderTrace() {
         <div class="k">떡밥</div><div>${d.details.length ? `<ul class="items">${d.details.map(x => `<li><span class="mode ${x.mode}">${x.mode}</span><span class="id">${esc(x.id)}</span> <span class="badge">${x.via === "narration" ? "지문으로" : esc(NAME()) + "에게"}</span> ${esc(x.how)}</li>`).join("")}</ul>` : "<span class='empty'>없음</span>"}</div>
         ${d.reveal.length ? `<div class="k">비밀 열기</div><div>${d.reveal.map(x => `<span class="st revealable">${esc(x.id)}</span> ${esc(x.why)}`).join("<br>")}</div>` : ""}
         <div class="k">${esc(NAME())}의 속</div><div class="directive">${esc(d.directive)}</div>
-        ${cuItems.length ? `<div class="k">특성 갱신</div><div><ul class="items">${cuItems.map(x => `<li>${x}</li>`).join("")}</ul><span style="color:var(--faint);font-size:12px">일관성: ${esc(cu.consistency)}</span></div>` : ""}
+        ${cuItems.length ? `<div class="k">특성 갱신</div><div><ul class="items">${cuItems.map(x => `<li>${x}</li>`).join("")}</ul>${cu.consistency ? `<span style="color:var(--faint);font-size:12px">일관성: ${esc(cu.consistency)}</span>` : ""}</div>` : ""}
         ${d.goal_updates.length ? `<div class="k">목표</div><div>${d.goal_updates.map(g => `<span class="id">${esc(g.id)}</span> → ${esc(g.status)}`).join(", ")}</div>` : ""}
         ${d.user_facts.length ? `<div class="k">유저 디테일</div><div><ul class="items">${d.user_facts.map(f => `<li>${esc(f.text)} <span class="aff">${esc(f.affordances.join(", "))}</span></li>`).join("")}</ul></div>` : ""}
         ${(d.world_additions || []).length ? `<div class="k">세계 확장</div><div><ul class="items">${d.world_additions.map(x => `<li class="note ${x.accept ? "good" : "bad"}"><span class="badge">${esc(x.source)}</span> ${esc(x.kind)}: ${esc(x.name ? x.name + " — " : "")}${esc(x.text)}${x.affordances.length ? ` <span class="aff">→ 떡밥 쓸모: ${esc(x.affordances.join(", "))}</span>` : ""}${x.accept ? "" : ` <span style="color:var(--faint)">${esc(x.why)}</span>`}</li>`).join("")}</ul></div>` : ""}
         ${(d.show_facts || []).length ? `<div class="k">${esc(NAME())}에게 보일 사실</div><div>${d.show_facts.map(id => `<span class="id">${esc(id)}</span> ${esc(factText(id))}`).join("<br>")}</div>` : ""}
-        ${(d.retire_facts || []).length ? `<div class="k">지난 사실 정리</div><div>${d.retire_facts.map(x => `<span class="id">${esc(x.id)}</span> ${esc(factText(x.id))} <span style="color:var(--faint)">${esc(x.why)}</span>`).join("<br>")}</div>` : ""}
+        ${(d.retire_facts || []).length ? `<div class="k">지난 사실 정리</div><div>${d.retire_facts.map(x => `<span class="id">${esc(x.id)}</span> ${esc(factText(x.id))}${x.why ? ` <span style="color:var(--faint)">${esc(x.why)}</span>` : ""}`).join("<br>")}</div>` : ""}
       </div>
       ${t.dm_doc ? `<details><summary>드라마 매니저가 받은 XML 보기</summary><pre class="xml">${esc(t.dm_doc)}</pre></details>` : ""}`));
   } else parts.push(step(2, "드라마 매니저", !!r, ""));
@@ -480,6 +487,10 @@ function renderTrace() {
   if (t.calls) parts.push(step(t.episode ? 6 : 5, "LLM 호출", false, callsTable(t.calls)));
   $("#trace").innerHTML = parts.join("");
 }
+function eventText(id) {
+  const e = state && state.world && (state.world.events || []).find(x => x.id === id);
+  return e ? e.text : "";
+}
 function factText(id) {
   const f = state && state.world && (state.world.facts || []).find(x => x.id === id);
   return f ? f.text + (f.active ? "" : " (지난 사실)") : "";
@@ -498,6 +509,7 @@ function callsTable(calls) {
 function renderTab() {
   document.querySelectorAll("#tabs button").forEach(b => b.classList.toggle("on", b.dataset.tab === tab));
   const body = $("#tabBody");
+  if (tab === "ideas") { renderIdeas(body); return; }
   if (!state || !state.details) { body.innerHTML = `<div class="empty">시작하면 채워진다.</div>`; return; }
   if (tab === "details") {
     const order = { paid_off: 0, planted: 1, unplanted: 2 };
@@ -532,6 +544,26 @@ function renderTab() {
     body.innerHTML = `<div class="stats"><span><span class="k">호출</span>${c.count}회</span><span><span class="k">입력</span>${c.input.toLocaleString()}</span>
       <span><span class="k">캐시</span>${c.input ? Math.round(100 * c.cached / c.input) : 0}%</span><span><span class="k">출력</span>${c.output.toLocaleString()}</span></div>`;
   }
+}
+
+// README의 "아이디어" 절. 목록(-, 들여쓴 -)과 **굵게**, `코드`만 그린다
+let IDEAS = null;
+async function renderIdeas(body) {
+  if (IDEAS === null) {
+    body.innerHTML = `<div class="empty">불러오는 중…</div>`;
+    try { IDEAS = (await (await fetch("/api/ideas")).json()).markdown || ""; } catch { IDEAS = ""; }
+  }
+  if (tab !== "ideas") return;
+  const inline = (x) => esc(x).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>").replace(/`([^`]+)`/g, '<code>$1</code>');
+  const items = [];
+  for (const line of IDEAS.split("\n")) {
+    const m = line.match(/^(\s*)- (.*)$/);
+    if (m && !m[1]) items.push({ head: m[2], sub: [] });
+    else if (m && items.length) items[items.length - 1].sub.push(m[2]);
+  }
+  body.innerHTML = items.length ? `<div style="font-size:12px;color:var(--muted);margin-bottom:8px">데모 뒤에 이어 갈 방향. README의 "아이디어" 절과 같다.</div>
+    <div class="ideas">${items.map(it => `<div class="idea"><div>${inline(it.head)}</div>${it.sub.length ? `<ul>${it.sub.map(x => `<li>${inline(x)}</li>`).join("")}</ul>` : ""}</div>`).join("")}</div>`
+    : `<div class="empty">README에 아이디어가 없다.</div>`;
 }
 
 function renderHeader() {

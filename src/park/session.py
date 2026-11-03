@@ -48,8 +48,8 @@ SN = nullable(S)
 
 def world_pick_schema(event_ids):
     # fact id는 대화 중에 늘어나므로 enum으로 묶지 않는다(스키마가 매 턴 바뀌면 캐시가 깨진다). 후보에 있는지는 코드가 본다
-    return obj({"picks": {"type": "array", "items": obj({"id": enum(event_ids), "why": S})},
-                "facts": {"type": "array", "items": obj({"id": S, "why": S})}})
+    return obj({"picks": {"type": "array", "items": obj({"id": enum(event_ids)})},
+                "facts": {"type": "array", "items": obj({"id": S})}})
 
 
 def detail_pick_schema(ids):
@@ -78,15 +78,14 @@ def dm_schema(*, name, locations, event_ids, detail_ids, secret_ids, grievance_i
         "character_update": obj({
             "mood": SN, "attitude": SN, "want": SN,
             "grievances": {"type": "array", "items": obj({"id": enum(grievance_ids), "intensity": {"type": "integer"}, "why": S})},
-            "new_grievance": SN,
-            "consistency": S}),
-        "goal_updates": {"type": "array", "items": obj({"id": enum(goal_ids), "status": enum(["open", "done", "failed", "dropped"]), "why": S})},
+            "new_grievance": SN}),
+        "goal_updates": {"type": "array", "items": obj({"id": enum(goal_ids), "status": enum(["open", "done", "failed", "dropped"])})},
         "world_additions": {"type": "array", "items": obj({
             "source": enum(["유저", name]), "kind": enum(["location", "fact", "past"]), "name": S, "text": S,
             "near": nullable(enum(locations)), "accept": {"type": "boolean"}, "why": S,
             "event_text": S, "affordances": {"type": "array", "items": S}})},
         "show_facts": {"type": "array", "items": S},
-        "retire_facts": {"type": "array", "items": obj({"id": S, "why": S})},
+        "retire_facts": {"type": "array", "items": obj({"id": S})},
         "user_facts": {"type": "array", "items": obj({"text": S, "affordances": {"type": "array", "items": S}})},
         "narration": SN,
     })
@@ -243,6 +242,10 @@ class Session:
         out = self.llm.json(self.prompt("retrieve_details"), doc, detail_pick_schema(self._all_detail_ids()), label="retrieve-details")
         ids = {d["id"] for d in cands}
         out["picks"] = [p for p in out["picks"] if p["id"] in ids][:4]
+        # 쓸모는 그 떡밥의 affordances 중 하나만 받는다. 검색기가 지어낸 해석이 DM을 끌고 가지 않게 한다
+        for p in out["picks"]:
+            if p["use_as"] not in self.details.get(p["id"])["affordances"]:
+                p["use_as"] = ""
         return out
 
     # ---- 장면 사실 추출. 지난 턴 캐릭터의 말과 이번 유저 입력에서 새로 생긴 것을 뽑는다. 받을지는 DM이 판단한다 ----

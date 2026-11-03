@@ -230,9 +230,9 @@ def dm_doc(*, world: World, details: Details, character: Character, memory: Memo
     known = tag("planted_details", "".join(f"\n  {tag('detail', t(x['seed']), id=x['id'], **last_use_attrs(details, x['id']))}" for x in planted) + "\n")
     cand = [
         tag("events", "".join(
-            f"\n    {tag('event', t(w.event(p['id'])['text']), id=p['id'], window='~'.join(w.event(p['id'])['window']), where=','.join(w.event(p['id'])['where']), why=p['why'])}"
+            f"\n    {tag('event', t(w.event(p['id'])['text']), id=p['id'], window='~'.join(w.event(p['id'])['window']), where=','.join(w.event(p['id'])['where']))}"
             for p in ev_picks) + "\n  "),
-        tag("facts", "".join(f"\n    {fact_xml(w, w.fact(p['id']), why=p['why'])}" for p in fact_picks) + "\n  "),
+        tag("facts", "".join(f"\n    {fact_xml(w, w.fact(p['id']))}" for p in fact_picks) + "\n  "),
         tag("details", "".join(
             f"\n    {tag('detail', t(details.get(p['id'])['seed']), id=p['id'], status=details.get(p['id'])['status'], affordances=','.join(details.get(p['id'])['affordances']), use_as=p['use_as'], **last_use_attrs(details, p['id']))}"
             for p in det_picks.get("picks", [])) + "\n  ", need=det_picks.get("need")),

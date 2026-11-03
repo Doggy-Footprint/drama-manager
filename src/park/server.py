@@ -10,6 +10,7 @@ API
   GET  /api/runs                      저장된 로그(runs/park/*.jsonl) 목록
   GET  /api/run?file=...              저장된 로그 하나를 화면이 그릴 수 있는 형태로(읽기 전용)
   GET  /api/scenarios                 고를 수 있는 이야기 목록
+  GET  /api/ideas                     README의 "아이디어" 절(다음 진행 방향)
   POST /api/reset {"scenario": "park", "baseline": true}  새 세션
   POST /api/turn  {"text": "..."}     한 턴. text가 비면 시작 턴(캐릭터가 먼저 말한다). 응답은 NDJSON 스트림
 """
@@ -40,6 +41,13 @@ def list_runs() -> list[dict]:
         out.append({"file": f.name, "turns": len(lines), "clock": last.get("trace", {}).get("clock_after"),
                     "viewable": "state" in last})
     return out
+
+
+def ideas() -> dict:
+    """README의 '## 아이디어' 절을 그대로 돌려준다. 화면의 '다음 방향' 탭이 그린다."""
+    text = (ROOT / "README.md").read_text(encoding="utf-8")
+    m = re.search(r"^## 아이디어\n(.*?)(?=^## |\Z)", text, re.S | re.M)
+    return {"markdown": m.group(1).strip() if m else ""}
 
 
 def load_run(name: str) -> dict:
@@ -101,6 +109,8 @@ class Handler(BaseHTTPRequestHandler):
             self._json(s.snapshot() if s else {"n": 0, "empty": True})
         elif url.path == "/api/scenarios":
             self._json(scenarios())
+        elif url.path == "/api/ideas":
+            self._json(ideas())
         elif url.path == "/api/runs":
             self._json(list_runs())
         elif url.path == "/api/run":
