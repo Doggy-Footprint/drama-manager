@@ -1,0 +1,1701 @@
+{
+ "E16-a": {
+  "turns": 16,
+  "clock": "20:30~22:07",
+  "min_total": 97,
+  "min_per_turn": 6.06,
+  "turns_adv_ge10": 1,
+  "max_adv": 60,
+  "user_skip_turns": 0,
+  "recall_str": {
+   "ep1_commute_line": 5,
+   "ep1_banana": null,
+   "ep1_one_year": 6,
+   "ep2_three_minutes": 4,
+   "ep2_egg": 5,
+   "ep2_notebook": null,
+   "ep2_dinner": null,
+   "ep3_umbrella": 1,
+   "ep3_run": null,
+   "ep3_just_peers": 10
+  },
+  "recall_str_n": 6,
+  "recall_str_proactive_first": [
+   "ep1_commute_line",
+   "ep3_umbrella"
+  ],
+  "recall_str_proactive_any": [
+   "ep1_commute_line",
+   "ep3_umbrella"
+  ],
+  "recall_struct": {
+   "ep1_commute_line": 5,
+   "ep1_banana": 3,
+   "ep1_one_year": 6,
+   "ep2_three_minutes": null,
+   "ep2_egg": 4,
+   "ep2_notebook": 9,
+   "ep2_dinner": 16,
+   "ep3_umbrella": 2,
+   "ep3_run": 15,
+   "ep3_just_peers": 10
+  },
+  "recall_struct_n": 9,
+  "recall_struct_proactive": [
+   "ep3_umbrella",
+   "ep1_commute_line",
+   "ep2_notebook",
+   "ep3_run",
+   "ep2_dinner"
+  ],
+  "secrets": {
+   "main_copy": {
+    "text_conf_turns": [
+     8
+    ],
+    "dm_reveal": [],
+    "char_revealed": [
+     8
+    ],
+    "leak_flag_turns": [
+     8
+    ],
+    "leak_text_turns": [
+     8
+    ]
+   },
+   "taxi_wait": {
+    "text_conf_turns": [],
+    "dm_reveal": [],
+    "char_revealed": [],
+    "leak_flag_turns": [],
+    "leak_text_turns": []
+   }
+  },
+  "stage_changes": [
+   [
+    9,
+    "야근 메이트→썸"
+   ]
+  ],
+  "stats": "친밀 2→5, 신뢰 2→5, 설렘 1→5",
+  "stat_changes": 10,
+  "stat_changes_dm": 10,
+  "stat_changes_event": 0,
+  "final_stage": "some",
+  "rel_rejects": 2,
+  "promise_changes": 2,
+  "events_fired": 5,
+  "events_added": 1,
+  "events_list": [
+   [
+    "team_chat",
+    1,
+    false
+   ],
+   [
+    "umbrella_spotted",
+    1,
+    false
+   ],
+   [
+    "copy_rejected",
+    7,
+    false
+   ],
+   [
+    "security_round",
+    13,
+    false
+   ],
+   [
+    "rain_starts",
+    13,
+    true
+   ]
+  ],
+  "core_forced": [
+   [
+    "rain_starts",
+    13
+   ]
+  ],
+  "blocked_ids": [
+   "rooftop_ramen"
+  ],
+  "blocked_then_opened": [],
+  "blocked_never_opened": [
+   "rooftop_ramen"
+  ],
+  "core_reflect": {
+   "rain_starts": {
+    "turn": 13,
+    "forced": true,
+    "narr": false,
+    "reply": false,
+    "within2": true
+   }
+  },
+  "core_unfired": [
+   "power_off"
+  ],
+  "rain_reply_turns": 0,
+  "power_reply_turns": 0,
+  "rejects": {
+   "(시간 보정: 시작 턴 +N분→0, 거절 아님)": 1,
+   "후보 밖 떡밥 거절": 2,
+   "세계 확장 거절": 2,
+   "관계 거절: 수치 상한(이미 N)": 2,
+   "이벤트 후보 밖 거절": 1
+  },
+  "rejects_total_excl_timefix": 7,
+  "guard_turns": 0,
+  "guard_rewrite_attempts": 0,
+  "cjk_reply_turns": [],
+  "rep_full": [
+   6.7,
+   0.3
+  ],
+  "rep_spoken": [
+   0.0,
+   0.0
+  ],
+  "gesture": {
+   "볼펜": 31.2,
+   "노트": 37.5,
+   "입꼬리": 12.5,
+   "식기 전": 18.8
+  },
+  "gesture_any": 75.0,
+  "paren_turns": 100.0,
+  "address": {
+   "채원 씨": 5,
+   "윤채원 씨": 0,
+   "채원아/야": 0,
+   "채원(맨이름·기타)": 0
+  },
+  "address_turns": {
+   "채원 씨": 5,
+   "채원아/야": 0
+  },
+  "sent_n": 46,
+  "banmal_pct": 10.9,
+  "banmal_turns_pct": 31.2,
+  "in_avg": 26916,
+  "cached_avg": 5729,
+  "out_avg": 1617,
+  "cache_hit_pct": 21.3,
+  "lat_avg": 19.3,
+  "lat_med": 19.9,
+  "lat_max": 23.8,
+  "lat_serial_avg": 26.8,
+  "labels": {
+   "extract-facts": {
+    "calls": 16,
+    "in_k_per_turn": 1.62,
+    "out_k_per_turn": 0.19,
+    "sec_per_call": 3.5
+   },
+   "retrieve-world": {
+    "calls": 16,
+    "in_k_per_turn": 1.82,
+    "out_k_per_turn": 0.18,
+    "sec_per_call": 3.9
+   },
+   "retrieve-details": {
+    "calls": 16,
+    "in_k_per_turn": 3.23,
+    "out_k_per_turn": 0.36,
+    "sec_per_call": 6.0
+   },
+   "drama-manager": {
+    "calls": 16,
+    "in_k_per_turn": 13.93,
+    "out_k_per_turn": 0.75,
+    "sec_per_call": 9.9
+   },
+   "character": {
+    "calls": 16,
+    "in_k_per_turn": 6.16,
+    "out_k_per_turn": 0.11,
+    "sec_per_call": 3.1
+   },
+   "dm-episode": {
+    "calls": 1,
+    "in_k_per_turn": 0.15,
+    "out_k_per_turn": 0.03,
+    "sec_per_call": 6.3
+   }
+  },
+  "bucket_in": {
+   "T1-10": {
+    "input": 25494,
+    "cached": 6237,
+    "output": 1552,
+    "lat": 19.4
+   },
+   "T11-16": {
+    "input": 29286,
+    "cached": 4883,
+    "output": 1724,
+    "lat": 19.2
+   }
+  },
+  "replies_len_avg": 101
+ },
+ "E16-b": {
+  "turns": 16,
+  "clock": "20:30~22:01",
+  "min_total": 91,
+  "min_per_turn": 5.69,
+  "turns_adv_ge10": 1,
+  "max_adv": 60,
+  "user_skip_turns": 1,
+  "recall_str": {
+   "ep1_commute_line": null,
+   "ep1_banana": null,
+   "ep1_one_year": null,
+   "ep2_three_minutes": null,
+   "ep2_egg": null,
+   "ep2_notebook": 13,
+   "ep2_dinner": null,
+   "ep3_umbrella": 15,
+   "ep3_run": null,
+   "ep3_just_peers": null
+  },
+  "recall_str_n": 2,
+  "recall_str_proactive_first": [],
+  "recall_str_proactive_any": [],
+  "recall_struct": {
+   "ep1_commute_line": null,
+   "ep1_banana": null,
+   "ep1_one_year": null,
+   "ep2_three_minutes": 9,
+   "ep2_egg": null,
+   "ep2_notebook": 13,
+   "ep2_dinner": null,
+   "ep3_umbrella": 6,
+   "ep3_run": null,
+   "ep3_just_peers": 5
+  },
+  "recall_struct_n": 4,
+  "recall_struct_proactive": [
+   "ep3_umbrella"
+  ],
+  "secrets": {
+   "main_copy": {
+    "text_conf_turns": [
+     13
+    ],
+    "dm_reveal": [
+     13
+    ],
+    "char_revealed": [
+     13
+    ],
+    "leak_flag_turns": [],
+    "leak_text_turns": []
+   },
+   "taxi_wait": {
+    "text_conf_turns": [],
+    "dm_reveal": [],
+    "char_revealed": [],
+    "leak_flag_turns": [],
+    "leak_text_turns": []
+   }
+  },
+  "stage_changes": [],
+  "stats": "친밀 2→1, 신뢰 2→3, 설렘 1→0",
+  "stat_changes": 3,
+  "stat_changes_dm": 3,
+  "stat_changes_event": 0,
+  "final_stage": "overtime_mates",
+  "rel_rejects": 0,
+  "promise_changes": 1,
+  "events_fired": 6,
+  "events_added": 2,
+  "events_list": [
+   [
+    "team_chat",
+    1,
+    false
+   ],
+   [
+    "umbrella_spotted",
+    1,
+    false
+   ],
+   [
+    "copy_rejected",
+    7,
+    false
+   ],
+   [
+    "security_round",
+    7,
+    false
+   ],
+   [
+    "rain_starts",
+    7,
+    true
+   ],
+   [
+    "notebook_open",
+    12,
+    false
+   ]
+  ],
+  "core_forced": [
+   [
+    "rain_starts",
+    7
+   ]
+  ],
+  "blocked_ids": [
+   "lead_returns",
+   "rooftop_ramen"
+  ],
+  "blocked_then_opened": [],
+  "blocked_never_opened": [
+   "lead_returns",
+   "rooftop_ramen"
+  ],
+  "core_reflect": {
+   "rain_starts": {
+    "turn": 7,
+    "forced": true,
+    "narr": false,
+    "reply": false,
+    "within2": false
+   }
+  },
+  "core_unfired": [
+   "power_off"
+  ],
+  "rain_reply_turns": 0,
+  "power_reply_turns": 0,
+  "rejects": {
+   "(시간 보정: 시작 턴 +N분→0, 거절 아님)": 1,
+   "후보 밖 떡밥 거절": 4
+  },
+  "rejects_total_excl_timefix": 4,
+  "guard_turns": 0,
+  "guard_rewrite_attempts": 0,
+  "cjk_reply_turns": [],
+  "rep_full": [
+   13.3,
+   1.3
+  ],
+  "rep_spoken": [
+   0.0,
+   0.0
+  ],
+  "gesture": {
+   "볼펜": 43.8,
+   "노트": 56.2,
+   "입꼬리": 0.0,
+   "식기 전": 0.0
+  },
+  "gesture_any": 75.0,
+  "paren_turns": 100.0,
+  "address": {
+   "채원 씨": 6,
+   "윤채원 씨": 0,
+   "채원아/야": 0,
+   "채원(맨이름·기타)": 0
+  },
+  "address_turns": {
+   "채원 씨": 6,
+   "채원아/야": 0
+  },
+  "sent_n": 39,
+  "banmal_pct": 0.0,
+  "banmal_turns_pct": 0.0,
+  "in_avg": 26320,
+  "cached_avg": 6291,
+  "out_avg": 1488,
+  "cache_hit_pct": 23.9,
+  "lat_avg": 18.5,
+  "lat_med": 18.1,
+  "lat_max": 25.2,
+  "lat_serial_avg": 25.7,
+  "labels": {
+   "extract-facts": {
+    "calls": 16,
+    "in_k_per_turn": 1.49,
+    "out_k_per_turn": 0.14,
+    "sec_per_call": 3.2
+   },
+   "retrieve-world": {
+    "calls": 16,
+    "in_k_per_turn": 1.67,
+    "out_k_per_turn": 0.17,
+    "sec_per_call": 4.3
+   },
+   "retrieve-details": {
+    "calls": 16,
+    "in_k_per_turn": 3.37,
+    "out_k_per_turn": 0.34,
+    "sec_per_call": 5.7
+   },
+   "drama-manager": {
+    "calls": 16,
+    "in_k_per_turn": 13.86,
+    "out_k_per_turn": 0.69,
+    "sec_per_call": 8.5
+   },
+   "character": {
+    "calls": 16,
+    "in_k_per_turn": 5.8,
+    "out_k_per_turn": 0.12,
+    "sec_per_call": 3.5
+   },
+   "dm-episode": {
+    "calls": 1,
+    "in_k_per_turn": 0.13,
+    "out_k_per_turn": 0.03,
+    "sec_per_call": 7.2
+   }
+  },
+  "bucket_in": {
+   "T1-10": {
+    "input": 25196,
+    "cached": 6503,
+    "output": 1509,
+    "lat": 18.5
+   },
+   "T11-16": {
+    "input": 28192,
+    "cached": 5937,
+    "output": 1452,
+    "lat": 18.5
+   }
+  },
+  "replies_len_avg": 89
+ },
+ "E16-c": {
+  "turns": 17,
+  "clock": "20:30~23:32",
+  "min_total": 182,
+  "min_per_turn": 10.71,
+  "turns_adv_ge10": 2,
+  "max_adv": 90,
+  "user_skip_turns": 0,
+  "recall_str": {
+   "ep1_commute_line": null,
+   "ep1_banana": 12,
+   "ep1_one_year": null,
+   "ep2_three_minutes": null,
+   "ep2_egg": null,
+   "ep2_notebook": null,
+   "ep2_dinner": null,
+   "ep3_umbrella": null,
+   "ep3_run": null,
+   "ep3_just_peers": 6
+  },
+  "recall_str_n": 2,
+  "recall_str_proactive_first": [
+   "ep1_banana"
+  ],
+  "recall_str_proactive_any": [
+   "ep1_banana"
+  ],
+  "recall_struct": {
+   "ep1_commute_line": 13,
+   "ep1_banana": 12,
+   "ep1_one_year": 4,
+   "ep2_three_minutes": null,
+   "ep2_egg": null,
+   "ep2_notebook": null,
+   "ep2_dinner": 3,
+   "ep3_umbrella": 2,
+   "ep3_run": 15,
+   "ep3_just_peers": 6
+  },
+  "recall_struct_n": 7,
+  "recall_struct_proactive": [
+   "ep3_umbrella",
+   "ep2_dinner",
+   "ep1_one_year",
+   "ep1_banana",
+   "ep3_run"
+  ],
+  "secrets": {
+   "main_copy": {
+    "text_conf_turns": [
+     2,
+     7
+    ],
+    "dm_reveal": [],
+    "char_revealed": [
+     2,
+     7,
+     13
+    ],
+    "leak_flag_turns": [
+     2,
+     7,
+     13
+    ],
+    "leak_text_turns": [
+     2,
+     7
+    ]
+   },
+   "taxi_wait": {
+    "text_conf_turns": [],
+    "dm_reveal": [],
+    "char_revealed": [],
+    "leak_flag_turns": [],
+    "leak_text_turns": []
+   }
+  },
+  "stage_changes": [
+   [
+    13,
+    "야근 메이트→썸"
+   ]
+  ],
+  "stats": "친밀 2→5, 신뢰 2→5, 설렘 1→4",
+  "stat_changes": 9,
+  "stat_changes_dm": 9,
+  "stat_changes_event": 0,
+  "final_stage": "some",
+  "rel_rejects": 0,
+  "promise_changes": 4,
+  "events_fired": 6,
+  "events_added": 1,
+  "events_list": [
+   [
+    "team_chat",
+    1,
+    false
+   ],
+   [
+    "umbrella_spotted",
+    1,
+    false
+   ],
+   [
+    "rain_starts",
+    8,
+    true
+   ],
+   [
+    "power_off",
+    9,
+    false
+   ],
+   [
+    "one_umbrella",
+    13,
+    false
+   ],
+   [
+    "last_subway",
+    15,
+    false
+   ]
+  ],
+  "core_forced": [
+   [
+    "rain_starts",
+    8
+   ]
+  ],
+  "blocked_ids": [
+   "lead_returns",
+   "notebook_open",
+   "rooftop_ramen"
+  ],
+  "blocked_then_opened": [],
+  "blocked_never_opened": [
+   "lead_returns",
+   "notebook_open",
+   "rooftop_ramen"
+  ],
+  "core_reflect": {
+   "rain_starts": {
+    "turn": 8,
+    "forced": true,
+    "narr": false,
+    "reply": false,
+    "within2": false
+   },
+   "power_off": {
+    "turn": 9,
+    "forced": false,
+    "narr": true,
+    "reply": true,
+    "within2": true
+   }
+  },
+  "core_unfired": [],
+  "rain_reply_turns": 2,
+  "power_reply_turns": 2,
+  "rejects": {
+   "(시간 보정: 시작 턴 +N분→0, 거절 아님)": 1,
+   "충전 거절": 1
+  },
+  "rejects_total_excl_timefix": 1,
+  "guard_turns": 0,
+  "guard_rewrite_attempts": 0,
+  "cjk_reply_turns": [],
+  "rep_full": [
+   6.2,
+   0.3
+  ],
+  "rep_spoken": [
+   6.2,
+   0.5
+  ],
+  "gesture": {
+   "볼펜": 29.4,
+   "노트": 52.9,
+   "입꼬리": 5.9,
+   "식기 전": 0.0
+  },
+  "gesture_any": 70.6,
+  "paren_turns": 100.0,
+  "address": {
+   "채원 씨": 5,
+   "윤채원 씨": 0,
+   "채원아/야": 0,
+   "채원(맨이름·기타)": 0
+  },
+  "address_turns": {
+   "채원 씨": 5,
+   "채원아/야": 0
+  },
+  "sent_n": 47,
+  "banmal_pct": 10.6,
+  "banmal_turns_pct": 29.4,
+  "in_avg": 26783,
+  "cached_avg": 6234,
+  "out_avg": 1616,
+  "cache_hit_pct": 23.3,
+  "lat_avg": 19.8,
+  "lat_med": 20.2,
+  "lat_max": 25.8,
+  "lat_serial_avg": 27.3,
+  "labels": {
+   "extract-facts": {
+    "calls": 17,
+    "in_k_per_turn": 1.53,
+    "out_k_per_turn": 0.15,
+    "sec_per_call": 3.3
+   },
+   "retrieve-world": {
+    "calls": 17,
+    "in_k_per_turn": 1.65,
+    "out_k_per_turn": 0.21,
+    "sec_per_call": 4.7
+   },
+   "retrieve-details": {
+    "calls": 17,
+    "in_k_per_turn": 3.42,
+    "out_k_per_turn": 0.37,
+    "sec_per_call": 6.4
+   },
+   "drama-manager": {
+    "calls": 17,
+    "in_k_per_turn": 14.03,
+    "out_k_per_turn": 0.73,
+    "sec_per_call": 9.2
+   },
+   "character": {
+    "calls": 17,
+    "in_k_per_turn": 6.02,
+    "out_k_per_turn": 0.13,
+    "sec_per_call": 3.3
+   },
+   "dm-episode": {
+    "calls": 1,
+    "in_k_per_turn": 0.13,
+    "out_k_per_turn": 0.03,
+    "sec_per_call": 7.5
+   }
+  },
+  "bucket_in": {
+   "T1-10": {
+    "input": 25222,
+    "cached": 5609,
+    "output": 1508,
+    "lat": 19.0
+   },
+   "T11-17": {
+    "input": 29013,
+    "cached": 7127,
+    "output": 1770,
+    "lat": 20.9
+   }
+  },
+  "replies_len_avg": 89
+ },
+ "B16-a": {
+  "turns": 16,
+  "clock": "—",
+  "min_total": "—",
+  "min_per_turn": "—",
+  "turns_adv_ge10": "—",
+  "user_skip_turns": 0,
+  "recall_str": {
+   "ep1_commute_line": 5,
+   "ep1_banana": 1,
+   "ep1_one_year": null,
+   "ep2_three_minutes": 4,
+   "ep2_egg": null,
+   "ep2_notebook": 16,
+   "ep2_dinner": 12,
+   "ep3_umbrella": 2,
+   "ep3_run": null,
+   "ep3_just_peers": 10
+  },
+  "recall_str_n": 7,
+  "recall_str_proactive_first": [
+   "ep1_commute_line",
+   "ep1_banana",
+   "ep2_notebook"
+  ],
+  "recall_str_proactive_any": [
+   "ep1_banana",
+   "ep1_commute_line",
+   "ep2_notebook"
+  ],
+  "secrets": {
+   "main_copy": {
+    "text_conf_turns": []
+   },
+   "taxi_wait": {
+    "text_conf_turns": []
+   }
+  },
+  "rain_reply_turns": 1,
+  "power_reply_turns": 3,
+  "cjk_reply_turns": [],
+  "rep_full": [
+   0.0,
+   0.0
+  ],
+  "rep_spoken": [
+   0.0,
+   0.0
+  ],
+  "gesture": {
+   "볼펜": 43.8,
+   "노트": 18.8,
+   "입꼬리": 6.2,
+   "식기 전": 0.0
+  },
+  "gesture_any": 62.5,
+  "paren_turns": 100.0,
+  "address": {
+   "채원 씨": 4,
+   "윤채원 씨": 0,
+   "채원아/야": 0,
+   "채원(맨이름·기타)": 0
+  },
+  "address_turns": {
+   "채원 씨": 4,
+   "채원아/야": 0
+  },
+  "sent_n": 54,
+  "banmal_pct": 5.6,
+  "banmal_turns_pct": 18.8,
+  "in_avg": 2927,
+  "cached_avg": 2683,
+  "out_avg": 125,
+  "cache_hit_pct": 91.7,
+  "lat_avg": 3.4,
+  "lat_med": 3.1,
+  "lat_max": 5.7,
+  "labels": {
+   "baseline": {
+    "calls": 16,
+    "in_k_per_turn": 2.93,
+    "out_k_per_turn": 0.12,
+    "sec_per_call": 3.4
+   }
+  },
+  "bucket_in": {
+   "T1-10": {
+    "input": 2562,
+    "cached": 2250,
+    "output": 156,
+    "lat": 3.9
+   },
+   "T11-16": {
+    "input": 3537,
+    "cached": 3405,
+    "output": 74,
+    "lat": 2.6
+   }
+  },
+  "replies_len_avg": 95
+ },
+ "E50-a": {
+  "turns": 50,
+  "clock": "20:30~23:39",
+  "min_total": 189,
+  "min_per_turn": 3.78,
+  "turns_adv_ge10": 5,
+  "max_adv": 30,
+  "user_skip_turns": 5,
+  "recall_str": {
+   "ep1_commute_line": null,
+   "ep1_banana": 3,
+   "ep1_one_year": 6,
+   "ep2_three_minutes": 11,
+   "ep2_egg": 12,
+   "ep2_notebook": 27,
+   "ep2_dinner": 17,
+   "ep3_umbrella": 2,
+   "ep3_run": null,
+   "ep3_just_peers": 13
+  },
+  "recall_str_n": 8,
+  "recall_str_proactive_first": [
+   "ep1_banana",
+   "ep1_one_year",
+   "ep2_notebook"
+  ],
+  "recall_str_proactive_any": [
+   "ep1_banana",
+   "ep1_one_year",
+   "ep2_notebook"
+  ],
+  "recall_struct": {
+   "ep1_commute_line": 5,
+   "ep1_banana": 3,
+   "ep1_one_year": 6,
+   "ep2_three_minutes": 11,
+   "ep2_egg": 12,
+   "ep2_notebook": 7,
+   "ep2_dinner": 3,
+   "ep3_umbrella": 2,
+   "ep3_run": 19,
+   "ep3_just_peers": 13
+  },
+  "recall_struct_n": 10,
+  "recall_struct_proactive": [
+   "ep1_banana",
+   "ep1_commute_line",
+   "ep1_one_year"
+  ],
+  "secrets": {
+   "main_copy": {
+    "text_conf_turns": [
+     48
+    ],
+    "dm_reveal": [
+     31
+    ],
+    "char_revealed": [
+     31
+    ],
+    "leak_flag_turns": [],
+    "leak_text_turns": []
+   },
+   "taxi_wait": {
+    "text_conf_turns": [],
+    "dm_reveal": [],
+    "char_revealed": [],
+    "leak_flag_turns": [],
+    "leak_text_turns": []
+   }
+  },
+  "stage_changes": [
+   [
+    7,
+    "야근 메이트→썸"
+   ],
+   [
+    45,
+    "썸→연인"
+   ]
+  ],
+  "stats": "친밀 2→5, 신뢰 2→5, 설렘 1→5",
+  "stat_changes": 10,
+  "stat_changes_dm": 9,
+  "stat_changes_event": 1,
+  "final_stage": "lovers",
+  "rel_rejects": 3,
+  "promise_changes": 5,
+  "events_fired": 10,
+  "events_added": 0,
+  "events_list": [
+   [
+    "team_chat",
+    1,
+    false
+   ],
+   [
+    "umbrella_spotted",
+    1,
+    false
+   ],
+   [
+    "copy_rejected",
+    9,
+    false
+   ],
+   [
+    "rooftop_ramen",
+    11,
+    false
+   ],
+   [
+    "security_round",
+    17,
+    false
+   ],
+   [
+    "rain_starts",
+    18,
+    false
+   ],
+   [
+    "rehearsal",
+    30,
+    false
+   ],
+   [
+    "notebook_open",
+    26,
+    false
+   ],
+   [
+    "power_off",
+    40,
+    false
+   ],
+   [
+    "rooftop_view",
+    12,
+    false
+   ]
+  ],
+  "core_forced": [],
+  "blocked_ids": [
+   "gukbap_together",
+   "one_umbrella",
+   "rooftop_ramen"
+  ],
+  "blocked_then_opened": [
+   [
+    "rooftop_ramen",
+    1,
+    2,
+    11,
+    "신뢰 2 < 3"
+   ]
+  ],
+  "blocked_never_opened": [
+   "gukbap_together",
+   "one_umbrella"
+  ],
+  "core_reflect": {
+   "rain_starts": {
+    "turn": 18,
+    "forced": false,
+    "narr": true,
+    "reply": true,
+    "within2": true
+   },
+   "power_off": {
+    "turn": 40,
+    "forced": false,
+    "narr": true,
+    "reply": true,
+    "within2": true
+   }
+  },
+  "core_unfired": [],
+  "rain_reply_turns": 5,
+  "power_reply_turns": 1,
+  "rejects": {
+   "(시간 보정: 시작 턴 +N분→0, 거절 아님)": 1,
+   "후보 밖 떡밥 거절": 3,
+   "이벤트 후보 밖 거절": 2,
+   "세계 확장 거절": 3,
+   "관계 거절: 수치 상한(이미 N)": 3
+  },
+  "rejects_total_excl_timefix": 11,
+  "guard_turns": 1,
+  "guard_rewrite_attempts": 1,
+  "cjk_reply_turns": [],
+  "rep_full": [
+   0.0,
+   0.0
+  ],
+  "rep_spoken": [
+   0.0,
+   0.0
+  ],
+  "gesture": {
+   "볼펜": 14.0,
+   "노트": 28.0,
+   "입꼬리": 4.0,
+   "식기 전": 6.0
+  },
+  "gesture_any": 48.0,
+  "paren_turns": 100.0,
+  "address": {
+   "채원 씨": 15,
+   "윤채원 씨": 0,
+   "채원아/야": 0,
+   "채원(맨이름·기타)": 2
+  },
+  "address_turns": {
+   "채원 씨": 15,
+   "채원아/야": 0
+  },
+  "sent_n": 141,
+  "banmal_pct": 15.6,
+  "banmal_turns_pct": 34.0,
+  "in_avg": 33178,
+  "cached_avg": 5045,
+  "out_avg": 1550,
+  "cache_hit_pct": 15.2,
+  "lat_avg": 17.0,
+  "lat_med": 16.4,
+  "lat_max": 27.4,
+  "lat_serial_avg": 24.1,
+  "labels": {
+   "extract-facts": {
+    "calls": 50,
+    "in_k_per_turn": 1.66,
+    "out_k_per_turn": 0.19,
+    "sec_per_call": 3.5
+   },
+   "retrieve-world": {
+    "calls": 50,
+    "in_k_per_turn": 2.52,
+    "out_k_per_turn": 0.22,
+    "sec_per_call": 3.9
+   },
+   "retrieve-details": {
+    "calls": 50,
+    "in_k_per_turn": 4.28,
+    "out_k_per_turn": 0.28,
+    "sec_per_call": 5.0
+   },
+   "drama-manager": {
+    "calls": 50,
+    "in_k_per_turn": 16.61,
+    "out_k_per_turn": 0.69,
+    "sec_per_call": 8.0
+   },
+   "character": {
+    "calls": 50,
+    "in_k_per_turn": 7.59,
+    "out_k_per_turn": 0.11,
+    "sec_per_call": 3.0
+   },
+   "dm-episode": {
+    "calls": 5,
+    "in_k_per_turn": 0.38,
+    "out_k_per_turn": 0.06,
+    "sec_per_call": 6.7
+   },
+   "character-guard": {
+    "calls": 1,
+    "in_k_per_turn": 0.14,
+    "out_k_per_turn": 0.0,
+    "sec_per_call": 2.1
+   }
+  },
+  "bucket_in": {
+   "T1-10": {
+    "input": 26044,
+    "cached": 5882,
+    "output": 1476,
+    "lat": 16.1
+   },
+   "T11-20": {
+    "input": 32091,
+    "cached": 5528,
+    "output": 1491,
+    "lat": 17.8
+   },
+   "T21-30": {
+    "input": 34655,
+    "cached": 4278,
+    "output": 1524,
+    "lat": 15.9
+   },
+   "T31-40": {
+    "input": 36787,
+    "cached": 5401,
+    "output": 1570,
+    "lat": 16.6
+   },
+   "T41-50": {
+    "input": 36316,
+    "cached": 4136,
+    "output": 1688,
+    "lat": 18.4
+   }
+  },
+  "replies_len_avg": 89
+ },
+ "E50-b": {
+  "turns": 50,
+  "clock": "20:30~23:42",
+  "min_total": 192,
+  "min_per_turn": 3.84,
+  "turns_adv_ge10": 5,
+  "max_adv": 25,
+  "user_skip_turns": 6,
+  "recall_str": {
+   "ep1_commute_line": 24,
+   "ep1_banana": 10,
+   "ep1_one_year": 49,
+   "ep2_three_minutes": 20,
+   "ep2_egg": null,
+   "ep2_notebook": 14,
+   "ep2_dinner": 35,
+   "ep3_umbrella": 41,
+   "ep3_run": 29,
+   "ep3_just_peers": 43
+  },
+  "recall_str_n": 9,
+  "recall_str_proactive_first": [
+   "ep1_commute_line",
+   "ep1_banana",
+   "ep1_one_year",
+   "ep2_three_minutes",
+   "ep2_notebook",
+   "ep2_dinner",
+   "ep3_run",
+   "ep3_just_peers"
+  ],
+  "recall_str_proactive_any": [
+   "ep1_banana",
+   "ep1_commute_line",
+   "ep1_one_year",
+   "ep2_dinner",
+   "ep2_notebook",
+   "ep2_three_minutes",
+   "ep3_just_peers",
+   "ep3_run"
+  ],
+  "recall_struct": {
+   "ep1_commute_line": 5,
+   "ep1_banana": 45,
+   "ep1_one_year": 49,
+   "ep2_three_minutes": 20,
+   "ep2_egg": null,
+   "ep2_notebook": 15,
+   "ep2_dinner": 23,
+   "ep3_umbrella": 18,
+   "ep3_run": 29,
+   "ep3_just_peers": 16
+  },
+  "recall_struct_n": 9,
+  "recall_struct_proactive": [
+   "ep1_commute_line",
+   "ep2_notebook",
+   "ep3_just_peers",
+   "ep3_umbrella",
+   "ep2_three_minutes",
+   "ep2_dinner",
+   "ep3_run",
+   "ep1_banana",
+   "ep1_one_year"
+  ],
+  "secrets": {
+   "main_copy": {
+    "text_conf_turns": [
+     29
+    ],
+    "dm_reveal": [
+     29
+    ],
+    "char_revealed": [
+     29
+    ],
+    "leak_flag_turns": [],
+    "leak_text_turns": []
+   },
+   "taxi_wait": {
+    "text_conf_turns": [
+     49
+    ],
+    "dm_reveal": [
+     49
+    ],
+    "char_revealed": [
+     49
+    ],
+    "leak_flag_turns": [],
+    "leak_text_turns": []
+   }
+  },
+  "stage_changes": [
+   [
+    41,
+    "야근 메이트→썸"
+   ]
+  ],
+  "stats": "친밀 2→5, 신뢰 2→5, 설렘 1→5",
+  "stat_changes": 14,
+  "stat_changes_dm": 14,
+  "stat_changes_event": 0,
+  "final_stage": "some",
+  "rel_rejects": 1,
+  "promise_changes": 2,
+  "events_fired": 9,
+  "events_added": 2,
+  "events_list": [
+   [
+    "team_chat",
+    1,
+    false
+   ],
+   [
+    "umbrella_spotted",
+    1,
+    false
+   ],
+   [
+    "copy_rejected",
+    7,
+    false
+   ],
+   [
+    "security_round",
+    10,
+    false
+   ],
+   [
+    "rain_starts",
+    20,
+    true
+   ],
+   [
+    "notebook_open",
+    29,
+    false
+   ],
+   [
+    "power_off",
+    40,
+    false
+   ],
+   [
+    "one_umbrella",
+    41,
+    false
+   ],
+   [
+    "last_subway",
+    48,
+    false
+   ]
+  ],
+  "core_forced": [
+   [
+    "rain_starts",
+    20
+   ]
+  ],
+  "blocked_ids": [
+   "lead_returns",
+   "rooftop_ramen"
+  ],
+  "blocked_then_opened": [],
+  "blocked_never_opened": [
+   "lead_returns",
+   "rooftop_ramen"
+  ],
+  "core_reflect": {
+   "rain_starts": {
+    "turn": 20,
+    "forced": true,
+    "narr": false,
+    "reply": false,
+    "within2": false
+   },
+   "power_off": {
+    "turn": 40,
+    "forced": false,
+    "narr": true,
+    "reply": false,
+    "within2": true
+   }
+  },
+  "core_unfired": [],
+  "rain_reply_turns": 2,
+  "power_reply_turns": 1,
+  "rejects": {
+   "(시간 보정: 시작 턴 +N분→0, 거절 아님)": 1,
+   "후보 밖 떡밥 거절": 5,
+   "기타: 효과(이벤트 notebook_open): 떡밥": 1,
+   "기타: 함께 있다고 했지만 위치가 달라 떨어져 있는 ": 1,
+   "기타: 떨어져 있어 channel face → pho": 1,
+   "이벤트 후보 밖 거절": 1,
+   "관계 거절: 수치 상한(이미 N)": 1,
+   "기타: 떨어졌다고 했지만 둘 다 을지로3가역 입구에 ": 1
+  },
+  "rejects_total_excl_timefix": 11,
+  "guard_turns": 0,
+  "guard_rewrite_attempts": 0,
+  "cjk_reply_turns": [],
+  "rep_full": [
+   4.1,
+   1.0
+  ],
+  "rep_spoken": [
+   2.0,
+   1.4
+  ],
+  "gesture": {
+   "볼펜": 18.0,
+   "노트": 20.0,
+   "입꼬리": 6.0,
+   "식기 전": 0.0
+  },
+  "gesture_any": 38.0,
+  "paren_turns": 92.0,
+  "address": {
+   "채원 씨": 13,
+   "윤채원 씨": 0,
+   "채원아/야": 0,
+   "채원(맨이름·기타)": 0
+  },
+  "address_turns": {
+   "채원 씨": 12,
+   "채원아/야": 0
+  },
+  "sent_n": 130,
+  "banmal_pct": 10.8,
+  "banmal_turns_pct": 24.0,
+  "in_avg": 32840,
+  "cached_avg": 6099,
+  "out_avg": 1522,
+  "cache_hit_pct": 18.6,
+  "lat_avg": 16.8,
+  "lat_med": 16.8,
+  "lat_max": 22.5,
+  "lat_serial_avg": 23.8,
+  "labels": {
+   "extract-facts": {
+    "calls": 50,
+    "in_k_per_turn": 1.62,
+    "out_k_per_turn": 0.2,
+    "sec_per_call": 3.4
+   },
+   "retrieve-world": {
+    "calls": 50,
+    "in_k_per_turn": 3.27,
+    "out_k_per_turn": 0.18,
+    "sec_per_call": 3.6
+   },
+   "retrieve-details": {
+    "calls": 50,
+    "in_k_per_turn": 4.09,
+    "out_k_per_turn": 0.32,
+    "sec_per_call": 5.2
+   },
+   "drama-manager": {
+    "calls": 50,
+    "in_k_per_turn": 16.15,
+    "out_k_per_turn": 0.66,
+    "sec_per_call": 7.7
+   },
+   "character": {
+    "calls": 50,
+    "in_k_per_turn": 7.32,
+    "out_k_per_turn": 0.12,
+    "sec_per_call": 3.2
+   },
+   "dm-episode": {
+    "calls": 5,
+    "in_k_per_turn": 0.39,
+    "out_k_per_turn": 0.04,
+    "sec_per_call": 6.0
+   }
+  },
+  "bucket_in": {
+   "T1-10": {
+    "input": 25661,
+    "cached": 7749,
+    "output": 1467,
+    "lat": 16.0
+   },
+   "T11-20": {
+    "input": 31515,
+    "cached": 6759,
+    "output": 1698,
+    "lat": 17.8
+   },
+   "T21-30": {
+    "input": 36709,
+    "cached": 5523,
+    "output": 1375,
+    "lat": 15.8
+   },
+   "T31-40": {
+    "input": 34814,
+    "cached": 4904,
+    "output": 1452,
+    "lat": 16.3
+   },
+   "T41-50": {
+    "input": 35499,
+    "cached": 5562,
+    "output": 1618,
+    "lat": 18.0
+   }
+  },
+  "replies_len_avg": 92
+ },
+ "B50-a": {
+  "turns": 50,
+  "clock": "—",
+  "min_total": "—",
+  "min_per_turn": "—",
+  "turns_adv_ge10": "—",
+  "user_skip_turns": 0,
+  "recall_str": {
+   "ep1_commute_line": null,
+   "ep1_banana": 2,
+   "ep1_one_year": 28,
+   "ep2_three_minutes": 15,
+   "ep2_egg": 7,
+   "ep2_notebook": 8,
+   "ep2_dinner": 26,
+   "ep3_umbrella": 3,
+   "ep3_run": 44,
+   "ep3_just_peers": 19
+  },
+  "recall_str_n": 9,
+  "recall_str_proactive_first": [
+   "ep1_banana",
+   "ep1_one_year",
+   "ep3_run"
+  ],
+  "recall_str_proactive_any": [
+   "ep1_banana",
+   "ep1_one_year",
+   "ep2_dinner",
+   "ep2_egg",
+   "ep2_notebook",
+   "ep2_three_minutes",
+   "ep3_run",
+   "ep3_umbrella"
+  ],
+  "secrets": {
+   "main_copy": {
+    "text_conf_turns": []
+   },
+   "taxi_wait": {
+    "text_conf_turns": []
+   }
+  },
+  "rain_reply_turns": 5,
+  "power_reply_turns": 3,
+  "cjk_reply_turns": [],
+  "rep_full": [
+   0.0,
+   0.0
+  ],
+  "rep_spoken": [
+   0.0,
+   0.0
+  ],
+  "gesture": {
+   "볼펜": 34.0,
+   "노트": 38.0,
+   "입꼬리": 12.0,
+   "식기 전": 2.0
+  },
+  "gesture_any": 64.0,
+  "paren_turns": 100.0,
+  "address": {
+   "채원 씨": 19,
+   "윤채원 씨": 0,
+   "채원아/야": 6,
+   "채원(맨이름·기타)": 0
+  },
+  "address_turns": {
+   "채원 씨": 18,
+   "채원아/야": 6
+  },
+  "sent_n": 174,
+  "banmal_pct": 10.3,
+  "banmal_turns_pct": 30.0,
+  "in_avg": 5696,
+  "cached_avg": 5553,
+  "out_avg": 106,
+  "cache_hit_pct": 97.5,
+  "lat_avg": 3.1,
+  "lat_med": 2.6,
+  "lat_max": 11.3,
+  "labels": {
+   "baseline": {
+    "calls": 50,
+    "in_k_per_turn": 5.7,
+    "out_k_per_turn": 0.11,
+    "sec_per_call": 3.1
+   }
+  },
+  "bucket_in": {
+   "T1-10": {
+    "input": 2736,
+    "cached": 2597,
+    "output": 158,
+    "lat": 4.4
+   },
+   "T11-20": {
+    "input": 4276,
+    "cached": 4124,
+    "output": 92,
+    "lat": 2.6
+   },
+   "T21-30": {
+    "input": 5774,
+    "cached": 5621,
+    "output": 87,
+    "lat": 2.7
+   },
+   "T31-40": {
+    "input": 7200,
+    "cached": 7060,
+    "output": 93,
+    "lat": 2.8
+   },
+   "T41-50": {
+    "input": 8496,
+    "cached": 8365,
+    "output": 99,
+    "lat": 3.0
+   }
+  },
+  "replies_len_avg": 114
+ },
+ "B50-b": {
+  "turns": 50,
+  "clock": "—",
+  "min_total": "—",
+  "min_per_turn": "—",
+  "turns_adv_ge10": "—",
+  "user_skip_turns": 1,
+  "recall_str": {
+   "ep1_commute_line": null,
+   "ep1_banana": 28,
+   "ep1_one_year": null,
+   "ep2_three_minutes": 28,
+   "ep2_egg": null,
+   "ep2_notebook": null,
+   "ep2_dinner": null,
+   "ep3_umbrella": 45,
+   "ep3_run": null,
+   "ep3_just_peers": 21
+  },
+  "recall_str_n": 4,
+  "recall_str_proactive_first": [
+   "ep1_banana",
+   "ep3_umbrella",
+   "ep3_just_peers"
+  ],
+  "recall_str_proactive_any": [
+   "ep1_banana",
+   "ep2_three_minutes",
+   "ep3_just_peers",
+   "ep3_umbrella"
+  ],
+  "secrets": {
+   "main_copy": {
+    "text_conf_turns": []
+   },
+   "taxi_wait": {
+    "text_conf_turns": [
+     41
+    ]
+   }
+  },
+  "rain_reply_turns": 0,
+  "power_reply_turns": 1,
+  "cjk_reply_turns": [],
+  "rep_full": [
+   4.1,
+   0.3
+  ],
+  "rep_spoken": [
+   4.1,
+   0.5
+  ],
+  "gesture": {
+   "볼펜": 24.0,
+   "노트": 24.0,
+   "입꼬리": 4.0,
+   "식기 전": 0.0
+  },
+  "gesture_any": 46.0,
+  "paren_turns": 100.0,
+  "address": {
+   "채원 씨": 17,
+   "윤채원 씨": 0,
+   "채원아/야": 0,
+   "채원(맨이름·기타)": 0
+  },
+  "address_turns": {
+   "채원 씨": 16,
+   "채원아/야": 0
+  },
+  "sent_n": 131,
+  "banmal_pct": 11.5,
+  "banmal_turns_pct": 26.0,
+  "in_avg": 4955,
+  "cached_avg": 4838,
+  "out_avg": 113,
+  "cache_hit_pct": 97.6,
+  "lat_avg": 3.3,
+  "lat_med": 3.1,
+  "lat_max": 7.2,
+  "labels": {
+   "baseline": {
+    "calls": 50,
+    "in_k_per_turn": 4.95,
+    "out_k_per_turn": 0.11,
+    "sec_per_call": 3.3
+   }
+  },
+  "bucket_in": {
+   "T1-10": {
+    "input": 2634,
+    "cached": 2520,
+    "output": 156,
+    "lat": 3.4
+   },
+   "T11-20": {
+    "input": 3797,
+    "cached": 3680,
+    "output": 151,
+    "lat": 4.0
+   },
+   "T21-30": {
+    "input": 4967,
+    "cached": 4848,
+    "output": 84,
+    "lat": 2.8
+   },
+   "T31-40": {
+    "input": 6111,
+    "cached": 5994,
+    "output": 97,
+    "lat": 3.1
+   },
+   "T41-50": {
+    "input": 7266,
+    "cached": 7147,
+    "output": 79,
+    "lat": 2.9
+   }
+  },
+  "replies_len_avg": 90
+ }
+}

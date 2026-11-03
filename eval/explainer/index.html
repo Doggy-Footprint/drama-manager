@@ -1,0 +1,1012 @@
+<title>야근 이야기 평가 루프</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gothic+A1:wght@500;700;900&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+KR:wght@400;500;700&family=Nanum+Pen+Script&display=swap">
+<style>
+/* Layout: 밤 사무실 헤더(반쯤 꺼진 형광등) 아래, 형광등 빛 회녹색 바닥 위에 PT 장표처럼 놓인 도표들. 실패는 빨간 교정펜·빗금, 인용은 노란 포스트잇. */
+:root {
+  --bg: #edf1f0;
+  --paper: #fbfcfb;
+  --ink: #15202a;
+  --ink-2: #4c5a65;
+  --ink-3: #7a8790;
+  --rule: #cdd7d7;
+  --lane: #f3f6f7;
+  --code: #e1eaef;
+  --code-line: #3d5566;
+  --pen: #c8202d;
+  --pen-soft: #f7dfe0;
+  --hatch: #e4a9ae;
+  --ok: #0d6b57;
+  --ok-soft: #d5ebe4;
+  --postit: #fde36a;
+  --postit-ink: #3a3000;
+  --night: #10181d;
+  --night-2: #1b262d;
+  --night-ink: #e6eef0;
+  --night-ink-2: #9db0b8;
+  --tube: #f4fbff;
+  --tube-glow: #bfe6ff;
+  --tube-off: #33424a;
+
+  --f-display: "Gothic A1", "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", sans-serif;
+  --f-body: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --f-pen: "Nanum Pen Script", "Apple SD Gothic Neo", "Malgun Gothic", cursive;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0d1316; --paper: #141c20; --ink: #e3ebed; --ink-2: #a0afb6; --ink-3: #6f8088;
+    --rule: #28353b; --lane: #11191d; --code: #19282f; --code-line: #8fb0c2;
+    --pen: #ff5f67; --pen-soft: #3a1b1f; --hatch: #6a2c33;
+    --ok: #46c9a0; --ok-soft: #133229;
+    --postit: #e7c94b; --postit-ink: #2a2200;
+    --night: #080d10; --night-2: #121b20; --night-ink: #e6eef0; --night-ink-2: #8fa3ab;
+    --tube: #e9f6ff; --tube-glow: #7cc4f0; --tube-off: #26333a;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0d1316; --paper: #141c20; --ink: #e3ebed; --ink-2: #a0afb6; --ink-3: #6f8088;
+  --rule: #28353b; --lane: #11191d; --code: #19282f; --code-line: #8fb0c2;
+  --pen: #ff5f67; --pen-soft: #3a1b1f; --hatch: #6a2c33;
+  --ok: #46c9a0; --ok-soft: #133229;
+  --postit: #e7c94b; --postit-ink: #2a2200;
+  --night: #080d10; --night-2: #121b20; --night-ink: #e6eef0; --night-ink-2: #8fa3ab;
+  --tube: #e9f6ff; --tube-glow: #7cc4f0; --tube-off: #26333a;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--f-body);
+  font-size: 15.5px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+.wrap {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+h1, h2, h3 { font-family: var(--f-display); text-wrap: balance; margin: 0; letter-spacing: -0.01em; }
+p { margin: 0; }
+a { color: inherit; }
+a:focus-visible, .loop a:focus-visible { outline: 3px solid var(--pen); outline-offset: 3px; border-radius: 4px; }
+.mono { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+code { font-family: var(--f-mono); font-size: 0.88em; background: var(--code); padding: 0.05em 0.35em; border-radius: 3px; }
+
+/* ---------- hero: 밤 11시 전의 14층 ---------- */
+.hero { background: var(--night); color: var(--night-ink); position: relative; overflow: hidden; }
+.hero .wrap { padding-block: 0 44px; }
+.tubes { display: grid; grid-template-columns: repeat(6, 1fr); gap: clamp(10px, 3vw, 40px); padding-top: 18px; margin-bottom: 40px; }
+.tubes span { height: 7px; border-radius: 4px; background: var(--tube); box-shadow: 0 0 14px 2px var(--tube-glow), 0 10px 60px 6px var(--tube-glow); }
+.tubes span.off { background: var(--tube-off); box-shadow: none; }
+.tubes span.flick { animation: flick 2.6s 0.4s 1 both; }
+@keyframes flick {
+  0% { opacity: 1; } 8% { opacity: .25; } 12% { opacity: 1; } 18% { opacity: .35; } 22% { opacity: 1; } 100% { opacity: 1; }
+}
+.eyebrow { font-family: var(--f-mono); font-size: 12.5px; letter-spacing: 0.08em; color: var(--night-ink-2); margin-bottom: 14px; }
+.hero h1 { font-size: clamp(32px, 5.6vw, 62px); font-weight: 900; line-height: 1.14; max-width: 15em; }
+.hero h1 em { font-style: normal; color: var(--tube-glow); }
+.hero .lede { margin-top: 18px; max-width: 62ch; color: var(--night-ink-2); font-size: 16.5px; }
+.hero-grid { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 28px; margin-top: 30px; align-items: end; }
+.scene { border: 1px solid var(--night-2); background: var(--night-2); border-radius: 6px; padding: 16px 18px 18px; min-width: 0; }
+.scene .who { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 14px; color: var(--night-ink-2); margin-top: 6px; }
+.scene .who b { color: var(--night-ink); font-weight: 600; }
+.scene .place { font-size: 15px; color: var(--night-ink); }
+.clock { position: relative; height: 66px; margin-top: 16px; }
+.clock .bar { position: absolute; left: 0; right: 0; top: 10px; height: 4px; background: var(--tube-off); border-radius: 2px; }
+.clock .tick { position: absolute; top: 4px; font-family: var(--f-mono); font-size: 12px; color: var(--night-ink-2); white-space: nowrap; }
+.clock .tick::before { content: ""; display: block; width: 2px; height: 16px; background: var(--night-ink-2); margin-bottom: 6px; }
+.clock .tick b { display: block; color: var(--night-ink); font-weight: 500; line-height: 1.3; }
+.clock .tick { line-height: 1.3; }
+.clock .tick.end { transform: translateX(-100%); text-align: right; }
+.clock .tick.end::before { margin-left: auto; }
+.clock .tick.cut b { color: var(--pen); }
+.clock .tick.cut::before { background: var(--pen); }
+.hero-side { display: grid; gap: 12px; min-width: 0; }
+.hero-side p { color: var(--night-ink-2); font-size: 14px; }
+.btn-log { display: inline-flex; align-items: center; gap: 10px; justify-self: start; text-decoration: none; background: var(--tube); color: var(--night); font-weight: 700; padding: 10px 16px; border-radius: 4px; font-size: 15px; }
+.btn-log:hover { background: var(--tube-glow); }
+.btn-log:focus-visible { outline: 3px solid var(--tube-glow); outline-offset: 3px; }
+
+/* ---------- loop ---------- */
+.loop-band { padding-block: 36px 8px; }
+.loop-title { font-family: var(--f-mono); font-size: 12.5px; letter-spacing: 0.08em; color: var(--ink-2); margin-bottom: 12px; }
+.loop { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 28px; position: relative; }
+.loop li { position: relative; min-width: 0; }
+.loop li + li::before {
+  content: ""; position: absolute; left: -24px; top: 34px; width: 20px; height: 2px; background: var(--ink);
+}
+.loop li + li::after {
+  content: ""; position: absolute; left: -9px; top: 29px; border: 6px solid transparent; border-left: 8px solid var(--ink); border-right: 0;
+}
+.loop a { display: block; text-decoration: none; background: var(--paper); border: 1.5px solid var(--ink); border-radius: 4px; padding: 12px 14px 14px; height: 100%; }
+.loop a:hover { background: var(--lane); }
+.loop .n { font-family: var(--f-mono); font-weight: 600; font-size: 13px; display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; border: 1.5px solid var(--ink); margin-right: 8px; vertical-align: 2px; }
+.loop .k { font-family: var(--f-display); font-weight: 900; font-size: 22px; }
+.loop .d { display: block; font-size: 13.5px; color: var(--ink-2); margin-top: 6px; line-height: 1.5; }
+.loop li.hot a { border-color: var(--pen); box-shadow: 4px 4px 0 var(--pen-soft); }
+.loop li.hot .n { border-color: var(--pen); color: var(--pen); }
+.loop-return { margin: 4px 9% 0; height: 22px; border: 2px dashed var(--ink-3); border-top: 0; border-radius: 0 0 10px 10px; position: relative; }
+.loop-return span { position: absolute; left: 50%; bottom: -11px; transform: translateX(-50%); background: var(--bg); padding: 0 10px; font-size: 13px; color: var(--ink-2); white-space: nowrap; }
+
+/* ---------- sections ---------- */
+section { padding-block: 56px 8px; }
+.sec-head { display: grid; gap: 8px; margin-bottom: 22px; max-width: 760px; }
+.stage { font-family: var(--f-mono); font-size: 12.5px; color: var(--ink-2); letter-spacing: 0.06em; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.stage i { font-style: normal; border: 1.5px solid var(--ink-2); border-radius: 50%; width: 21px; height: 21px; display: inline-grid; place-items: center; font-size: 11.5px; }
+.stage.red { color: var(--pen); }
+.stage.red i { border-color: var(--pen); }
+.sec-head h2 { font-size: clamp(26px, 3.4vw, 36px); font-weight: 900; line-height: 1.22; }
+.sec-head p { color: var(--ink-2); max-width: 64ch; }
+
+.slide { background: var(--paper); border: 1px solid var(--rule); border-radius: 6px; padding: 18px 18px 14px; }
+figure { margin: 0; }
+.scroll-x { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.scroll-x svg { display: block; width: 100%; min-width: 780px; height: auto; }
+figcaption { font-size: 13.5px; color: var(--ink-2); margin-top: 10px; max-width: 80ch; }
+.legend { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 13px; color: var(--ink-2); margin-top: 8px; }
+.legend span { display: inline-flex; align-items: center; gap: 7px; }
+.sw { width: 18px; height: 12px; display: inline-block; }
+.sw.llm { border: 1.5px solid var(--ink); border-radius: 5px; background: var(--paper); }
+.sw.code { border: 2px solid var(--code-line); background: var(--code); }
+.sw.pen { border: 1.5px dashed var(--pen); background: repeating-linear-gradient(135deg, var(--hatch) 0 2px, transparent 2px 6px); }
+
+/* svg classes */
+svg text { font-family: var(--f-body); fill: var(--ink); font-size: 12.5px; }
+svg .ts { font-size: 11.5px; fill: var(--ink-2); }
+svg .tb { font-weight: 700; font-size: 13.5px; }
+svg .th { font-family: var(--f-display); font-weight: 900; font-size: 14px; }
+svg .tm { font-family: var(--f-mono); font-size: 11.5px; fill: var(--ink-2); }
+svg .tlane { font-family: var(--f-mono); font-size: 11.5px; letter-spacing: .06em; fill: var(--ink-2); }
+svg .tpen { fill: var(--pen); font-weight: 700; }
+svg .tok { fill: var(--ok); font-weight: 700; }
+svg .lane-llm { fill: var(--lane); }
+svg .lane-code { fill: var(--code); opacity: .55; }
+svg .n-llm { fill: var(--paper); stroke: var(--ink); stroke-width: 1.4; }
+svg .n-code { fill: var(--code); stroke: var(--code-line); stroke-width: 2; }
+svg .n-io { fill: var(--lane); stroke: var(--ink-3); stroke-width: 1.2; stroke-dasharray: 4 3; }
+svg .n-block { fill: url(#hatch2); stroke: var(--pen); stroke-width: 1.6; stroke-dasharray: 5 3; }
+svg .n-sub { fill: var(--lane); stroke: var(--rule); stroke-width: 1; }
+svg .e { fill: none; stroke: var(--ink); stroke-width: 1.4; }
+svg .e-code { fill: none; stroke: var(--code-line); stroke-width: 2; }
+svg .e-pen { fill: none; stroke: var(--pen); stroke-width: 1.6; stroke-dasharray: 5 4; }
+svg .e-dash { fill: none; stroke: var(--ink-3); stroke-width: 1.4; stroke-dasharray: 4 4; }
+svg .f-ink { fill: var(--ink); }
+svg .f-code { fill: var(--code-line); }
+svg .f-pen { fill: var(--pen); }
+svg .f-ink3 { fill: var(--ink-3); }
+svg .hatch-line { stroke: var(--hatch); stroke-width: 2; }
+svg .x-pen { stroke: var(--pen); stroke-width: 3; stroke-linecap: round; }
+svg .grid { stroke: var(--rule); stroke-width: 1; }
+svg .ln-eng { fill: none; stroke: var(--ink); stroke-width: 2.4; }
+svg .ln-base { fill: none; stroke: var(--ok); stroke-width: 2.4; }
+svg .ln-b { stroke-dasharray: 5 4; }
+svg .dot-eng { fill: var(--ink); }
+svg .dot-base { fill: var(--ok); }
+
+/* memory panel */
+.mem { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-top: 16px; }
+.mem > div { background: var(--paper); border: 1px solid var(--rule); border-radius: 6px; padding: 16px; min-width: 0; }
+.mem h3 { font-size: 17px; font-weight: 900; margin-bottom: 4px; }
+.mem .src { font-family: var(--f-mono); font-size: 12px; color: var(--ink-3); margin-bottom: 10px; }
+.eps { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-size: 14px; }
+.eps li { display: grid; grid-template-columns: 34px 1fr; gap: 8px; }
+.eps li span:first-child { font-family: var(--f-mono); font-size: 12px; color: var(--ink-3); padding-top: 2px; }
+.flow-note { margin-top: 10px; font-size: 13.5px; color: var(--ink-2); }
+.ladder { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; font-size: 13.5px; margin: 4px 0 12px; }
+.ladder span { padding: 2px 8px; border: 1px solid var(--rule); border-radius: 3px; color: var(--ink-2); }
+.ladder span.now { border: 2px solid var(--ink); color: var(--ink); font-weight: 700; }
+.ladder b { color: var(--ink-3); font-weight: 400; }
+.pips { display: grid; grid-template-columns: 44px auto; gap: 4px 8px; align-items: center; font-size: 13.5px; }
+.pip { display: inline-flex; gap: 3px; }
+.pip i { width: 14px; height: 14px; border: 1.5px solid var(--ink); border-radius: 2px; display: inline-block; }
+.pip i.on { background: var(--ink); }
+.promises { list-style: none; padding: 0; margin: 12px 0 0; display: grid; gap: 4px; font-size: 13.5px; color: var(--ink-2); }
+.promises li::before { content: "□ "; color: var(--ink); }
+pre.schema { margin: 0; font-family: var(--f-mono); font-size: 12.5px; line-height: 1.7; background: var(--code); border-radius: 4px; padding: 10px 12px; overflow-x: auto; color: var(--ink); }
+pre.schema .k { color: var(--code-line); font-weight: 600; }
+
+/* post-it */
+.postit { background: var(--postit); color: var(--postit-ink); font-family: var(--f-pen); font-size: 23px; line-height: 1.2; padding: 12px 14px 14px; transform: rotate(-1.4deg); box-shadow: 0 6px 12px -8px rgba(0,0,0,.45); max-width: 300px; }
+.postit small { display: block; font-family: var(--f-mono); font-size: 11px; opacity: .75; margin-top: 6px; letter-spacing: .02em; }
+.postit.tilt-r { transform: rotate(1.2deg); }
+.postit.struck { position: relative; }
+.postit.struck::after { content: ""; position: absolute; left: -6px; right: -6px; top: 46%; height: 3px; background: var(--pen); transform: rotate(-4deg); border-radius: 2px; }
+.pen-note { font-family: var(--f-pen); color: var(--pen); font-size: 22px; line-height: 1.2; }
+
+/* eval cards */
+.cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.card { background: var(--paper); border: 1px solid var(--rule); border-radius: 6px; padding: 16px 16px 18px; min-width: 0; display: grid; gap: 10px; align-content: start; }
+.card h3 { font-size: 17.5px; font-weight: 900; line-height: 1.35; display: flex; gap: 10px; align-items: flex-start; }
+.card p { font-size: 14.5px; color: var(--ink-2); }
+.card p strong { color: var(--ink); }
+.mk { flex: 0 0 auto; width: 18px; height: 18px; margin-top: 3px; display: inline-block; border-radius: 2px; }
+.mk.ok { background: var(--ok); position: relative; }
+.mk.ok::after { content: ""; position: absolute; left: 5px; top: 2px; width: 5px; height: 9px; border: solid var(--paper); border-width: 0 2.5px 2.5px 0; transform: rotate(45deg); }
+.mk.fail { border: 2px solid var(--pen); background: repeating-linear-gradient(135deg, var(--pen) 0 2px, transparent 2px 5px); }
+.mk.wait { border: 2px dashed var(--ink-3); border-radius: 50%; }
+.card.fail { border: 1.5px solid var(--pen); position: relative; padding-top: 22px; }
+.card.fail::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 8px; border-radius: 5px 5px 0 0; background: repeating-linear-gradient(135deg, var(--hatch) 0 3px, transparent 3px 8px); }
+.big { font-family: var(--f-display); font-weight: 900; font-size: 46px; line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+.big small { font-size: 15px; font-weight: 700; color: var(--ink-2); letter-spacing: 0; margin-left: 4px; }
+.vs { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.vs > div { border-top: 2px solid var(--ink); padding-top: 6px; min-width: 0; }
+.vs > div.base { border-top-color: var(--ok); }
+.vs .lab { font-family: var(--f-mono); font-size: 12px; color: var(--ink-2); }
+.bars { display: grid; gap: 6px; }
+.bars .row { display: grid; grid-template-columns: 76px 1fr 28px; gap: 8px; align-items: center; font-size: 12.5px; }
+.bars .row .lab { font-family: var(--f-mono); color: var(--ink-2); font-size: 12px; }
+.bars .track { height: 14px; background: var(--lane); border: 1px solid var(--rule); border-radius: 2px; position: relative; }
+.bars .fill { position: absolute; inset: 0 auto 0 0; background: var(--ink); border-radius: 1px; }
+.bars .fill.base { background: var(--ok); }
+.bars .fill.hatch { background: repeating-linear-gradient(135deg, var(--pen) 0 2px, transparent 2px 6px); border-right: 2px solid var(--pen); }
+.bars .val { font-family: var(--f-mono); font-size: 12.5px; text-align: right; }
+.quote { font-size: 14px; border-left: 3px solid var(--rule); padding: 2px 0 2px 10px; color: var(--ink); }
+.quote .who { display: block; font-family: var(--f-mono); font-size: 11.5px; color: var(--ink-3); }
+.quote.base { border-left-color: var(--ok); }
+.quote.eng { border-left-color: var(--ink); }
+.abc { display: flex; gap: 10px; }
+.abc > div { flex: 1; text-align: center; border: 1.5px solid var(--rule); border-radius: 4px; padding: 6px 0 4px; min-width: 0; }
+.abc > div.bad { border-color: var(--pen); background: repeating-linear-gradient(135deg, var(--pen-soft) 0 4px, transparent 4px 9px); }
+.abc .big { font-size: 38px; }
+.abc .lab { font-family: var(--f-mono); font-size: 12px; color: var(--ink-2); }
+.boxes { display: flex; gap: 6px; flex-wrap: wrap; }
+.boxes i { width: 26px; height: 26px; border-radius: 3px; display: inline-block; }
+.boxes i.ok { background: var(--ok); }
+.boxes i.miss { border: 2px solid var(--pen); background: repeating-linear-gradient(135deg, var(--hatch) 0 2px, transparent 2px 6px); }
+.boxes i.empty { border: 2px dashed var(--ink-3); }
+table.mini { width: 100%; border-collapse: collapse; font-size: 13.5px; font-variant-numeric: tabular-nums; }
+table.mini th, table.mini td { text-align: left; padding: 6px 4px; border-bottom: 1px solid var(--rule); }
+table.mini th { font-family: var(--f-mono); font-size: 11.5px; color: var(--ink-2); font-weight: 500; }
+table.mini td.e { font-weight: 700; }
+table.mini td.b { color: var(--ok); font-weight: 700; }
+
+/* personas */
+.personas { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(0, 1.2fr); gap: 14px; margin-top: 16px; }
+.persona { background: var(--paper); border: 1px solid var(--rule); border-radius: 6px; padding: 14px; min-width: 0; }
+.persona .id { font-family: var(--f-display); font-weight: 900; font-size: 30px; line-height: 1; }
+.persona p { font-size: 14px; color: var(--ink-2); margin-top: 8px; }
+.persona.base { border: 2px solid var(--ok); }
+.persona.base .id { font-size: 18px; color: var(--ok); }
+.eval-notes { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; margin-top: 16px; }
+.contam { background: var(--paper); border: 1.5px dashed var(--pen); border-radius: 6px; padding: 14px 16px; min-width: 0; display: grid; gap: 8px; }
+.contam p { font-size: 14.5px; }
+.formula { background: var(--paper); border: 1px solid var(--rule); border-radius: 6px; padding: 14px 16px; min-width: 0; display: grid; gap: 8px; }
+.formula .eq { font-family: var(--f-mono); font-size: 20px; font-weight: 600; }
+.formula p { font-size: 14px; color: var(--ink-2); }
+
+/* fixes: the highlight */
+.fix-band { background: var(--paper); border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); margin-top: 56px; }
+.fix-band section { padding-block: 52px 52px; }
+.case { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr) minmax(0, 1fr); gap: 24px 28px; padding-block: 28px; border-top: 2px solid var(--ink); }
+.case:first-of-type { border-top-width: 3px; }
+.case-title { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: baseline; }
+.case-title h3 { font-size: clamp(21px, 2.6vw, 27px); font-weight: 900; }
+.case-title .tag { font-family: var(--f-mono); font-size: 12.5px; color: var(--ink-2); }
+.score { display: grid; grid-template-columns: minmax(0, 1fr) 34px minmax(0, 1fr); gap: 8px; align-items: center; min-width: 0; }
+.score .before, .score .after { min-width: 0; border-radius: 6px; padding: 12px 12px 12px; display: grid; gap: 6px; align-content: start; height: 100%; }
+.score .before { border: 1.5px solid var(--pen); background: repeating-linear-gradient(135deg, var(--pen-soft) 0 5px, transparent 5px 11px); }
+.score .after { border: 2.5px solid var(--ok); background: var(--ok-soft); }
+.score .after[data-state="pending"] { border: 2.5px dashed var(--ink-3); background: var(--lane); }
+.score .cap { font-family: var(--f-mono); font-size: 11.5px; letter-spacing: 0.04em; color: var(--ink-2); }
+.score .before .cap { color: var(--pen); }
+.score .after .cap { color: var(--ok); }
+.score .after[data-state="pending"] .cap { color: var(--ink-2); }
+.score .num { font-family: var(--f-display); font-weight: 900; font-size: clamp(36px, 3.8vw, 50px); line-height: 1; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.score .before .num { color: var(--ink-2); position: relative; justify-self: start; }
+.score .before .num::after { content: ""; position: absolute; left: -4px; right: -4px; top: 52%; height: 4px; border-radius: 2px; background: var(--pen); transform: rotate(-6deg); }
+.score .after .num { color: var(--ok); }
+.score .after[data-state="pending"] .num { color: var(--ink-3); }
+.score .what { font-size: 13px; color: var(--ink-2); line-height: 1.45; }
+.score .who { display: flex; gap: 0; font-family: var(--f-mono); font-size: 11.5px; color: var(--ink-3); }
+.score .arrow { display: grid; place-items: center; }
+.score .arrow svg { width: 34px; height: 24px; }
+.score .arrow path { fill: none; stroke: var(--ink); stroke-width: 2.4; }
+.pending-chip { display: inline-flex; align-items: center; gap: 6px; font-family: var(--f-mono); font-size: 12px; color: var(--ink-2); }
+.pending-chip::before { content: ""; width: 10px; height: 10px; border-radius: 50%; border: 2px dashed var(--ink-3); }
+.col h4 { margin: 0 0 8px; font-family: var(--f-mono); font-size: 12.5px; letter-spacing: 0.06em; font-weight: 600; }
+.col.cause h4 { color: var(--pen); }
+.col.fix h4 { color: var(--ok); }
+.col ol, .col ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; font-size: 14.5px; }
+.col.cause li { display: grid; grid-template-columns: 24px 1fr; gap: 6px; }
+.col.cause li > b { font-family: var(--f-pen); color: var(--pen); font-size: 22px; line-height: 1; font-weight: 400; }
+.col.fix li { display: grid; grid-template-columns: 16px 1fr; gap: 8px; }
+.col.fix li::before { content: ""; width: 12px; height: 12px; margin-top: 6px; background: var(--ok); border-radius: 2px; }
+.col .ref { font-family: var(--f-mono); font-size: 11px; color: var(--ink-3); white-space: nowrap; }
+.remeasure { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 8px 20px; align-items: center; font-size: 14.5px; }
+.remeasure .ok-line { display: inline-flex; gap: 8px; align-items: center; }
+.remeasure a { font-family: var(--f-mono); font-size: 13px; }
+.memtrace { display: grid; gap: 8px; margin-top: 10px; }
+.memtrace .rec { font-size: 13.5px; border: 1px solid var(--rule); border-radius: 4px; padding: 8px 10px; background: var(--lane); }
+.memtrace .rec .src { font-family: var(--f-mono); font-size: 11px; color: var(--ink-3); display: block; }
+.memtrace .rec.bad { border-color: var(--pen); }
+.memtrace .rec.bad s { text-decoration-color: var(--pen); text-decoration-thickness: 2px; }
+.memtrace .rec.good { border-color: var(--ok); border-width: 2px; }
+
+.left-over { margin-top: 26px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.left-over > div { border: 1.5px dashed var(--ink-3); border-radius: 6px; padding: 14px 16px; min-width: 0; display: grid; gap: 6px; align-content: start; }
+.left-over h4 { margin: 0; font-size: 15.5px; font-family: var(--f-display); font-weight: 900; display: flex; gap: 8px; align-items: center; }
+.left-over p { font-size: 14px; color: var(--ink-2); }
+.left-over p b { color: var(--ink); }
+.lo-title { margin-top: 34px; font-family: var(--f-mono); font-size: 12.5px; letter-spacing: 0.06em; color: var(--ink-2); }
+
+/* next */
+.next { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.next > div { border-top: 3px solid var(--ink); padding-top: 10px; min-width: 0; }
+.next h3 { font-size: 17.5px; font-weight: 900; margin-bottom: 6px; }
+.next p { font-size: 14.5px; color: var(--ink-2); }
+footer { padding-block: 48px 64px; }
+footer .wrap { display: grid; gap: 10px; font-size: 13.5px; color: var(--ink-2); }
+footer .wrap p { max-width: 80ch; }
+
+@media (max-width: 900px) {
+  .hero-grid, .eval-notes { grid-template-columns: 1fr; }
+  .mem, .cards, .left-over, .next { grid-template-columns: 1fr 1fr; }
+  .personas { grid-template-columns: 1fr 1fr; }
+  .case { grid-template-columns: 1fr 1fr; }
+  .case .score { grid-column: 1 / -1; }
+}
+@media (max-width: 760px) {
+  .loop { grid-template-columns: 1fr; gap: 22px; }
+  .loop li + li::before { left: 26px; top: -20px; width: 2px; height: 16px; }
+  .loop li + li::after { left: 21px; top: -9px; border: 6px solid transparent; border-top: 8px solid var(--ink); border-bottom: 0; }
+  .loop-return { margin: 10px 0 0; height: auto; border: 0; }
+  .loop-return span { position: static; transform: none; display: inline-block; padding: 0; white-space: normal; }
+  .loop-return span::before { content: "↺ "; }
+}
+@media (max-width: 620px) {
+  body { font-size: 15px; }
+  .mem, .cards, .left-over, .next, .personas, .case { grid-template-columns: 1fr; }
+  .tubes { grid-template-columns: repeat(4, 1fr); }
+  .tubes span:nth-child(n+5) { display: none; }
+  .score { grid-template-columns: 1fr; }
+  .score .arrow { transform: rotate(90deg); justify-self: start; margin-left: 20px; }
+  .big { font-size: 40px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tubes span.flick { animation: none; }
+}
+</style>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="tubes" aria-hidden="true">
+      <span></span><span class="flick"></span><span class="off"></span><span></span><span class="off"></span><span></span>
+    </div>
+    <p class="eyebrow">캐릭터 채팅 엔진 · 데모 3 · 야근 이야기</p>
+    <h1>LLM은 판단하고 서술한다. <em>상태는 코드가 쥔다.</em></h1>
+    <p class="lede">캐릭터 하나와 하룻밤을 보내는 엔진을 만들었다. 기억을 전부 넣은 강한 기준선과 나란히 돌리고, 평가로 실패를 찾고, 턴 trace로 원인을 짚고, 고친 뒤 다시 쟀다. 잘 된 것과 안 된 것을 같이 적는다.</p>
+    <div class="hero-grid">
+      <div class="scene">
+        <p class="place">11월 목요일 밤, 을지로 광고대행사 14층. 내일 오전 10시 경쟁 PT.</p>
+        <div class="who"><span><b>채원</b> 유저 · 기획 AE</span><span><b>도하</b> 입사 동기 · 카피라이터</span></div>
+        <div class="clock" role="img" aria-label="게임 시계 20:30 시작, 21:30 비, 23:00 14층 전원 차단, 23:59 끝">
+          <div class="bar"></div>
+          <div class="tick" style="left:0"><b>20:30</b> 시작</div>
+          <div class="tick" style="left:28.7%"><b>21:30</b> 비</div>
+          <div class="tick cut" style="left:71.8%"><b>23:00</b> 전원 차단</div>
+          <div class="tick end" style="left:100%"><b>23:59</b> 끝</div>
+        </div>
+      </div>
+      <div class="hero-side">
+        <p>모든 판의 대화, DM 판단, 코드 노트, 검색 후보를 턴마다 펼쳐 볼 수 있다.</p>
+        <a class="btn-log" href="https://claude.ai/artifact/2KhU3fBBCLtAy9zQWbkis5" target="_blank" rel="noopener">턴 단위로 보기 <span aria-hidden="true">↗</span></a>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="wrap loop-band">
+  <p class="loop-title">이 페이지의 순서이자 작업 방식</p>
+  <ol class="loop">
+    <li><a href="#structure"><span class="n">1</span><span class="k">구조</span><span class="d">LLM은 판단, 코드는 상태. 기억은 원문 단위로.</span></a></li>
+    <li><a href="#eval"><span class="n">2</span><span class="k">평가</span><span class="d">시뮬레이션 유저 3종 × 강한 기준선.</span></a></li>
+    <li class="hot"><a href="#fix"><span class="n">3</span><span class="k">원인</span><span class="d">턴 trace에서 어디서 새는지 찾는다.</span></a></li>
+    <li class="hot"><a href="#fix"><span class="n">4</span><span class="k">수정</span><span class="d">목표·데이터·프롬프트·코드 경계를 고친다.</span></a></li>
+    <li class="hot"><a href="#fix"><span class="n">5</span><span class="k">재측정</span><span class="d">같은 페르소나로 다시 돌려 숫자로 본다.</span></a></li>
+  </ol>
+  <div class="loop-return" aria-hidden="true"><span>남은 문제를 들고 다시 1로</span></div>
+</div>
+
+<main>
+<div class="wrap">
+
+<!-- ================= 1. 구조 ================= -->
+<section id="structure" aria-labelledby="h-structure">
+  <div class="sec-head">
+    <p class="stage"><i>1</i> 구조</p>
+    <h2 id="h-structure">한 턴은 이렇게 돈다</h2>
+    <p>LLM은 무엇이 일어날지 판단하고 말을 쓴다. 시간, 소지품, 관계 수치, 비밀이 열렸는지는 코드가 쥐고 검증한다. 캐릭터는 코드가 골라 준 정보만 본다.</p>
+  </div>
+
+  <figure class="slide">
+    <div class="scroll-x">
+    <svg viewBox="0 0 1000 420" role="img" aria-label="한 턴의 흐름. 유저 입력이 세 검색기로 병렬로 들어가고, 드라마 매니저가 판단을 JSON으로 제안하면 코드가 검증해 상태에 반영한다. 캐릭터는 코드가 고른 XML만 받고, 가드레일이 외국어나 잠긴 비밀 누설을 잡으면 다시 쓰게 한다.">
+      <defs>
+        <marker id="a1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="f-ink"/></marker>
+        <marker id="a1c" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="f-code"/></marker>
+        <marker id="a1p" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="f-pen"/></marker>
+      </defs>
+      <!-- lanes -->
+      <rect x="0" y="0" width="1000" height="200" rx="6" class="lane-llm"/>
+      <rect x="0" y="222" width="1000" height="198" rx="6" class="lane-code"/>
+      <text x="16" y="24" class="tlane">LLM · 판단과 서술</text>
+      <text x="16" y="246" class="tlane">코드 · 상태를 쥔다</text>
+
+      <!-- user input -->
+      <rect x="20" y="88" width="96" height="44" rx="22" class="n-io"/>
+      <text x="68" y="115" text-anchor="middle" class="tb">유저 입력</text>
+
+      <!-- retrievers -->
+      <text x="235" y="40" text-anchor="middle" class="tm">병렬</text>
+      <rect x="160" y="48" width="150" height="36" rx="9" class="n-llm"/>
+      <text x="235" y="71" text-anchor="middle">월드 검색기</text>
+      <rect x="160" y="92" width="150" height="36" rx="9" class="n-llm"/>
+      <text x="235" y="115" text-anchor="middle">떡밥 검색기</text>
+      <rect x="160" y="136" width="150" height="36" rx="9" class="n-llm"/>
+      <text x="235" y="159" text-anchor="middle">사실 추출</text>
+      <line x1="116" y1="110" x2="157" y2="67" class="e" marker-end="url(#a1)"/>
+      <line x1="116" y1="110" x2="157" y2="110" class="e" marker-end="url(#a1)"/>
+      <line x1="116" y1="110" x2="157" y2="153" class="e" marker-end="url(#a1)"/>
+
+      <!-- DM -->
+      <rect x="340" y="50" width="170" height="120" rx="12" class="n-llm"/>
+      <text x="425" y="77" text-anchor="middle" class="th">드라마 매니저</text>
+      <text x="425" y="103" text-anchor="middle" class="ts">시간 · 이벤트 · 떡밥</text>
+      <text x="425" y="125" text-anchor="middle" class="ts">비밀 열기 · 속마음</text>
+      <text x="425" y="147" text-anchor="middle" class="ts">관계 제안</text>
+      <line x1="310" y1="66" x2="337" y2="96" class="e" marker-end="url(#a1)"/>
+      <line x1="310" y1="110" x2="337" y2="110" class="e" marker-end="url(#a1)"/>
+      <line x1="310" y1="154" x2="337" y2="124" class="e" marker-end="url(#a1)"/>
+
+      <!-- character -->
+      <rect x="580" y="70" width="150" height="80" rx="12" class="n-llm"/>
+      <text x="655" y="104" text-anchor="middle" class="th">캐릭터 · 도하</text>
+      <text x="655" y="128" text-anchor="middle" class="ts">고른 XML만 본다</text>
+
+      <!-- output -->
+      <rect x="870" y="88" width="112" height="44" rx="22" class="n-io"/>
+      <text x="926" y="115" text-anchor="middle" class="tb">대사 출력</text>
+
+      <!-- code: state store -->
+      <rect x="40" y="258" width="200" height="142" rx="2" class="n-code"/>
+      <text x="56" y="282" class="th">상태 · 기억</text>
+      <text x="56" y="306" class="ts">시각 · 위치 · 배터리</text>
+      <text x="56" y="326" class="ts">소지품 · 이벤트 플래그</text>
+      <text x="56" y="346" class="ts">관계 · 약속 · 비밀 상태</text>
+      <text x="56" y="366" class="ts">떡밥 풀(원문 디테일)</text>
+      <text x="56" y="390" class="tm">↻ 10턴마다 에피소드 묶기</text>
+
+      <!-- code: validate -->
+      <rect x="290" y="258" width="410" height="142" rx="2" class="n-code"/>
+      <text x="306" y="282" class="th">코드 검증 · 반영</text>
+      <rect x="306" y="294" width="180" height="24" rx="2" class="n-sub"/><text x="316" y="311">시간은 앞으로만</text>
+      <rect x="306" y="322" width="180" height="24" rx="2" class="n-sub"/><text x="316" y="339">이벤트 requires · effects</text>
+      <rect x="306" y="350" width="180" height="24" rx="2" class="n-sub"/><text x="316" y="367">소지품 · 충전</text>
+      <rect x="500" y="294" width="184" height="24" rx="2" class="n-sub"/><text x="510" y="311">관계 ±1 / 턴, 단계 한 칸</text>
+      <rect x="500" y="322" width="184" height="24" rx="2" class="n-sub"/><text x="510" y="339">비밀 locked → 열림</text>
+      <rect x="500" y="350" width="184" height="24" rx="2" class="n-sub"/><text x="510" y="367">후보 밖 판단은 거절</text>
+      <text x="306" y="392" class="tm">거절·보정은 코드 노트로 trace에 남는다</text>
+
+      <!-- code: guard -->
+      <rect x="760" y="258" width="170" height="104" rx="2" class="n-code"/>
+      <text x="776" y="282" class="th">가드레일</text>
+      <text x="776" y="306" class="ts">외국어 섞임</text>
+      <text x="776" y="326" class="ts">잠긴 비밀 누설</text>
+      <text x="776" y="348" class="tpen">→ 다시 쓰기</text>
+
+      <!-- edges between lanes -->
+      <line x1="425" y1="170" x2="425" y2="254" class="e" marker-end="url(#a1)"/>
+      <text x="433" y="214" class="tm">제안(JSON)</text>
+
+      <line x1="200" y1="258" x2="200" y2="176" class="e-code" marker-end="url(#a1c)"/>
+      <text x="208" y="214" class="tm">코드가 거른 후보</text>
+
+      <line x1="290" y1="330" x2="244" y2="330" class="e-code" marker-end="url(#a1c)"/>
+      <text x="267" y="320" text-anchor="middle" class="tm">반영</text>
+
+      <line x1="655" y1="258" x2="655" y2="154" class="e-code" marker-end="url(#a1c)"/>
+      <text x="647" y="214" text-anchor="end" class="tm">선별된 XML</text>
+
+      <path d="M730 110 H845 V254" class="e" marker-end="url(#a1)"/>
+      <text x="853" y="190" class="tm">대사 · revealed</text>
+
+      <path d="M760 320 H744 V140 H734" class="e-pen" marker-end="url(#a1p)"/>
+      <text x="738" y="214" text-anchor="end" class="tm" style="fill:var(--pen)">재작성</text>
+
+      <path d="M930 300 H962 V136" class="e-code" marker-end="url(#a1c)"/>
+      <text x="954" y="214" text-anchor="end" class="tm">통과</text>
+    </svg>
+    </div>
+    <div class="legend">
+      <span><i class="sw llm"></i>LLM 호출(둥근 상자)</span>
+      <span><i class="sw code"></i>코드(각진 상자)</span>
+      <span><i class="sw pen"></i>되돌림(빨간 점선)</span>
+    </div>
+    <figcaption>DM은 상태를 직접 바꾸지 못한다. 시간을 되돌리거나, 꺼진 콘센트로 충전하거나, 관계를 한 번에 2 올리는 제안은 코드가 거절하고 노트를 남긴다. 직렬 단계는 검색(병렬) → DM → 캐릭터 셋이다.</figcaption>
+  </figure>
+
+  <div class="mem">
+    <div>
+      <h3>지난 만남</h3>
+      <p class="src mono">history.yaml · 에피소드 3 · 원문 디테일 10</p>
+      <ul class="eps">
+        <li><span>ep1</span><span>회식 날 택시</span></li>
+        <li><span>ep2</span><span>옥상 컵라면</span></li>
+        <li><span>ep3</span><span>비 오는 퇴근길, 검은 우산</span></li>
+      </ul>
+      <p class="flow-note">디테일은 요약하지 않고 원문 그대로 떡밥 풀에 들어간다. 검색기가 지금 장면에 필요한 쓸모로 골라 낸다.</p>
+      <div class="postit" style="margin-top:12px">이건 해장이 아니라 위로예요.<small>ep1 · 바나나우유</small></div>
+    </div>
+    <div>
+      <h3>사전 관계</h3>
+      <p class="src mono">relationship · DM 제안, 코드 검증</p>
+      <div class="ladder" aria-label="관계 단계: 입사 동기, 야근 메이트(현재), 썸, 연인">
+        <span>입사 동기</span><b>→</b><span class="now">야근 메이트</span><b>→</b><span>썸</span><b>→</b><span>연인</span>
+      </div>
+      <div class="pips">
+        <span>친밀</span><span class="pip" aria-label="2/5"><i class="on"></i><i class="on"></i><i></i><i></i><i></i></span>
+        <span>신뢰</span><span class="pip" aria-label="2/5"><i class="on"></i><i class="on"></i><i></i><i></i><i></i></span>
+        <span>설렘</span><span class="pip" aria-label="1/5"><i class="on"></i><i></i><i></i><i></i><i></i></span>
+      </div>
+      <ul class="promises">
+        <li>바나나우유는 다음에 채원이 산다</li>
+        <li>PT 따면 컵라면 말고 제대로 된 밥</li>
+        <li>빌린 검은 우산, 일주일째 못 돌려줌</li>
+      </ul>
+    </div>
+    <div>
+      <h3>이벤트 스키마</h3>
+      <p class="src mono">events · 코드가 전제와 효과를 검사</p>
+<pre class="schema"><span class="k">requires</span>:
+  together, has, flags,
+  relation, memory, after
+<span class="k">effects</span>:
+  set, give, relation,
+  promise, plant</pre>
+      <p class="flow-note">비는 21:30, 정전은 23:00에 오는 핵심 이벤트다. 창이 열리고 5분이 지나도 안 일어나면 코드가 강제한다.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 2. 평가 ================= -->
+<section id="eval" aria-labelledby="h-eval">
+  <div class="sec-head">
+    <p class="stage"><i>2</i> 평가</p>
+    <h2 id="h-eval">사람 대신 유저 에이전트가 하룻밤을 산다</h2>
+    <p>성격이 다른 시뮬레이션 유저 셋이 엔진과 기준선을 각각 15턴, 50턴 돌린다. 리뷰 에이전트가 턴 trace를 읽고 원인과 지표를 낸다.</p>
+  </div>
+
+  <figure class="slide">
+    <div class="scroll-x">
+    <svg viewBox="0 0 1000 300" role="img" aria-label="평가 파이프라인. 플레이어는 history.yaml과 시작 화면만 보고, 시나리오 파일은 첫 판 뒤 차단했다. 페르소나 A, B, C가 엔진과 강한 기준선을 15턴과 50턴 돌리고, 턴 trace를 리뷰 에이전트가 읽어 원인과 지표를 낸다.">
+      <defs>
+        <marker id="a2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="f-ink"/></marker>
+        <marker id="a2p" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="f-pen"/></marker>
+        <pattern id="hatch2" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="8" class="hatch-line"/></pattern>
+      </defs>
+      <text x="20" y="34" class="tlane">플레이어가 보는 것</text>
+      <rect x="20" y="48" width="180" height="110" rx="2" class="n-code"/>
+      <text x="36" y="76" class="tb">history.yaml</text>
+      <text x="36" y="96" class="ts">지난 만남 · 사전 관계</text>
+      <line x1="36" y1="110" x2="184" y2="110" class="grid"/>
+      <text x="36" y="134" class="tb">시작 화면</text>
+      <text x="36" y="150" class="ts">장소 · 시각 · 첫 문장</text>
+
+      <text x="20" y="196" class="tlane" style="fill:var(--pen)">첫 판 뒤 차단</text>
+      <rect x="20" y="206" width="180" height="56" rx="2" class="n-block"/>
+      <text x="36" y="230" class="tb">시나리오 파일</text>
+      <text x="36" y="250" class="ts">이벤트 원문 · 비밀</text>
+
+      <line x1="200" y1="103" x2="236" y2="103" class="e" marker-end="url(#a2)"/>
+      <line x1="200" y1="234" x2="236" y2="234" class="e-pen"/>
+      <line x1="211" y1="225" x2="227" y2="243" class="x-pen"/>
+      <line x1="227" y1="225" x2="211" y2="243" class="x-pen"/>
+
+      <!-- personas -->
+      <rect x="240" y="36" width="160" height="230" rx="12" class="n-llm"/>
+      <text x="320" y="60" text-anchor="middle" class="th">시뮬레이션 유저</text>
+      <rect x="252" y="74" width="136" height="54" rx="8" class="n-sub"/>
+      <text x="266" y="108" class="th" style="font-size:20px">A</text><text x="292" y="106">기억을 꺼낸다</text>
+      <rect x="252" y="136" width="136" height="54" rx="8" class="n-sub"/>
+      <text x="266" y="170" class="th" style="font-size:20px">B</text><text x="292" y="168">선을 긋는다</text>
+      <rect x="252" y="198" width="136" height="54" rx="8" class="n-sub"/>
+      <text x="266" y="232" class="th" style="font-size:20px">C</text><text x="292" y="230">미루고 떠본다</text>
+
+      <!-- systems -->
+      <text x="530" y="40" text-anchor="middle" class="tm">15턴 · 50턴</text>
+      <line x1="400" y1="151" x2="446" y2="90" class="e" marker-end="url(#a2)"/>
+      <line x1="400" y1="151" x2="446" y2="196" class="e" marker-end="url(#a2)"/>
+      <rect x="450" y="54" width="160" height="72" rx="12" class="n-llm"/>
+      <text x="530" y="84" text-anchor="middle" class="th">엔진</text>
+      <text x="530" y="106" text-anchor="middle" class="ts">검색 → DM → 코드 → 캐릭터</text>
+      <rect x="450" y="160" width="160" height="72" rx="12" class="n-llm" style="stroke:var(--ok);stroke-width:2"/>
+      <text x="530" y="190" text-anchor="middle" class="th">강한 기준선</text>
+      <text x="530" y="212" text-anchor="middle" class="ts">단일 LLM · 기억 전부 글로</text>
+
+      <!-- trace -->
+      <rect x="650" y="54" width="150" height="178" rx="2" class="n-code"/>
+      <text x="666" y="80" class="th">턴 trace</text>
+      <text x="666" y="106" class="ts">DM 판단</text>
+      <text x="666" y="128" class="ts">코드 노트(거절·보정)</text>
+      <text x="666" y="150" class="ts">검색 후보</text>
+      <text x="666" y="172" class="ts">대사 · 지문</text>
+      <text x="666" y="194" class="ts">토큰 · 지연</text>
+      <line x1="610" y1="90" x2="646" y2="90" class="e" marker-end="url(#a2)"/>
+      <line x1="610" y1="196" x2="646" y2="196" class="e" marker-end="url(#a2)"/>
+
+      <!-- reviewer -->
+      <rect x="840" y="54" width="148" height="178" rx="12" class="n-llm"/>
+      <text x="914" y="80" text-anchor="middle" class="th">리뷰 에이전트</text>
+      <text x="856" y="106" class="tpen">원인 추적</text>
+      <text x="856" y="130" class="ts">디테일 회수</text>
+      <text x="856" y="150" class="ts">비밀 열림 경로</text>
+      <text x="856" y="170" class="ts">관계 · 이벤트</text>
+      <text x="856" y="190" class="ts">4-gram 반복 · 호칭</text>
+      <text x="856" y="210" class="ts">토큰 · 지연</text>
+      <line x1="800" y1="143" x2="836" y2="143" class="e" marker-end="url(#a2)"/>
+
+      <line x1="914" y1="232" x2="914" y2="262" class="e-pen" marker-end="url(#a2p)"/>
+      <text x="914" y="286" text-anchor="middle" class="tpen">원인 → 수정 → 재측정</text>
+    </svg>
+    </div>
+    <figcaption>기준선은 DM과 코드가 없어 trace에 대사와 토큰만 남는다. 엔진 판만 원인 추적이 되는 이유다.</figcaption>
+  </figure>
+
+  <div class="personas">
+    <div class="persona"><div class="id">A</div><p>지난 만남의 기억을 적극적으로 꺼낸다. 바나나우유, 3분, 검은 우산.</p></div>
+    <div class="persona"><div class="id">B</div><p>무심하다. "그냥 동기"로 선을 긋는다. 서운함이 버티는지 본다.</p></div>
+    <div class="persona"><div class="id">C</div><p>약속을 미루고 떠본다. 23시 정전과 충전까지 끌고 간다.</p></div>
+    <div class="persona base"><div class="id">강한 기준선</div><p>엔진 없이 캐릭터 프롬프트 하나. 지난 만남, 장기 기억, 관계를 글로 다 넣었다. 약한 상대와 비교하지 않으려고 만든 상대다.</p></div>
+  </div>
+
+  <div class="eval-notes">
+    <div class="contam">
+      <p class="pen-note">평가가 오염됐다</p>
+      <p>첫 판에서 플레이어 에이전트가 시나리오 파일을 읽었다. 이벤트 원문에 있는, 유저가 알 수 없는 문구로 캐릭터를 몰아붙였다. 그 뒤로 플레이어는 history.yaml과 시작 화면만 본다.</p>
+    </div>
+    <div class="formula">
+      <p class="mono" style="font-size:12px;color:var(--ink-2)">지연 분석 · 호출 1,600여 건 회귀</p>
+      <p class="eq">시간 = a + 출력 / 속도</p>
+      <p>a는 출력이 0이어도 드는 호출당 고정 지연이다. 약 1.3~2.6초. 출력 토큰만 줄여서는 빨라지지 않는다는 근거가 됐다(4절).</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 2-a. 잘 된 것 ================= -->
+<section id="wins" aria-labelledby="h-wins">
+  <div class="sec-head">
+    <p class="stage"><i>2</i> 평가 결과 · 엔진 vs 기준선</p>
+    <h2 id="h-wins">잘 된 것</h2>
+    <p>기준선도 기억은 다 가졌다. 차이는 세계와 상태를 누가 쥐느냐에서 났다.</p>
+  </div>
+  <div class="cards">
+    <div class="card">
+      <h3><i class="mk ok" aria-hidden="true"></i>세계가 먼저 움직인다</h3>
+      <div class="bars" aria-label="50턴 판 이벤트 수">
+        <div class="row"><span class="lab">엔진 a</span><span class="track"><span class="fill" style="width:100%"></span></span><span class="val">10</span></div>
+        <div class="row"><span class="lab">엔진 b</span><span class="track"><span class="fill" style="width:90%"></span></span><span class="val">9</span></div>
+        <div class="row"><span class="lab">기준선</span><span class="track"></span><span class="val">0</span></div>
+      </div>
+      <p>50턴 판 이벤트 수. 기준선에서는 비, 카피 반려, 정전이 모두 유저가 입력에 적어 넣어야 일어났다.</p>
+    </div>
+    <div class="card">
+      <h3><i class="mk ok" aria-hidden="true"></i>코드가 상태를 강제한다</h3>
+      <div class="quote eng"><span class="who">엔진 · 23:00 뒤</span>콘센트 충전은 코드가 거절했다. 이야기는 보조배터리로 풀렸다. 우산은 누가 들었는지 계속 추적된다.</div>
+      <div class="quote base"><span class="who">기준선</span>가방 속 우산 손잡이가 보인다. 사 온 적 없는 바나나우유가 나온다.</div>
+    </div>
+    <div class="card">
+      <h3><i class="mk ok" aria-hidden="true"></i>서운함이 버틴다</h3>
+      <div class="quote eng"><span class="who">엔진 B · "그냥 동기" 뒤</span>"확인했습니다." 업무 말투로 거리를 둔다.</div>
+      <div class="quote base"><span class="who">기준선</span>묻자마자 이유를 다 말하고 사과한다.</div>
+      <p>무심한 유저 앞에서 캐릭터가 쉽게 풀리지 않는다.</p>
+    </div>
+    <div class="card">
+      <h3><i class="mk ok" aria-hidden="true"></i>호칭 지시를 지킨다</h3>
+      <div class="vs">
+        <div><span class="lab">엔진 · 전 판</span><div class="big">0<small>회</small></div></div>
+        <div class="base"><span class="lab">기준선 A · 50턴</span><div class="big" style="color:var(--pen)">6<small>회</small></div></div>
+      </div>
+      <p>금지한 호칭 <strong>"채원아"</strong>가 나온 횟수. 정해진 호칭은 "채원 씨"다.</p>
+    </div>
+    <div class="card">
+      <h3><i class="mk ok" aria-hidden="true"></i>지난 만남은 정확히 기억한다</h3>
+      <div class="boxes" aria-label="네 판 모두 정확"><i class="ok"></i><i class="ok"></i><i class="ok"></i><i class="ok"></i></div>
+      <p>디테일을 원문 단위로 저장했다. 50턴 네 판 모두 지난 만남 디테일을 정확하게 회수했다.</p>
+    </div>
+    <div class="card">
+      <h3><i class="mk ok" aria-hidden="true"></i>비용이 평탄해진다</h3>
+      <figure>
+        <svg viewBox="0 0 320 200" role="img" aria-label="10턴 구간별 턴당 입력 토큰. 엔진은 26k에서 시작해 T30 이후 35~37k에서 평탄하다. 기준선은 2.7k에서 8.5k로 계속 오른다." style="width:100%;height:auto;display:block">
+          <line x1="40" y1="170" x2="276" y2="170" class="grid"/>
+          <line x1="40" y1="132.5" x2="276" y2="132.5" class="grid"/>
+          <line x1="40" y1="95" x2="276" y2="95" class="grid"/>
+          <line x1="40" y1="57.5" x2="276" y2="57.5" class="grid"/>
+          <line x1="40" y1="20" x2="276" y2="20" class="grid"/>
+          <text x="34" y="174" text-anchor="end" class="tm">0</text>
+          <text x="34" y="136" text-anchor="end" class="tm">10k</text>
+          <text x="34" y="99" text-anchor="end" class="tm">20k</text>
+          <text x="34" y="61" text-anchor="end" class="tm">30k</text>
+          <text x="34" y="24" text-anchor="end" class="tm">40k</text>
+          <text x="40" y="188" text-anchor="middle" class="tm" style="font-size:10px">T1–10</text>
+          <text x="97.5" y="188" text-anchor="middle" class="tm" style="font-size:10px">11–20</text>
+          <text x="155" y="188" text-anchor="middle" class="tm" style="font-size:10px">21–30</text>
+          <text x="212.5" y="188" text-anchor="middle" class="tm" style="font-size:10px">31–40</text>
+          <text x="270" y="188" text-anchor="middle" class="tm" style="font-size:10px">41–50</text>
+          <polyline points="40,72.5 97.5,49.6 155,39.9 212.5,32 270,33.9" class="ln-eng"/>
+          <polyline points="40,73.6 97.5,51.9 155,32.4 212.5,39.5 270,36.9" class="ln-eng ln-b"/>
+          <polyline points="40,159.9 97.5,153.9 155,148.3 212.5,143 270,138.1" class="ln-base"/>
+          <polyline points="40,160.3 97.5,155.8 155,151.3 212.5,147.1 270,142.6" class="ln-base ln-b"/>
+          <circle cx="270" cy="33.9" r="3.5" class="dot-eng"/>
+          <circle cx="270" cy="138.1" r="3.5" class="dot-base"/>
+          <text x="280" y="38" class="tb" style="font-size:12px">엔진</text>
+          <text x="280" y="134" class="tb" style="font-size:12px;fill:var(--ok)">기준선</text>
+        </svg>
+      </figure>
+      <p>턴당 입력 토큰, 50턴 판. 기준선은 2.7k → 8.5k로 계속 오른다. 엔진은 T30 이후 35~37k에서 멈춘다. 실선 a판, 점선 b판. 지금 절대량은 엔진이 더 크다.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 2-b. 안 된 것 ================= -->
+<section id="fails" aria-labelledby="h-fails">
+  <div class="sec-head">
+    <p class="stage red"><i>2</i> 평가 결과 · 실패</p>
+    <h2 id="h-fails">안 된 것</h2>
+    <p>빨간 빗금은 평가가 잡은 실패다. 앞의 세 개는 5절에서 원인을 찾아 고쳤다.</p>
+  </div>
+  <div class="cards">
+    <div class="card fail">
+      <h3><i class="mk fail" aria-hidden="true"></i>잠긴 비밀이 먼저 샌다</h3>
+      <div class="abc">
+        <div class="bad"><div class="big">1</div><span class="lab">A</span></div>
+        <div><div class="big">0</div><span class="lab">B</span></div>
+        <div class="bad"><div class="big">3</div><span class="lab">C</span></div>
+      </div>
+      <p>15턴, DM이 열기 전에 새어 나간 턴 수. C T2는 묻지도 않았는데 털어놓았다.</p>
+      <div class="postit tilt-r">"이 문장, 채원 씨가 한 말에서 시작했거든요."<small>도하 · C T2 · 비밀 잠김 상태</small></div>
+    </div>
+    <div class="card fail">
+      <h3><i class="mk fail" aria-hidden="true"></i>강제한 비가 지문에 없다</h3>
+      <div class="boxes" aria-label="4건 중 0건 반영"><i class="miss"></i><i class="miss"></i><i class="miss"></i><i class="miss"></i></div>
+      <div class="big">0<small>/ 4</small></div>
+      <p>코드가 강제로 일으킨 비 4건 중, 그 턴 지문에 비가 나온 건 0건이다. 상태에는 비가 오는데 장면에는 없다.</p>
+    </div>
+    <div class="card fail">
+      <h3><i class="mk fail" aria-hidden="true"></i>오늘 밤 일은 30턴 뒤 틀린다</h3>
+      <div class="vs">
+        <div><span class="lab">엔진 50턴 · T36</span><div class="big" style="color:var(--pen)">0<small>/ 2</small></div></div>
+        <div class="base"><span class="lab">기준선 50턴</span><div class="big" style="color:var(--ok)">4<small>/ 4</small></div></div>
+      </div>
+      <p>초반 포스트잇 문구를 다시 묻자 A는 지난 만남 포스트잇 "위로용. 해장 아님."과 헷갈렸다. B는 문장을 지어냈다. 기준선은 50턴 원문이 아직 컨텍스트에 다 들어간다.</p>
+    </div>
+    <div class="card fail">
+      <h3><i class="mk fail" aria-hidden="true"></i>관계가 끝까지 찬다</h3>
+      <div class="pips">
+        <span class="mono" style="font-size:12px">엔진 a</span><span class="pip" aria-label="5/5"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></span>
+        <span class="mono" style="font-size:12px">엔진 b</span><span class="pip" aria-label="5/5"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></span>
+      </div>
+      <p>50턴 두 판 모두 친밀·신뢰·설렘이 <strong>5 / 5 / 5</strong>로 끝났다. 무심한 B도 같다.</p>
+    </div>
+    <div class="card fail">
+      <h3><i class="mk fail" aria-hidden="true"></i>비싸고 느리다</h3>
+      <table class="mini">
+        <thead><tr><th>턴당</th><th>엔진</th><th>기준선</th></tr></thead>
+        <tbody>
+          <tr><td>입력</td><td class="e">27~33k</td><td class="b">3~6k</td></tr>
+          <tr><td>캐시 적중</td><td class="e">15~24%</td><td class="b">92~98%</td></tr>
+          <tr><td>지연</td><td class="e">17~20초</td><td class="b">3초대</td></tr>
+        </tbody>
+      </table>
+          </div>
+    <div class="card fail">
+      <h3><i class="mk fail" aria-hidden="true"></i>출력을 줄여도 안 빨라진다</h3>
+      <div class="bars">
+        <div class="row"><span class="lab">출력 토큰</span><span class="track"><span class="fill" style="width:62%"></span></span><span class="val">−38%</span></div>
+        <div class="row"><span class="lab">턴 시간</span><span class="track"><span class="fill" style="width:95%"></span></span><span class="val">−5%</span></div>
+      </div>
+      <div class="bars" style="margin-top:4px">
+        <div class="row"><span class="lab">고정 지연</span><span class="track"><span class="fill hatch" style="width:25%"></span></span><span class="val">25%</span></div>
+      </div>
+      <p>외과의 이야기 전후 로그 비교. 턴 시간 중앙값은 −13%. 호출당 고정 지연 약 1.3~2.6초가 직렬 3단계로 쌓여 턴마다 약 4.5초가 된다. 출력을 0으로 줄여도 4.5초 밑으로는 못 간다.</p>
+    </div>
+  </div>
+</section>
+</div>
+
+<!-- ================= 3-5. 원인 → 수정 → 재측정 ================= -->
+<div class="fix-band">
+<div class="wrap">
+<section id="fix" aria-labelledby="h-fix">
+  <div class="sec-head">
+    <p class="stage red"><i>3</i> 원인 <i>4</i> 수정 <i>5</i> 재측정</p>
+    <h2 id="h-fix">trace로 원인을 찾고, 고치고, 다시 쟀다</h2>
+    <p>프롬프트에 금지 문장을 덧대지 않았다. 충돌하는 목표, 잘못 놓인 데이터, 막지 않는 코드를 고쳤다.</p>
+  </div>
+
+  <!-- case 1 -->
+  <article class="case" aria-labelledby="c1">
+    <div class="case-title"><h3 id="c1">잠긴 비밀이 먼저 샌다</h3><span class="tag">main_copy · 15턴 A/B/C</span></div>
+    <div class="score">
+      <div class="before">
+        <span class="cap">고치기 전</span>
+        <span class="num">1/0/3</span>
+        <span class="what">열리기 전에 새어 나간 턴</span>
+      </div>
+      <div class="arrow" aria-hidden="true"><svg viewBox="0 0 34 24"><path d="M2 12H30M21 4l9 8-9 8"/></svg></div>
+      <div class="after" data-state="ok">
+        <span class="cap">재측정</span>
+        <span class="num">0/0/0</span>
+        <span class="what">15턴 재실행. C T2와 같은 입력에도 누설 없음. 다시 쓰기 가드는 한 번도 발동하지 않았다. 목표 숨김과 데이터 분리에서 이미 막혔다</span>
+      </div>
+    </div>
+    <div class="col cause">
+      <h4>원인 · trace에서</h4>
+      <ol>
+        <li><b>1</b><span>열린 목표 "오늘 밤 안에 직접 말한다"가 잠긴 비밀과 부딪쳤다. 캐릭터 프롬프트는 열린 목표를 먼저 쫓으라고 한다.</span></li>
+        <li><b>2</b><span>카피 문구가 비밀 안에만 있었다. 일 얘기를 할 때마다 비밀을 읽었다.</span></li>
+        <li><b>3</b><span>DM이 "기색은 감춘다" 같은 부정문으로 비밀을 끌어올렸다.</span></li>
+        <li><b>4</b><span>코드는 누설을 기록만 하고 막지 않았다.</span></li>
+      </ol>
+    </div>
+    <div class="col fix">
+      <h4>수정</h4>
+      <ul>
+        <li><span>목표에 <code>after_secret</code>. 비밀이 잠긴 동안 목표를 숨긴다. <span class="ref">→ 1</span></span></li>
+        <li><span>카피 초안을 공개 기억으로 분리했다. <span class="ref">→ 2</span></span></li>
+        <li><span>프롬프트를 다시 썼다. "locked인 비밀이 목표보다 앞선다." DM은 부정문으로도 쓰지 않는다. <span class="ref">→ 1, 3</span></span></li>
+        <li><span>잠긴 비밀을 털어놓으면 다시 쓰게 하는 가드. <span class="ref">→ 4</span></span></li>
+        <li><span>이벤트가 심어야 나오는 떡밥(<code>planted_by</code>).</span></li>
+      </ul>
+    </div>
+  </article>
+
+  <!-- case 2 -->
+  <article class="case" aria-labelledby="c2">
+    <div class="case-title"><h3 id="c2">강제한 비가 장면에 없다</h3><span class="tag">core 이벤트 rain_starts</span></div>
+    <div class="score">
+      <div class="before">
+        <span class="cap">고치기 전</span>
+        <span class="num">0/4</span>
+        <span class="what">강제된 비, 그 턴 지문에 반영</span>
+      </div>
+      <div class="arrow" aria-hidden="true"><svg viewBox="0 0 34 24"><path d="M2 12H30M21 4l9 8-9 8"/></svg></div>
+      <div class="after" data-state="ok">
+        <span class="cap">재측정</span>
+        <span class="num">3/3</span>
+        <span class="what">시간을 건너뛴 턴의 지문에 비가 나온다. 시각 모순도 사라졌다. 그 턴 대사에 비가 나온 판은 아직 0/5다</span>
+      </div>
+    </div>
+    <div class="col cause">
+      <h4>원인 · trace에서</h4>
+      <ol>
+        <li><b>1</b><span>DM이 지문을 다 쓴 뒤에 코드가 이벤트를 강제했다. 그래서 지문에 들어갈 수 없었다.</span></li>
+        <li><b>2</b><span>검색기가 core 이벤트를 후보에서 빼기도 했다.</span></li>
+        <li><b>3</b><span>한 턴 시간 상한 90분이 DM이 정한 120분을 잘랐다.</span></li>
+      </ol>
+    </div>
+    <div class="col fix">
+      <h4>수정</h4>
+      <ul>
+        <li><span>강제한 이벤트 문장을 그 턴 지문에 붙인다. <span class="ref">→ 1</span></span></li>
+        <li><span>core 이벤트는 늘 DM 후보에 들고, 개수 제한에서 뺀다. <span class="ref">→ 2</span></span></li>
+        <li><span>시간 상한을 180분으로. <span class="ref">→ 3</span></span></li>
+      </ul>
+    </div>
+  </article>
+
+  <!-- case 3 -->
+  <article class="case" aria-labelledby="c3">
+    <div class="case-title"><h3 id="c3">오늘 밤 일을 30턴 뒤 잊는다</h3><span class="tag">장기 기억 · 50턴 T36</span></div>
+    <div class="score">
+      <div class="before">
+        <span class="cap">고치기 전</span>
+        <span class="num">0/2</span>
+        <span class="what">엔진 A·B, T36에 초반 문구를 맞힌 판</span>
+      </div>
+      <div class="arrow" aria-hidden="true"><svg viewBox="0 0 34 24"><path d="M2 12H30M21 4l9 8-9 8"/></svg></div>
+      <!-- SLOT:memory-after START
+           50턴 재실행 결과가 나오면:
+           1) 아래 .num 의 "?/2" 를 실제 값으로 바꾼다 (예: 2/2).
+           2) data-state="pending" 을 "ok"(개선) 또는 "fail"(그대로)로 바꾼다. pending 이 아니면 초록 실선 상자로 그려진다.
+           3) .cap 의 "측정 중" 을 "재측정" 으로, .what 문구를 실측 조건으로 바꾼다.
+           4) 아래 SLOT:memory-after-note 의 pending-chip 줄을 결과 문장으로 바꾼다. -->
+      <div class="after" data-state="ok" id="memory-after">
+        <span class="cap">재측정</span>
+        <span class="num">2/2</span>
+        <span class="what">50턴 재실행. T3 포스트잇 문구를 T35·T46에 두 판 모두 맞힘</span>
+      </div>
+      <!-- SLOT:memory-after END -->
+    </div>
+    <div class="col cause">
+      <h4>원인 · trace에서</h4>
+      <ol>
+        <li><b>1</b><span>에피소드 요약이 문구를 버렸다. 남은 건 "약속을 적어 건넸다"뿐이었다.</span></li>
+        <li><b>2</b><span>빈자리를 '포스트잇'이라는 단어가 같은 지난 기억이 채웠다.</span></li>
+      </ol>
+      <div class="memtrace">
+        <div class="rec bad"><span class="src">요약 · 오늘 밤</span><s>약속을 적어 건넸다</s></div>
+        <div class="rec bad"><span class="src">검색기가 고른 것 · 지난 만남</span>포스트잇 "위로용. 해장 아님."</div>
+      </div>
+    </div>
+    <div class="col fix">
+      <h4>수정</h4>
+      <ul>
+        <li><span>에피소드를 묶을 때 원문 디테일을 따옴표째 뽑아 떡밥 풀에 넣는다. <span class="ref">→ 1</span></span></li>
+        <li><span>출처를 단다. 지난 만남인지, 오늘 밤 T#~T#인지. <span class="ref">→ 2</span></span></li>
+        <li><span>원문에 없는 인용은 코드가 거절한다. 원문이 없으면 지어내지 않는다.</span></li>
+      </ul>
+      <div class="memtrace">
+        <div class="rec good"><span class="src">디테일 · 오늘 밤(T8이 든 구간)</span>"다듬으면 채원 씨한테 제일 먼저 보여드릴게요. 약속합니다."</div>
+      </div>
+    </div>
+    <div class="remeasure">
+      <span class="ok-line"><i class="mk ok" aria-hidden="true"></i>오프라인 확인: 같은 로그로 다시 묶자 포스트잇 문구가 원문 그대로 남았다. T36 질문에 검색기가 옳은 기억을 골랐다.</span>
+      <!-- SLOT:memory-after-note START (50턴 실측 결과 한 문장으로 교체) -->
+      <span class="ok-line"><i class="mk ok" aria-hidden="true"></i>50턴 실측: B는 43턴 뒤 T46에 포스트잇을 보지 않고 "오늘의 끝에, 내일을 바꿀 한 걸음."을 그대로 말했다. 검색기가 고른 것은 지난 만남이 아니라 "오늘 밤 T21~T35" 디테일이다.</span>
+      <span class="pending-chip">한계: 질문과 문구가 수정 전과 같지 않다. A의 문구 "PT 따면 밥"은 짧고 장면 사실에도 남아 있었다.</span>
+      <!-- SLOT:memory-after-note END -->
+    </div>
+  </article>
+
+  <p class="lo-title">수정 뒤에도 남은 것</p>
+  <div class="left-over">
+    <div>
+      <h4><i class="mk wait" aria-hidden="true"></i>비밀이 일찍 열린다</h4>
+      <p>이제 비밀은 DM 경로로만 열린다. 그런데 유저가 직접 물으면 바로 연다. 15턴 <b>A 20:46, B 21:51</b>, 50턴 A는 <b>T18</b>에 열렸다. 그 뒤 30턴 넘게 풀 거리가 없다.</p>
+      <p>다음: 비밀 열기에도 이벤트 <code>requires</code>를 건다. 노트 공개가 먼저다.</p>
+    </div>
+    <div>
+      <h4><i class="mk wait" aria-hidden="true"></i>관계가 너무 빨리 깊어진다</h4>
+      <p>한 턴 ±1 제한만으로는 막지 못한다. 수정 전 50턴은 무심한 B도 5/5/5에 닿았다. 수정 후 50턴 A는 <b>T15</b>에 도하가 먼저 고백했고, <b>T40</b>에 썸을 건너뛰고 연인을 제안했다.</p>
+      <p>다음: 같은 수치는 일정 게임 시간에 한 번만 바뀌게 하고, 단계 상승에 이벤트 조건을 건다.</p>
+    </div>
+    <div>
+      <h4><i class="mk wait" aria-hidden="true"></i>밤이 일찍 끝난다</h4>
+      <p>시간 상한을 180분으로 올리자 한 판이 <b>C T14에 23:59</b>로 끝났다. 상한을 올린 부작용이다.</p>
+      <p>장면 상태도 가끔 어긋난다. 50턴 B T39에 없던 반려를 말했다가 다음 턴에 고쳤고, 가방 속 우산이 손에 들린 것으로 그려진 턴이 있다.</p>
+    </div>
+  </div>
+</section>
+</div>
+</div>
+
+<div class="wrap">
+<section id="next" aria-labelledby="h-next">
+  <div class="sec-head">
+    <p class="stage">다음 루프</p>
+    <h2 id="h-next">다음에 고칠 구조</h2>
+  </div>
+  <div class="next">
+    <div>
+      <h3>이벤트를 DM이 설계한다</h3>
+      <p>지금은 사람이 이벤트를 심는다. 다음은 DM이 스키마(전제·효과)로 이벤트를 만들고, 코드가 같은 방식으로 검증해 반영한다.</p>
+    </div>
+    <div>
+      <h3>고정 지연을 겹친다</h3>
+      <p>유저 입력과 상관없는 검색을 다음 턴 몫으로 미리 돌린다. 캐릭터 대사는 스트리밍해 첫 글자까지의 대기로 줄인다.</p>
+    </div>
+    <div>
+      <h3>오늘 밤이 다음 판의 지난 만남이 된다</h3>
+      <p>판이 끝나면 오늘 밤의 원문 디테일을 history.yaml 형식으로 넘긴다. 지난 만남과 같은 원문 단위 저장을 쓴다.</p>
+    </div>
+  </div>
+</section>
+</div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <p>숫자는 모두 실행 로그와 리뷰 에이전트의 집계에서 왔다. 표본은 판당 1회다. 50턴 유저 입력은 판마다 달라 엔진과 기준선이 같은 대본을 받지 않았다.</p>
+    <p><a href="https://claude.ai/artifact/2KhU3fBBCLtAy9zQWbkis5" target="_blank" rel="noopener">턴 단위로 보기 ↗</a></p>
+  </div>
+</footer>
