@@ -432,6 +432,16 @@ def test_state_survives_between_calls(tmp_path, monkeypatch):
     assert restored.pending.tension  # 다음 턴에 적용할 판단도 이어진다
 
 
+def test_scene_name_placeholder_follows_card():
+    scene = {**SCENE, "checkpoints": [{"id": "call", "trigger": {"clock_gte": "19:00"}, "inject": "{name}에게 전화가 온다."},
+                                      SCENE["checkpoints"][1]]}
+    engine, _ = make(scene=scene)
+    assert engine.checkpoints[0].inject == "서진에게 전화가 온다."
+    female = Engine(ScriptedLLM(), "tsundere_some_f", scene=scene)
+    assert female.checkpoints[0].inject == "수아에게 전화가 온다." and "너는 수아다" in female.system
+    assert "{name}" not in str(Engine(ScriptedLLM(), "tsundere_some_f").scene)
+
+
 def test_ledger_tracks_only_scene_items():
     ledger = DetailLedger(SCENE)
     assert set(ledger.items) == {"umbrella", "detail_1"}

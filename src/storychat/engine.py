@@ -68,6 +68,8 @@ class Engine:
         self.director = Director(llm)
         self.card = load_data("cards", f"{card}.yaml")
         self.scene = scene if isinstance(scene, dict) else load_data("scenes", f"{scene or self.card['scene']}.yaml")
+        # 장면은 카드와 따로 쓰인다. 문장 속 {name}을 이 카드의 인물 이름으로 바꾼다
+        self.scene = json.loads(json.dumps(self.scene, ensure_ascii=False).replace("{name}", self.card["name"]))
         problems = scene_problems(self.scene)
         if problems:
             raise ValueError(f"장면 오류: {problems}")
@@ -107,7 +109,7 @@ class Engine:
         self.system = "\n\n".join([
             self.card["public"].strip(),
             "[오늘 이곳]\n" + self.scene["intro"].strip(),
-            "[둘의 지난 시간]\n" + self.history_text,
+            "[둘의 지난 시간] ('나'는 너, '상대'는 지금 네 앞의 그 사람이다)\n" + self.history_text,
             "[평소의 너]\n" + "\n".join(f"- {h['cover']}" for h in self.card["hidden"]),
             self.rules,
         ])
