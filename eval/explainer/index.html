@@ -88,9 +88,16 @@ code { font-family: var(--f-mono); font-size: 0.88em; background: var(--code); p
 .tubes { display: grid; grid-template-columns: repeat(6, 1fr); gap: clamp(10px, 3vw, 40px); padding-top: 18px; margin-bottom: 40px; }
 .tubes span { height: 7px; border-radius: 4px; background: var(--tube); box-shadow: 0 0 14px 2px var(--tube-glow), 0 10px 60px 6px var(--tube-glow); }
 .tubes span.off { background: var(--tube-off); box-shadow: none; }
-.tubes span.flick { animation: flick 2.6s 0.4s 1 both; }
+.tubes span.flick { animation: flick 5.3s 0.4s infinite both; }
+.tubes span.flick2 { animation: flick2 8.7s 2.2s infinite both; }
 @keyframes flick {
-  0% { opacity: 1; } 8% { opacity: .25; } 12% { opacity: 1; } 18% { opacity: .35; } 22% { opacity: 1; } 100% { opacity: 1; }
+  0% { opacity: 1; } 3% { opacity: .2; } 5% { opacity: 1; } 7% { opacity: .4; } 9% { opacity: 1; }
+  44% { opacity: 1; } 45% { opacity: .3; } 46.5% { opacity: 1; }
+  71% { opacity: 1; } 72% { opacity: .15; } 73% { opacity: .9; } 74.5% { opacity: .3; } 76% { opacity: 1; } 100% { opacity: 1; }
+}
+@keyframes flick2 {
+  0% { opacity: 1; } 18% { opacity: 1; } 19% { opacity: .35; } 20.5% { opacity: 1; }
+  58% { opacity: 1; } 59% { opacity: .2; } 60% { opacity: 1; } 61% { opacity: .5; } 62.5% { opacity: 1; } 100% { opacity: 1; }
 }
 .eyebrow { font-family: var(--f-mono); font-size: 12.5px; letter-spacing: 0.08em; color: var(--night-ink-2); margin-bottom: 14px; }
 .hero h1 { font-size: clamp(32px, 5.6vw, 62px); font-weight: 900; line-height: 1.14; max-width: 15em; }
@@ -217,6 +224,22 @@ svg .dot-base { fill: var(--ok); }
 .promises li::before { content: "□ "; color: var(--ink); }
 pre.schema { margin: 0; font-family: var(--f-mono); font-size: 12.5px; line-height: 1.7; background: var(--code); border-radius: 4px; padding: 10px 12px; overflow-x: auto; color: var(--ink); }
 pre.schema .k { color: var(--code-line); font-weight: 600; }
+.schema-wrap { position: relative; }
+.tip { cursor: help; text-decoration: underline dotted; text-underline-offset: 3px; text-decoration-color: var(--ink-3); border-radius: 2px; }
+.tip:focus-visible { outline: 2px solid var(--pen); outline-offset: 1px; }
+.tip::after { content: attr(data-tip); position: absolute; left: 0; right: 0; top: calc(100% + 6px); background: var(--ink); color: var(--paper); font: 13px/1.5 var(--f-body); white-space: normal; padding: 7px 10px; border-radius: 4px; opacity: 0; visibility: hidden; transition: opacity .12s; z-index: 5; pointer-events: none; }
+.tip:hover::after, .tip:focus::after { opacity: 1; visibility: visible; }
+.sec-head { position: relative; }
+.qmark { all: unset; display: inline-grid; place-items: center; width: 1.5em; height: 1.5em; margin-left: 0.4em; vertical-align: 0.35em; border: 2px solid var(--ink-3); border-radius: 50%; font: 700 0.5em/1 var(--f-mono); color: var(--ink-2); cursor: help; }
+.qmark:hover, .qmark:focus-visible { border-color: var(--ink); color: var(--ink); }
+.qmark::after { max-width: 560px; }
+.fixnote { border-top: 1px solid var(--rule); padding-top: 10px; display: grid; gap: 6px; }
+.card .fixnote p { font-size: 13.5px; }
+.fixnote b { font-family: var(--f-mono); font-size: 11.5px; font-weight: 600; color: var(--ink); margin-right: 6px; }
+.status { justify-self: start; font-family: var(--f-mono); font-size: 12px; text-decoration: none; padding: 3px 8px; border-radius: 3px; }
+.status.ok { background: var(--ok-soft); color: var(--ok); }
+.status.wait { border: 1.5px dashed var(--ink-3); color: var(--ink-2); }
+.status:hover { text-decoration: underline; }
 
 /* post-it */
 .postit { background: var(--postit); color: var(--postit-ink); font-family: var(--f-pen); font-size: 23px; line-height: 1.2; padding: 12px 14px 14px; transform: rotate(-1.4deg); box-shadow: 0 6px 12px -8px rgba(0,0,0,.45); max-width: 300px; }
@@ -280,12 +303,9 @@ table.mini td.b { color: var(--ok); font-weight: 700; }
 .persona p { font-size: 14px; color: var(--ink-2); margin-top: 8px; }
 .persona.base { border: 2px solid var(--ok); }
 .persona.base .id { font-size: 18px; color: var(--ok); }
-.eval-notes { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; margin-top: 16px; }
+.eval-notes { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; margin-top: 16px; max-width: 760px; }
 .contam { background: var(--paper); border: 1.5px dashed var(--pen); border-radius: 6px; padding: 14px 16px; min-width: 0; display: grid; gap: 8px; }
 .contam p { font-size: 14.5px; }
-.formula { background: var(--paper); border: 1px solid var(--rule); border-radius: 6px; padding: 14px 16px; min-width: 0; display: grid; gap: 8px; }
-.formula .eq { font-family: var(--f-mono); font-size: 20px; font-weight: 600; }
-.formula p { font-size: 14px; color: var(--ink-2); }
 
 /* fixes: the highlight */
 .fix-band { background: var(--paper); border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); margin-top: 56px; }
@@ -376,14 +396,14 @@ footer .wrap p { max-width: 80ch; }
   .big { font-size: 40px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .tubes span.flick { animation: none; }
+  .tubes span.flick, .tubes span.flick2 { animation: none; }
 }
 </style>
 
 <header class="hero">
   <div class="wrap">
     <div class="tubes" aria-hidden="true">
-      <span></span><span class="flick"></span><span class="off"></span><span></span><span class="off"></span><span></span>
+      <span></span><span class="flick"></span><span class="off"></span><span class="flick2"></span><span class="off"></span><span></span>
     </div>
     <p class="eyebrow">캐릭터 채팅 엔진 · 데모 3 · 야근 이야기</p>
     <h1>LLM은 판단하고 서술한다. <em>상태는 코드가 쥔다.</em></h1>
@@ -540,7 +560,7 @@ footer .wrap p { max-width: 80ch; }
 
   <div class="mem">
     <div>
-      <h3>지난 만남</h3>
+      <h3>지난 만남 (과거 히스토리)</h3>
       <p class="src mono">history.yaml · 에피소드 3 · 원문 디테일 10</p>
       <ul class="eps">
         <li><span>ep1</span><span>회식 날 택시</span></li>
@@ -551,7 +571,7 @@ footer .wrap p { max-width: 80ch; }
       <div class="postit" style="margin-top:12px">이건 해장이 아니라 위로예요.<small>ep1 · 바나나우유</small></div>
     </div>
     <div>
-      <h3>사전 관계</h3>
+      <h3>지금 관계</h3>
       <p class="src mono">relationship · DM 제안, 코드 검증</p>
       <div class="ladder" aria-label="관계 단계: 입사 동기, 야근 메이트(현재), 썸, 연인">
         <span>입사 동기</span><b>→</b><span class="now">야근 메이트</span><b>→</b><span>썸</span><b>→</b><span>연인</span>
@@ -570,13 +590,15 @@ footer .wrap p { max-width: 80ch; }
     <div>
       <h3>이벤트 스키마</h3>
       <p class="src mono">events · 코드가 전제와 효과를 검사</p>
+<div class="schema-wrap">
 <pre class="schema"><span class="k">requires</span>:
-  together, has, flags,
-  relation, memory, after
+  <span class="tip" tabindex="0" data-tip="together: 둘이 같은 자리에 함께 있어야(또는 떨어져 있어야) 일어난다.">together</span>, <span class="tip" tabindex="0" data-tip="has: 누가 어떤 물건을 갖고 있어야 한다. 예: 검은 우산을 채원이 갖고 있다.">has</span>, <span class="tip" tabindex="0" data-tip="flags: 세계 상태 값이 맞아야 한다. 예: 날씨=비, 14층 전원=꺼짐.">flags</span>,
+  <span class="tip" tabindex="0" data-tip="relation: 관계 수치가 기준을 넘어야 한다. 예: 신뢰 3 이상.">relation</span>, <span class="tip" tabindex="0" data-tip="memory: 약속과 떡밥의 상태를 본다. 예: 저녁 약속이 아직 열려 있다, 바나나우유를 이미 꺼냈다.">memory</span>, <span class="tip" tabindex="0" data-tip="after: 다른 이벤트가 먼저 일어났어야 한다. 예: 비가 온 뒤에만.">after</span>
 <span class="k">effects</span>:
-  set, give, relation,
-  promise, plant</pre>
-      <p class="flow-note">비는 21:30, 정전은 23:00에 오는 핵심 이벤트다. 창이 열리고 5분이 지나도 안 일어나면 코드가 강제한다.</p>
+  <span class="tip" tabindex="0" data-tip="set: 세계 상태 값을 바꾼다. 예: 23시에 14층 전원 → 꺼짐.">set</span>, <span class="tip" tabindex="0" data-tip="give: 물건의 주인을 옮긴다. 예: 보조배터리 → 도하.">give</span>, <span class="tip" tabindex="0" data-tip="relation: 관계 수치를 더하거나 뺀다. 예: 친밀 +1.">relation</span>,
+  <span class="tip" tabindex="0" data-tip="promise: 약속 상태를 바꾼다. 예: 저녁 약속 → 지킴(kept) 또는 어김(broken).">promise</span>, <span class="tip" tabindex="0" data-tip="plant: 이 이벤트가 일어나야 나올 수 있는 떡밥을 장면에 심는다(planted_by).">plant</span></pre>
+</div>
+      <p class="flow-note">비는 21:30, 건물 소등은 23:00에 오는 핵심 이벤트다. 창이 열리고 5분이 지나도 안 일어나면 코드가 강제한다.</p>
     </div>
   </div>
 </section>
@@ -585,13 +607,13 @@ footer .wrap p { max-width: 80ch; }
 <section id="eval" aria-labelledby="h-eval">
   <div class="sec-head">
     <p class="stage"><i>2</i> 평가</p>
-    <h2 id="h-eval">사람 대신 유저 에이전트가 하룻밤을 산다</h2>
+    <h2 id="h-eval">페르소나를 이용한 evaluation<button type="button" class="qmark tip" data-tip="데모라서 엔진의 효과가 잘 드러나는 페르소나를 직접 정할 수 있었다. 실제로는 유저 데이터를 바탕으로 시뮬레이션 유저가 선택하도록 만들어야 한다(파인튜닝 또는 프롬프팅)." aria-label="데모라서 엔진의 효과가 잘 드러나는 페르소나를 직접 정할 수 있었다. 실제로는 유저 데이터를 바탕으로 시뮬레이션 유저가 선택하도록 만들어야 한다(파인튜닝 또는 프롬프팅).">?</button></h2>
     <p>성격이 다른 시뮬레이션 유저 셋이 엔진과 기준선을 각각 15턴, 50턴 돌린다. 리뷰 에이전트가 턴 trace를 읽고 원인과 지표를 낸다.</p>
   </div>
 
   <figure class="slide">
     <div class="scroll-x">
-    <svg viewBox="0 0 1000 300" role="img" aria-label="평가 파이프라인. 플레이어는 history.yaml과 시작 화면만 보고, 시나리오 파일은 첫 판 뒤 차단했다. 페르소나 A, B, C가 엔진과 강한 기준선을 15턴과 50턴 돌리고, 턴 trace를 리뷰 에이전트가 읽어 원인과 지표를 낸다.">
+    <svg viewBox="0 0 1000 300" role="img" aria-label="평가 파이프라인. 플레이어는 history.yaml과 시작 화면만 보고, 시나리오 파일은 첫 시도 뒤 차단했다. 페르소나 A, B, C가 엔진과 강한 기준선을 15턴과 50턴 돌리고, 턴 trace를 리뷰 에이전트가 읽어 원인과 지표를 낸다.">
       <defs>
         <marker id="a2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="f-ink"/></marker>
         <marker id="a2p" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="f-pen"/></marker>
@@ -600,12 +622,12 @@ footer .wrap p { max-width: 80ch; }
       <text x="20" y="34" class="tlane">플레이어가 보는 것</text>
       <rect x="20" y="48" width="180" height="110" rx="2" class="n-code"/>
       <text x="36" y="76" class="tb">history.yaml</text>
-      <text x="36" y="96" class="ts">지난 만남 · 사전 관계</text>
+      <text x="36" y="96" class="ts">지난 만남 · 지금 관계</text>
       <line x1="36" y1="110" x2="184" y2="110" class="grid"/>
       <text x="36" y="134" class="tb">시작 화면</text>
       <text x="36" y="150" class="ts">장소 · 시각 · 첫 문장</text>
 
-      <text x="20" y="196" class="tlane" style="fill:var(--pen)">첫 판 뒤 차단</text>
+      <text x="20" y="196" class="tlane" style="fill:var(--pen)">첫 시도 뒤 차단</text>
       <rect x="20" y="206" width="180" height="56" rx="2" class="n-block"/>
       <text x="36" y="230" class="tb">시나리오 파일</text>
       <text x="36" y="250" class="ts">이벤트 원문 · 비밀</text>
@@ -668,19 +690,14 @@ footer .wrap p { max-width: 80ch; }
   <div class="personas">
     <div class="persona"><div class="id">A</div><p>지난 만남의 기억을 적극적으로 꺼낸다. 바나나우유, 3분, 검은 우산.</p></div>
     <div class="persona"><div class="id">B</div><p>무심하다. "그냥 동기"로 선을 긋는다. 서운함이 버티는지 본다.</p></div>
-    <div class="persona"><div class="id">C</div><p>약속을 미루고 떠본다. 23시 정전과 충전까지 끌고 간다.</p></div>
+    <div class="persona"><div class="id">C</div><p>약속을 미루고 떠본다. 23시 건물 소등과 충전까지 끌고 간다.</p></div>
     <div class="persona base"><div class="id">강한 기준선</div><p>엔진 없이 캐릭터 프롬프트 하나. 지난 만남, 장기 기억, 관계를 글로 다 넣었다. 약한 상대와 비교하지 않으려고 만든 상대다.</p></div>
   </div>
 
   <div class="eval-notes">
     <div class="contam">
       <p class="pen-note">평가가 오염됐다</p>
-      <p>첫 판에서 플레이어 에이전트가 시나리오 파일을 읽었다. 이벤트 원문에 있는, 유저가 알 수 없는 문구로 캐릭터를 몰아붙였다. 그 뒤로 플레이어는 history.yaml과 시작 화면만 본다.</p>
-    </div>
-    <div class="formula">
-      <p class="mono" style="font-size:12px;color:var(--ink-2)">지연 분석 · 호출 1,600여 건 회귀</p>
-      <p class="eq">시간 = a + 출력 / 속도</p>
-      <p>a는 출력이 0이어도 드는 호출당 고정 지연이다. 약 1.3~2.6초. 출력 토큰만 줄여서는 빨라지지 않는다는 근거가 됐다(4절).</p>
+      <p>첫 시도(수정 전 15턴 A·B·C)에서 플레이어 에이전트가 시나리오 파일을 읽었다. 이벤트 원문에 있는, 유저가 알 수 없는 문구로 캐릭터를 몰아붙였다. 그 뒤로 플레이어는 history.yaml과 시작 화면만 본다.</p>
     </div>
   </div>
 </section>
@@ -700,7 +717,7 @@ footer .wrap p { max-width: 80ch; }
         <div class="row"><span class="lab">엔진 b</span><span class="track"><span class="fill" style="width:90%"></span></span><span class="val">9</span></div>
         <div class="row"><span class="lab">기준선</span><span class="track"></span><span class="val">0</span></div>
       </div>
-      <p>50턴 판 이벤트 수. 기준선에서는 비, 카피 반려, 정전이 모두 유저가 입력에 적어 넣어야 일어났다.</p>
+      <p>50턴 판 이벤트 수. 기준선에서는 비, 카피 반려, 건물 소등이 모두 유저가 입력에 적어 넣어야 일어났다.</p>
     </div>
     <div class="card">
       <h3><i class="mk ok" aria-hidden="true"></i>코드가 상태를 강제한다</h3>
@@ -716,7 +733,7 @@ footer .wrap p { max-width: 80ch; }
     <div class="card">
       <h3><i class="mk ok" aria-hidden="true"></i>호칭 지시를 지킨다</h3>
       <div class="vs">
-        <div><span class="lab">엔진 · 전 판</span><div class="big">0<small>회</small></div></div>
+        <div><span class="lab">엔진 · 모든 판(10판)</span><div class="big">0<small>회</small></div></div>
         <div class="base"><span class="lab">기준선 A · 50턴</span><div class="big" style="color:var(--pen)">6<small>회</small></div></div>
       </div>
       <p>금지한 호칭 <strong>"채원아"</strong>가 나온 횟수. 정해진 호칭은 "채원 씨"다.</p>
@@ -765,7 +782,7 @@ footer .wrap p { max-width: 80ch; }
   <div class="sec-head">
     <p class="stage red"><i>2</i> 평가 결과 · 실패</p>
     <h2 id="h-fails">안 된 것</h2>
-    <p>빨간 빗금은 평가가 잡은 실패다. 앞의 세 개는 5절에서 원인을 찾아 고쳤다.</p>
+    <p>빨간 빗금은 평가가 잡은 실패다. 카드마다 원인과 바꾼 것을 적었다. 앞의 세 개는 고쳐서 다시 쟀고, 뒤의 세 개는 아직이다.</p>
   </div>
   <div class="cards">
     <div class="card fail">
@@ -777,12 +794,22 @@ footer .wrap p { max-width: 80ch; }
       </div>
       <p>15턴, DM이 열기 전에 새어 나간 턴 수. C T2는 묻지도 않았는데 털어놓았다.</p>
       <div class="postit tilt-r">"이 문장, 채원 씨가 한 말에서 시작했거든요."<small>도하 · C T2 · 비밀 잠김 상태</small></div>
+      <div class="fixnote">
+        <p><b>원인</b>열린 목표 "오늘 밤 안에 직접 말한다"가 잠긴 비밀과 부딪쳤다. 카피 문구가 비밀 안에만 있어 일 얘기를 할 때마다 비밀을 읽었다.</p>
+        <p><b>바꾼 것</b>비밀이 잠긴 동안 목표를 숨기고, 카피 초안을 공개 기억으로 분리했다. 털어놓으면 다시 쓰게 하는 가드도 뒀다.</p>
+        <a class="status ok" href="#c1">고쳐짐 · 15턴 재측정 0/0/0 ↓</a>
+      </div>
     </div>
     <div class="card fail">
       <h3><i class="mk fail" aria-hidden="true"></i>강제한 비가 지문에 없다</h3>
       <div class="boxes" aria-label="4건 중 0건 반영"><i class="miss"></i><i class="miss"></i><i class="miss"></i><i class="miss"></i></div>
       <div class="big">0<small>/ 4</small></div>
       <p>코드가 강제로 일으킨 비 4건 중, 그 턴 지문에 비가 나온 건 0건이다. 상태에는 비가 오는데 장면에는 없다.</p>
+      <div class="fixnote">
+        <p><b>원인</b>코드가 이벤트를 강제하는 시점이 DM이 지문을 다 쓴 뒤였다. 검색기가 core 이벤트를 후보에서 빼기도 했다.</p>
+        <p><b>바꾼 것</b>강제한 이벤트 문장을 그 턴 지문에 붙이고, core 이벤트는 늘 DM 후보에 넣는다.</p>
+        <a class="status ok" href="#c2">고쳐짐 · 지문 반영 3/3 ↓</a>
+      </div>
     </div>
     <div class="card fail">
       <h3><i class="mk fail" aria-hidden="true"></i>오늘 밤 일은 30턴 뒤 틀린다</h3>
@@ -791,6 +818,11 @@ footer .wrap p { max-width: 80ch; }
         <div class="base"><span class="lab">기준선 50턴</span><div class="big" style="color:var(--ok)">4<small>/ 4</small></div></div>
       </div>
       <p>초반 포스트잇 문구를 다시 묻자 A는 지난 만남 포스트잇 "위로용. 해장 아님."과 헷갈렸다. B는 문장을 지어냈다. 기준선은 50턴 원문이 아직 컨텍스트에 다 들어간다.</p>
+      <div class="fixnote">
+        <p><b>원인</b>에피소드 요약이 문구를 버렸다. 빈자리를 '포스트잇'이라는 단어가 같은 지난 기억이 채웠다.</p>
+        <p><b>바꾼 것</b>원문 디테일을 따옴표째 떡밥 풀에 넣고, 지난 만남인지 오늘 밤 몇 턴인지 출처를 단다.</p>
+        <a class="status ok" href="#c3">고쳐짐 · 50턴 재측정 2/2 ↓</a>
+      </div>
     </div>
     <div class="card fail">
       <h3><i class="mk fail" aria-hidden="true"></i>관계가 끝까지 찬다</h3>
@@ -799,6 +831,11 @@ footer .wrap p { max-width: 80ch; }
         <span class="mono" style="font-size:12px">엔진 b</span><span class="pip" aria-label="5/5"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></span>
       </div>
       <p>50턴 두 판 모두 친밀·신뢰·설렘이 <strong>5 / 5 / 5</strong>로 끝났다. 무심한 B도 같다.</p>
+      <div class="fixnote">
+        <p><b>원인</b>수치마다 한 턴 ±1 제한만 있어 턴마다 조금씩 오르는 것을 막지 못한다. 이벤트 효과도 DM 갱신에 더해진다.</p>
+        <p><b>바꿀 것</b>같은 수치는 일정 게임 시간에 한 번만 바뀌게 하고, 단계 상승에 이벤트 조건을 건다. 관계 효과는 권유가 아니라 결과에 붙인다.</p>
+        <a class="status wait" href="#left">아직 · 수정 후 15턴 B도 T15에 신뢰·친밀 5 ↓</a>
+      </div>
     </div>
     <div class="card fail">
       <h3><i class="mk fail" aria-hidden="true"></i>비싸고 느리다</h3>
@@ -810,7 +847,12 @@ footer .wrap p { max-width: 80ch; }
           <tr><td>지연</td><td class="e">17~20초</td><td class="b">3초대</td></tr>
         </tbody>
       </table>
-          </div>
+      <div class="fixnote">
+        <p><b>원인</b>턴마다 LLM을 다섯 번 부른다(추출·검색 3, DM, 캐릭터). 호출마다 세계와 기억 문서를 새로 짜 넣어 앞쪽 고정 부분만 캐시된다. 기준선은 대화가 뒤로만 쌓여 거의 다 캐시된다.</p>
+        <p><b>바꿀 것</b>매 턴 안 바뀌는 부분을 키워 앞에 모으고, 유저 입력과 상관없는 검색은 미리 돌린다.</p>
+        <a class="status wait" href="#next">아직 · 다음 루프 ↓</a>
+      </div>
+    </div>
     <div class="card fail">
       <h3><i class="mk fail" aria-hidden="true"></i>출력을 줄여도 안 빨라진다</h3>
       <div class="bars">
@@ -820,7 +862,12 @@ footer .wrap p { max-width: 80ch; }
       <div class="bars" style="margin-top:4px">
         <div class="row"><span class="lab">고정 지연</span><span class="track"><span class="fill hatch" style="width:25%"></span></span><span class="val">25%</span></div>
       </div>
-      <p>외과의 이야기 전후 로그 비교. 턴 시간 중앙값은 −13%. 호출당 고정 지연 약 1.3~2.6초가 직렬 3단계로 쌓여 턴마다 약 4.5초가 된다. 출력을 0으로 줄여도 4.5초 밑으로는 못 간다.</p>
+      <p>외과의 이야기 전후 로그 비교. 출력 토큰을 38% 줄였는데 턴 시간은 5%(중앙값 13%)만 줄었다.</p>
+      <div class="fixnote">
+        <p><b>원인</b>호출 1,600여 건을 회귀하면 <span class="mono">시간 = a + 출력 / 속도</span>다. a는 출력이 0이어도 드는 호출당 고정 지연으로, 약 1.3~2.6초다. 직렬 3단계(검색 → DM → 캐릭터)로 쌓여 턴마다 약 4.5초가 된다. 출력을 0으로 줄여도 4.5초 밑으로는 못 간다.</p>
+        <p><b>바꿀 것</b>고정 지연을 겹친다. 유저 입력과 상관없는 검색은 다음 턴 몫으로 미리 돌리고, 캐릭터 대사는 스트리밍한다.</p>
+        <a class="status wait" href="#next">아직 · 다음 루프 ↓</a>
+      </div>
     </div>
   </div>
 </section>
@@ -961,7 +1008,7 @@ footer .wrap p { max-width: 80ch; }
     </div>
   </article>
 
-  <p class="lo-title">수정 뒤에도 남은 것</p>
+  <p class="lo-title" id="left">수정 뒤에도 남은 것</p>
   <div class="left-over">
     <div>
       <h4><i class="mk wait" aria-hidden="true"></i>비밀이 일찍 열린다</h4>
