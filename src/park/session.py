@@ -82,7 +82,8 @@ def dm_schema(*, name, locations, event_ids, detail_ids, secret_ids, grievance_i
         "goal_updates": {"type": "array", "items": obj({"id": enum(goal_ids), "status": enum(["open", "done", "failed", "dropped"])})},
         "world_additions": {"type": "array", "items": obj({
             "source": enum(["유저", name]), "kind": enum(["location", "fact", "past"]), "name": S, "text": S,
-            "near": nullable(enum(locations)), "accept": {"type": "boolean"}, "why": S,
+            "near": nullable(enum(locations)), "arrive": enum(["both", "user", "character", "none"]),
+            "accept": {"type": "boolean"}, "why": S,
             "event_text": S, "affordances": {"type": "array", "items": S}})},
         "show_facts": {"type": "array", "items": S},
         "retire_facts": {"type": "array", "items": obj({"id": S})},
@@ -373,6 +374,8 @@ class Session:
                 result = w.expand(add, n, self.rng)
                 extra = f", 주사위 {result['roll']} → " + ("이벤트 추가" if "event" in result else "이벤트 없음")
                 notes.append({"ok": True, "text": f"세계 확장({who}, {add['kind']}): {label}{extra}"})
+                if result.get("kind") == "location":
+                    self._arrive(result["id"], add["arrive"], notes)
             if add["affordances"]:
                 result["detail"] = self.details.add_fact(add["text"], add["affordances"], n, source=who)
                 notes.append({"ok": True, "text": f"떡밥 풀에도 넣음: {result['detail']}"})
@@ -400,6 +403,19 @@ class Session:
                           "together": w.together, "battery": round(w.battery, 1), "charging": w.charging})
         return {"notes": notes, "fired_now": fired_now, "picked_details": picked, "additions": additions, "shown_facts": shown_facts,
                 "user_facts": user_facts, "narration": dm["narration"], "channel": dm["channel"]}
+
+    def _arrive(self, loc: str, who: str, notes: list) -> None:
+        """이번 턴에 새로 생긴 장소로 바로 옮긴다. 위치 필드는 이미 있는 장소만 고를 수 있어서, 새 장소로 가는 이동은 여기서 반영한다."""
+        w = self.world
+        if who == "character" and w.together:
+            notes.append({"ok": False, "text": f"{self.name} 이동 거절: 함께 있던 {josa(self.name, '을/를')} 혼자 {w.loc_name(loc)}로 보낼 수는 없다"})
+            return
+        for x in {"both": ["user", "character"], "user": ["user"], "character": ["character"]}.get(who, []):
+            ok, msg = w.move(x, loc)
+            notes.append({"ok": ok, "text": msg + " (새 장소)"})
+        if w.together and w.char_loc != w.user_loc:
+            notes.append({"ok": False, "text": "함께 있다고 했지만 위치가 달라 떨어져 있는 것으로 고쳤다"})
+            w.together = False
 
     # ---- 캐릭터 ----
     def _character(self, now: dict, dm: dict, picked: list, fired_now: list, facts: list) -> dict:

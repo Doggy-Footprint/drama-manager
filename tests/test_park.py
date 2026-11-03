@@ -205,9 +205,29 @@ def test_detail_use_as_must_be_one_of_its_affordances(runs):
     assert [p["use_as"] for p in out["picks"]] == [aff, ""]      # 목록에 없는 해석은 DM에게 가지 않는다
 
 
+def new_place(arrive):
+    return {"source": "유저", "kind": "location", "name": "지하 주차장", "text": "본관 지하 주차장", "near": None,
+            "arrive": arrive, "accept": True, "why": "", "event_text": "", "affordances": []}
+
+
+def test_new_location_can_be_entered_in_the_same_turn(runs):
+    s = session_mod.Session(llm=FakeLLM(dm(world_additions=[new_place("both")]), SAY))
+    s.turn("주차장 가요")
+    key = next(k for k, v in s.world.locations.items() if v["name"] == "지하 주차장")
+    assert (s.world.user_loc, s.world.char_loc, s.world.together) == (key, key, True)
+
+
+def test_new_location_does_not_send_character_away_alone(runs):
+    s = session_mod.Session(llm=FakeLLM(dm(world_additions=[new_place("character")]), SAY))
+    before = s.world.char_loc
+    s.turn("주차장이 있대")
+    assert s.world.char_loc == before and s.world.together                # 함께 있던 캐릭터를 혼자 보내지 않는다
+    assert any("혼자" in x["text"] for x in s.traces[1]["applied"]["notes"] if not x["ok"])
+
+
 def test_scene_fact_from_suah_is_kept_and_retrieved_not_broadcast(runs):
     add = {"source": "수아", "kind": "fact", "name": "", "text": "언덕에 남은 벤치는 하나뿐이다.", "near": "hill",
-           "accept": True, "why": "", "event_text": "", "affordances": []}
+           "arrive": "none", "accept": True, "why": "", "event_text": "", "affordances": []}
     llm = FakeLLM(dm(world_additions=[add]), SAY)
     s = session_mod.Session(llm=llm)
     s.turn("저기 비었네")

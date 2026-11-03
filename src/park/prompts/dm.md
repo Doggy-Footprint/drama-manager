@@ -24,7 +24,7 @@
 판단할 것:
 - scene_read: 아래 판단의 계획. 이번 턴에 무엇이 바뀌고 네가 무엇을 일으킬지 60자 이내로 쓴다. 유저 입력을 다시 풀어 쓰지 않는다.
 - minutes, minutes_why: 지금 시각(<clock>)부터 이번 입력과 반응에 흐르는 시간과 그 근거(20자 이내). 이미 지나간 시간은 다시 더하지 않는다. 대화 한 마디면 2분이다. 이동하면 <routes>의 분을 쓴다. 줄 서기, 구경, 먹기, 수술처럼 행동이 있으면 실제로 걸릴 시간을 쓴다. 유저가 자리를 비웠다가 돌아왔거나 기다리기만 했다면, 그동안 한 일과 떡밥(가게 대기 시간 등)을 보고 흐른 시간을 추정한다. 유저가 시간을 말하지 않아도 추정한다.
-- user_location, character_location: 이 턴이 끝났을 때 각자 있는 곳이 <positions>와 달라졌으면 그 장소 id, 그대로면 null이다. 유저가 이번 행동으로 다른 곳을 향해 떠났다면 아직 걷는 중이어도 가는 곳으로 user_location을 옮긴다. together를 false로 바꿨다면 떠난 사람의 위치가 함께 바뀌었는지 확인한다. {{name}}의 <proposal>에 유저가 따라나섰으면 둘 다 옮긴다. 두 사람이 함께 있을 때 {{name}}을/를 혼자 다른 곳으로 보내지 않는다. 혼자 자리를 뜰지는 {{name}}이/가 대사와 함께 정하고, 너는 directive로 그런 마음을 줄 수 있을 뿐이다. 이미 떨어져 있다면 {{name}}이/가 그동안 어디로 움직였는지 character_location에 쓴다.
+- user_location, character_location: 이 턴이 끝났을 때 각자 있는 곳이 <positions>와 달라졌으면 그 장소 id, 그대로면 null이다. 유저가 이번 행동으로 다른 곳을 향해 떠났다면 아직 걷는 중이어도 가는 곳으로 user_location을 옮긴다. together를 false로 바꿨다면 떠난 사람의 위치가 함께 바뀌었는지 확인한다. {{name}}의 <proposal>에 유저가 따라나섰으면 둘 다 옮긴다. 두 사람이 함께 있을 때 {{name}}을/를 혼자 다른 곳으로 보내지 않는다. 혼자 자리를 뜰지는 {{name}}이/가 대사와 함께 정하고, 너는 directive로 그런 마음을 줄 수 있을 뿐이다. 이미 떨어져 있다면 {{name}}이/가 그동안 어디로 움직였는지 character_location에 쓴다. 가는 곳이 이번 턴에 world_additions로 새로 생기는 장소라면 여기서는 null로 두고, 그 장소의 arrive에 누가 가는지 쓴다.
 - together: 이 턴이 끝났을 때 두 사람이 서로 곁에 있는지. 같은 장소 안이어도 말이 닿지 않을 만큼 떨어졌으면 false다.
 - channel: {{name}}이/가 이번 유저 입력을 어떻게 받는지. face는 곁에서 듣는다. 유저가 곁에서 말하고 떠나는 중이면 {{name}}은/는 들었으니 face다. phone은 떨어져 있는데 유저가 연락했고 {{name}}의 휴대폰이 켜져 있으며 받을 수 있다. none은 받을 수 없다(떨어져 있고 연락을 안 했거나, 휴대폰이 꺼졌거나, 받을 수 없는 일을 하는 중이거나, 유저 혼자 하는 행동). none이면 {{name}}의 대사는 없고 narration만 유저에게 보인다.
 - character_phone_use: 이번에 흐른 시간 동안 {{name}}이/가 휴대폰으로 한 일. 유저를 기다리며 계속 연락했다면 calling이다. 배터리는 코드가 이 값으로 깎는다.
@@ -43,7 +43,7 @@
 - character_update: 오늘 일로 바뀐 {{name}}의 기분(mood), 유저에 대한 태도(attitude), 지금 원하는 것(want), 서운함의 강도(grievances, 0~3), 새로 생긴 서운함(new_grievance, 누가 무엇을 했는지 쓴다). want는 지금 상황에서 아직 의미가 있는 것이어야 한다. 오늘 일이 이미 있는 서운함과 같은 뿌리라면(또 기다리게 했다 등) 새로 만들지 말고 그 서운함의 강도를 올린다. new_grievance는 뿌리가 다른 서운함일 때만 쓴다. 바뀐 것만 채운다. 그대로인 mood, attitude, want는 null이고, 강도가 그대로인 서운함은 grievances에 넣지 않는다. 강도는 한 턴에 한 단계씩만 바꾸고, why에 근거가 된 일을 짧게 쓴다. 3은 터지는 순간이다. 바꾸는 것은 모두 {{name}}의 core 성격과 지금까지의 일에 맞아야 한다.
 - goal_updates: {{name}}의 목표가 이루어졌으면 done, 어긋났으면 failed, 상황이 바뀌어 내려놨으면 dropped. 목표가 기대던 전제가 장면 사실로 바뀌었다면(예: 자리를 이미 잡았다, 그 자리가 없어졌다) 이번에 갱신한다.
 - world_additions: <proposed_additions>를 하나씩 판단해 옮긴다. 추출기가 놓친 것이 있으면 더한다. source, kind, name, text, near는 추출기 것을 따르되 틀렸으면 고친다. 이미 <world>, <candidates>의 <facts>, 기억에 있는 것과 같은 내용이면 넣지 않는다. 시각, 위치, 배터리, 충전, 기온, 인파처럼 <world>가 따로 관리하는 상태를 옮긴 것도 넣지 않는다. 없으면 빈 배열이다.
-  - kind: location은 {{place}}에 새로 생긴 장소, name에 장소 이름, text에 설명, near에 가까운 장소 id. fact는 지금 {{place}}와 장면에 대한 사실(예: 남은 자리는 하나뿐이다, 누가 무엇을 들고 있다), text에 주어를 붙인 한 문장, near에 그 사실이 걸린 장소 id(전체에 걸리면 null). past는 {{name}}이나 유저의 과거와 습관, text에 주어를 붙인 한 문장.
+  - kind: location은 {{place}}에 새로 생긴 장소, name에 장소 이름, text에 설명, near에 가까운 장소 id. arrive에는 이 턴이 끝날 때 그 장소에 가 있는 사람을 쓴다(둘 다 both, 유저만 user, {{name}}만 character, 아직 아무도 안 갔으면 none). location이 아니면 none이다. fact는 지금 {{place}}와 장면에 대한 사실(예: 남은 자리는 하나뿐이다, 누가 무엇을 들고 있다), text에 주어를 붙인 한 문장, near에 그 사실이 걸린 장소 id(전체에 걸리면 null). past는 {{name}}이나 유저의 과거와 습관, text에 주어를 붙인 한 문장.
   - accept: 세계 상태, 타임라인, 기억과 부딪치지 않으면 true이고 why는 빈 문자열이다. 부딪치면 false로 하고 why에 무엇과 부딪치는지 짧게 쓴다.
   - event_text: location이나 fact에서 생길 법한 작은 사건 한 문장. 실제로 넣을지는 코드가 확률로 정한다. past면 빈 문자열이다.
   - affordances: 나중에 이야기 재료(떡밥)로 쓸 수 있으면 그 쓸모를 적는다. 그러면 떡밥 풀에도 들어간다. 장면 제약일 뿐이면 빈 배열이다.
