@@ -1,0 +1,7 @@
+{"kind": "warmup", "created": 3.42, "first_item": 3.928, "msg_item": 6.385, "first_text": 6.385, "done": 10.443, "input": 13473, "cached": 0, "output": 552, "reasoning": 145}
+{"kind": "warmup", "created": 1.379, "first_item": 2.267, "done": 3.048, "input": 12203, "cached": 0, "output": 64, "reasoning": 64}
+{"kind": "dm-bust", "created": 0.736, "first_item": 1.198, "msg_item": 2.981, "first_text": 2.983, "done": 5.666, "input": 13492, "cached": 0, "output": 429, "reasoning": 148}
+{"kind": "dm-warm", "created": 0.778, "first_item": 1.33, "msg_item": 5.034, "first_text": 5.039, "done": 8.733, "input": 13473, "cached": 13470, "output": 638, "reasoning": 275}
+{"kind": "prefill-bust", "created": 0.734, "first_item": 1.117, "done": 1.725, "input": 12222, "cached": 0, "output": 64, "reasoning": 64}
+{"kind": "prefill-warm", "created": 1.947, "first_item": 2.379, "done": 3.173, "input": 12203, "cached": 12200, "output": 64, "reasoning": 64}
+{"kind": "tiny", "created": 0.499, "first_item": 0.922, "msg_item": 1.113, "first_text": 1.114, "done": 1.744, "input": 21, "cached": 0, "output": 29, "reasoning": 22}

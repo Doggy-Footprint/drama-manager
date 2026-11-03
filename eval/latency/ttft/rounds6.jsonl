@@ -1,0 +1,32 @@
+{"kind": "warmup", "created": 0.803, "first_item": 1.396, "msg_item": 5.855, "first_text": 5.856, "done": 9.676, "input": 13473, "cached": 13470, "output": 543, "reasoning": 228}
+{"kind": "warmup", "created": 0.717, "first_item": 1.247, "done": 2.102, "input": 12203, "cached": 12200, "output": 64, "reasoning": 64}
+{"kind": "dm-bust", "created": 1.487, "first_item": 1.93, "msg_item": 5.851, "first_text": 5.853, "done": 10.157, "input": 13493, "cached": 0, "output": 622, "reasoning": 245}
+{"kind": "dm-warm", "created": 1.069, "first_item": 1.835, "msg_item": 5.35, "first_text": 5.351, "done": 8.346, "input": 13473, "cached": 13470, "output": 528, "reasoning": 240}
+{"kind": "prefill-bust", "created": 0.86, "first_item": 1.101, "done": 1.914, "input": 12223, "cached": 0, "output": 64, "reasoning": 64}
+{"kind": "prefill-warm", "created": 1.063, "first_item": 1.501, "done": 2.468, "input": 12203, "cached": 12200, "output": 64, "reasoning": 64}
+{"kind": "tiny", "created": 0.521, "first_item": 0.988, "msg_item": 0.988, "first_text": 1.008, "done": 1.547, "input": 21, "cached": 0, "output": 5, "reasoning": 0}
+{"kind": "dm-bust", "created": 0.734, "first_item": 1.096, "msg_item": 6.84, "first_text": 6.841, "done": 12.039, "input": 13492, "cached": 0, "output": 775, "reasoning": 310}
+{"kind": "dm-warm", "created": 1.105, "first_item": 1.108, "msg_item": 3.989, "first_text": 3.992, "done": 7.123, "input": 13473, "cached": 13470, "output": 475, "reasoning": 185}
+{"kind": "prefill-bust", "created": 0.6, "first_item": 1.28, "msg_item": 1.28, "first_text": 1.281, "done": 1.912, "input": 12222, "cached": 0, "output": 5, "reasoning": 0}
+{"kind": "prefill-warm", "created": 0.624, "first_item": 1.239, "done": 1.632, "input": 12203, "cached": 12200, "output": 64, "reasoning": 64}
+{"kind": "tiny", "created": 0.543, "first_item": 0.857, "msg_item": 1.11, "first_text": 1.111, "done": 1.646, "input": 21, "cached": 0, "output": 33, "reasoning": 26}
+{"kind": "dm-bust", "created": 0.775, "first_item": 1.067, "msg_item": 3.276, "first_text": 3.287, "done": 5.948, "input": 13493, "cached": 0, "output": 459, "reasoning": 163}
+{"kind": "dm-warm", "created": 0.63, "first_item": 0.892, "msg_item": 4.577, "first_text": 4.578, "done": 9.028, "input": 13473, "cached": 13470, "output": 646, "reasoning": 223}
+{"kind": "prefill-bust", "created": 0.83, "first_item": 1.59, "done": 2.605, "input": 12223, "cached": 0, "output": 64, "reasoning": 64}
+{"kind": "prefill-warm", "created": 1.695, "first_item": 1.973, "done": 2.807, "input": 12203, "cached": 12200, "output": 64, "reasoning": 64}
+{"kind": "tiny", "created": 0.543, "first_item": 1.025, "msg_item": 1.537, "first_text": 1.538, "done": 2.079, "input": 21, "cached": 0, "output": 56, "reasoning": 49}
+{"kind": "dm-bust", "created": 1.11, "first_item": 1.6, "msg_item": 4.99, "first_text": 4.991, "done": 8.85, "input": 13495, "cached": 0, "output": 709, "reasoning": 258}
+{"kind": "dm-warm", "created": 0.783, "first_item": 1.669, "msg_item": 4.73, "first_text": 4.73, "done": 7.594, "input": 13473, "cached": 13470, "output": 454, "reasoning": 175}
+{"kind": "prefill-bust", "created": 0.545, "first_item": 1.016, "msg_item": 1.016, "first_text": 1.017, "done": 1.667, "input": 12225, "cached": 0, "output": 5, "reasoning": 0}
+{"kind": "prefill-warm", "created": 0.818, "first_item": 1.192, "done": 1.992, "input": 12203, "cached": 12200, "output": 64, "reasoning": 64}
+{"kind": "tiny", "created": 0.591, "first_item": 0.932, "msg_item": 1.381, "first_text": 1.383, "done": 1.96, "input": 21, "cached": 0, "output": 46, "reasoning": 39}
+{"kind": "dm-bust", "created": 0.611, "first_item": 1.301, "msg_item": 2.842, "first_text": 2.844, "done": 5.223, "input": 13494, "cached": 0, "output": 383, "reasoning": 127}
+{"kind": "dm-warm", "created": 0.692, "first_item": 1.254, "msg_item": 5.098, "first_text": 5.1, "done": 8.902, "input": 13473, "cached": 13470, "output": 629, "reasoning": 258}
+{"kind": "prefill-bust", "created": 0.595, "first_item": 1.164, "msg_item": 1.877, "first_text": 1.878, "done": 2.426, "input": 12224, "cached": 0, "output": 57, "reasoning": 50}
+{"kind": "prefill-warm", "created": 0.55, "first_item": 1.019, "msg_item": 1.626, "first_text": 1.627, "done": 2.205, "input": 12203, "cached": 12200, "output": 63, "reasoning": 56}
+{"kind": "tiny", "created": 0.94, "first_item": 1.283, "done": 1.809, "input": 21, "cached": 0, "output": 64, "reasoning": 64}
+{"kind": "dm-bust", "created": 0.798, "first_item": 1.174, "msg_item": 3.263, "first_text": 3.273, "done": 6.261, "input": 13490, "cached": 0, "output": 498, "reasoning": 169}
+{"kind": "dm-warm", "created": 0.676, "first_item": 1.004, "msg_item": 3.561, "first_text": 3.562, "done": 7.236, "input": 13473, "cached": 13470, "output": 585, "reasoning": 197}
+{"kind": "prefill-bust", "created": 0.546, "first_item": 1.077, "done": 1.966, "input": 12220, "cached": 0, "output": 64, "reasoning": 64}
+{"kind": "prefill-warm", "created": 1.084, "first_item": 2.551, "done": 3.256, "input": 12203, "cached": 12200, "output": 64, "reasoning": 64}
+{"kind": "tiny", "created": 0.779, "first_item": 2.186, "msg_item": 2.541, "first_text": 2.542, "done": 3.174, "input": 21, "cached": 0, "output": 39, "reasoning": 32}
