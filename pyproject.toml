@@ -1,0 +1,23 @@
+[project]
+name = "storychat"
+version = "0.2.0"
+description = "스토리라인이 상호작용에서 자라는 캐릭터 채팅 데모"
+requires-python = ">=3.12"
+dependencies = ["anthropic>=2.4,<3", "google-genai>=2.34", "python-dotenv>=1.2", "pyyaml>=6"]
+
+[project.optional-dependencies]
+dev = ["pytest>=9"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+storychat = ["prompts/*.yaml", "data/*.yaml", "data/cards/*.yaml"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

@@ -5,3 +5,4 @@ __pycache__/
 *.egg-info/
 **/eval/.cache/
 .DS_Store
+*.state.pkl

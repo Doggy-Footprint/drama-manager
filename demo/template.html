@@ -1,0 +1,236 @@
+<title>놀이동산 데이트 로그</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=IBM+Plex+Sans+KR:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* 레이아웃: 위는 하루 전체 띠(턴별 시간, 장소, 긴장, 사건). 왼쪽은 실제 대화, 오른쪽은 읽고 있는 턴의 월드 모델. */
+:root{
+  --bg:#f3f5f1; --panel:#fbfcf9; --ink:#1b2a2a; --quiet:#5b6b69; --line:#d5dcd5;
+  --teal:#0d6a68; --teal-soft:#d6ebe7; --amber:#a85a0c; --amber-soft:#f6e6cf; --rose:#ab2c4a; --rose-soft:#f7dde2;
+  --p1:#cfe3dc; --p2:#f1dfc0; --p3:#dcd7ec; --p4:#f2d3d0; --p5:#cfdff0;
+  --talk:"Gowun Batang","Noto Serif KR",serif; --body:"IBM Plex Sans KR","Apple SD Gothic Neo","Noto Sans KR",sans-serif; --mono:"IBM Plex Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#121a1a; --panel:#1a2424; --ink:#e6eeea; --quiet:#9db0ac; --line:#2f3e3d;
+  --teal:#62cdc2; --teal-soft:#16403d; --amber:#eeb066; --amber-soft:#463014; --rose:#f08ba2; --rose-soft:#4b1f2a;
+  --p1:#22443c; --p2:#4a3a1c; --p3:#37315a; --p4:#4f2a2a; --p5:#233c58; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#121a1a; --panel:#1a2424; --ink:#e6eeea; --quiet:#9db0ac; --line:#2f3e3d;
+  --teal:#62cdc2; --teal-soft:#16403d; --amber:#eeb066; --amber-soft:#463014; --rose:#f08ba2; --rose-soft:#4b1f2a;
+  --p1:#22443c; --p2:#4a3a1c; --p3:#37315a; --p4:#4f2a2a; --p5:#233c58; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:14px;line-height:1.6}
+.wrap{max-width:1180px;margin:0 auto;padding-block:20px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:16px}
+h1{font-family:var(--talk);font-size:26px;line-height:1.25;margin:0;text-wrap:balance}
+h2{font-size:12px;letter-spacing:.05em;margin:0;color:var(--quiet);font-weight:600}
+p{margin:0}
+button{font:inherit;color:inherit;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:5px 12px;cursor:pointer}
+button:hover{border-color:var(--teal)}
+button:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
+.tabs{display:flex;flex-wrap:wrap;gap:6px}
+.tabs button[aria-pressed="true"]{background:var(--teal);border-color:var(--teal);color:var(--panel)}
+.sum{color:var(--quiet);font-size:13px}
+/* 하루 띠 */
+.strip{overflow-x:auto;padding-bottom:4px}
+.day{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(18px,1fr);grid-template-rows:42px 20px 8px 20px 16px;min-width:max-content;gap:0 1px}
+.day .col{display:contents}
+.bar{align-self:end;background:var(--quiet);opacity:.55;border-radius:2px 2px 0 0;margin-inline:2px}
+.pl{font-size:11px;white-space:nowrap;overflow:hidden;padding-inline:4px;line-height:20px}
+.tn{height:8px;margin-top:2px;background:transparent}
+.tn.on{background:var(--rose)}
+.tn.br{background:var(--amber)}
+.mk{text-align:center;font-size:11px;line-height:20px;font-family:var(--mono)}
+.no{border:0;background:none;padding:0;border-radius:0;font-family:var(--mono);font-size:10px;color:var(--quiet);line-height:16px;text-align:center}
+.no.cur{color:var(--panel);background:var(--teal)}
+.legend{display:flex;flex-wrap:wrap;gap:2px 14px;font-size:12px;color:var(--quiet)}
+.legend b{font-family:var(--mono);font-weight:500}
+.legend i{display:inline-block;width:12px;height:6px;margin-right:5px;vertical-align:2px}
+/* 본문 */
+.main{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:20px;align-items:start}
+@media (max-width:860px){.main{grid-template-columns:minmax(0,1fr)}.world{order:-1;position:static!important;max-height:none!important}}
+.chat{display:grid;gap:2px;min-width:0}
+.t{display:grid;gap:5px;padding:9px 11px;border-radius:6px;border-left:3px solid transparent;cursor:pointer}
+.t.on{background:var(--panel);border-left-color:var(--teal)}
+.t small{font-family:var(--mono);font-size:11px;color:var(--quiet)}
+.t .u{justify-self:end;max-width:82%;background:var(--teal-soft);border-radius:10px 10px 2px 10px;padding:5px 11px}
+.t .c{font-family:var(--talk);font-size:15.5px;max-width:92%}
+.t .c b{font-weight:700}
+.ev{font-size:12.5px;display:flex;gap:7px;align-items:baseline;min-width:0}
+.ev em{font-style:normal;font-size:11px;padding:0 7px;border-radius:9px;white-space:nowrap;background:var(--line)}
+.ev.spark em{background:var(--amber-soft);color:var(--amber)}
+.ev.rose em{background:var(--rose-soft);color:var(--rose)}
+.ev.mint em{background:var(--teal-soft);color:var(--teal)}
+.ev span{overflow-wrap:anywhere;color:var(--quiet)}
+/* 월드 모델 */
+.world{position:sticky;top:calc(env(safe-area-inset-top,0px) + 10px);max-height:calc(100vh - 20px);overflow-y:auto;background:var(--panel);border:1px solid var(--line);border-radius:10px;min-width:0}
+.sky{padding:14px 16px;color:#fff;display:grid;gap:2px;transition:background .3s;border-radius:9px 9px 0 0}
+.sky .clock{font-family:var(--mono);font-size:30px;line-height:1.1;font-variant-numeric:tabular-nums}
+.sky .place{font-size:15px;font-weight:500}
+.sky .rel{font-size:12.5px;opacity:.9}
+.body{padding:12px 16px 16px;display:grid;gap:12px}
+.chips{display:flex;flex-wrap:wrap;gap:5px}
+.chip{font-size:12px;padding:1px 9px;border-radius:10px;border:1px solid var(--line);white-space:nowrap}
+.chip.on{background:var(--amber-soft);border-color:transparent;color:var(--amber)}
+.chip.open{background:var(--rose-soft);border-color:transparent;color:var(--rose)}
+.ledger{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border-radius:6px;overflow:hidden}
+.ledger div{background:var(--panel);padding:5px 4px;text-align:center;font-size:11px;color:var(--quiet)}
+.ledger b{display:block;font-family:var(--mono);font-size:16px;font-weight:500;color:var(--ink);font-variant-numeric:tabular-nums}
+pre{font-family:var(--mono);font-size:11.5px;white-space:pre-wrap;overflow-wrap:anywhere;margin:0;background:var(--bg);border-radius:6px;padding:9px}
+.block{display:grid;gap:5px}
+.lk{display:grid;gap:1px;font-size:12.5px}
+.lk small{color:var(--quiet)}
+ul{list-style:none;margin:0;padding:0;display:grid;gap:4px;font-size:12.5px}
+/* 아래 */
+details{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px 14px}
+details summary{cursor:pointer;font-weight:500}
+details>div{margin-top:10px;display:grid;gap:8px}
+table{border-collapse:collapse;width:100%;font-size:12.5px}
+th,td{text-align:left;padding:4px 10px 4px 0;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-weight:500;color:var(--quiet)}
+.scroll{overflow-x:auto}
+.mono{font-family:var(--mono);white-space:nowrap}
+</style>
+<div class="wrap">
+  <header style="display:grid;gap:4px">
+    <h1>놀이동산 데이트 로그</h1>
+    <p class="sum">대본 없는 실행의 실제 대화입니다. 유저는 Sonnet 서브 에이전트, 캐릭터와 드라마 매니저는 Haiku 5.5입니다. 턴을 누르거나 스크롤하면 오른쪽 월드 모델이 그 턴이 끝난 뒤의 상태로 바뀝니다.</p>
+  </header>
+  <nav class="tabs" id="tabs" aria-label="실행 선택"></nav>
+  <p class="sum" id="sum"></p>
+  <section style="display:grid;gap:6px" aria-label="하루 전체">
+    <div class="strip"><div class="day" id="day"></div></div>
+    <div class="legend"><span>막대: 그 턴에 흐른 시간</span><span><i style="background:var(--rose)"></i>긴장</span><span><i style="background:var(--amber)"></i>분기</span><span><b>●</b> 세계 사건</span><span><b>◆</b> 히든 열림</span><span><b>◎</b> 떡밥 회수</span><span><b>▲</b> 프레임 변경</span></div>
+  </section>
+  <div class="main">
+    <section class="chat" id="chat" aria-label="대화"></section>
+    <aside class="world" id="world" aria-label="월드 모델"></aside>
+  </div>
+  <details id="judgeBox"><summary>Judge 평가</summary><div id="judge"></div></details>
+  <details><summary>떡밥 원장</summary><div class="scroll" id="ledger"></div></details>
+</div>
+<script>
+const DATA=/*__DATA__*/null;
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+let run=DATA.runs[0],cur=1,placeColor={};
+const CP={hunger:"배고픔",evening_cold:"저녁 추위",fireworks:"불꽃놀이"};
+const AX={place:"장소",relationship:"관계"};
+const ACT={short_talk:"대화",activity:"활동",move:"이동",meal:"식사"};
+const SKY=[[1050,[176,88,52]],[1140,[104,62,110]],[1230,[31,42,82]],[1380,[13,18,38]]];
+function sky(text){
+ const [h,m]=text.split(":").map(Number),v=h*60+m;
+ let a=SKY[0],b=SKY[SKY.length-1];
+ for(let i=0;i<SKY.length-1;i++)if(v>=SKY[i][0]&&v<=SKY[i+1][0]){a=SKY[i];b=SKY[i+1];break}
+ const r=a===b?0:Math.min(1,Math.max(0,(v-a[0])/(b[0]-a[0])));
+ return `rgb(${a[1].map((x,i)=>Math.round(x+(b[1][i]-x)*r)).join(",")})`;
+}
+const INLINE={
+ checkpoint_fired:e=>["세계 사건",e.inject,"spark"],
+ checkpoint_deferred:e=>["사건 지연",`${CP[e.id]||e.id}: 긴장 중이라 미룸`,""],
+ hidden_revealed:e=>["히든 열림",e.id,"rose"],
+ memory_recalled:e=>e.smalls.length?["기억 검색",`${e.big} → ${e.smalls.join(", ")}`,""]:null,
+ detail_planted:e=>["떡밥 살포",`“${e.quote}”`,"mint"],
+ detail_added:e=>["디테일 추가",e.text,""],
+ payoff_injected:e=>["떡밥 주입",e.fact,"mint"],
+ payoff_unused:e=>["떡밥 미사용",e.id,""],
+ detail_paid:e=>["떡밥 회수",`“${e.quote}”`,"mint"],
+ frame_changed:e=>["프레임",`${AX[e.axis]||e.axis}: ${e.old} → ${e.new}`,"spark"],
+ episode_compressed:e=>["압축",`T${e.start}~T${e.end} ${e.title}${e.forced?" (강제)":""}`,""],
+ relationship_updated:e=>["관계 기억",e.state,""],
+ plan_generated:e=>["새 플랜",`${e.plan}: 디테일 ${e.details}개, 사건 ${e.checkpoints.length}개`,""],
+ refused:e=>["모델 거절",e.label,"rose"],
+};
+function evHtml(e){const f=INLINE[e.kind];const r=f&&f(e);return r?`<div class="ev ${r[2]}"><em>${esc(r[0])}</em><span>${esc(r[1])}</span></div>`:""}
+function colors(){
+ placeColor={};let n=0;
+ for(const t of run.turns)if(!(t.place in placeColor))placeColor[t.place]=(n++%5)+1;
+}
+function renderTabs(){
+ $("tabs").innerHTML=DATA.runs.map(r=>`<button aria-pressed="${r===run}" data-k="${r.key}">${esc(r.label)}</button>`).join("");
+ for(const b of $("tabs").children)b.onclick=()=>{run=DATA.runs.find(r=>r.key===b.dataset.k);cur=run.turns[0]?.turn??1;render();window.scrollTo(0,0)};
+}
+function renderSum(){
+ const last=run.turns[run.turns.length-1]?.after;
+ const places=new Set(run.turns.map(t=>t.place)).size;
+ $("sum").textContent=`${run.turns.length}턴 · 마지막 ${last?.clock??"-"} · 장소 ${places}곳 · ${run.ended?"데이트 끝남":"상한 또는 유저 종료"} · 호출 ${run.calls}회, 약 $${run.cost.toFixed(3)}`+(run.closed?` · ${run.closed.oneline}`:"");
+}
+function renderDay(){
+ const max=Math.max(...run.turns.map(t=>t.minutes||5));
+ let html="",prev=null;
+ run.turns.forEach((t,i)=>{
+  const c=i+1,kinds=t.events.map(e=>e.kind);
+  const m=kinds.includes("hidden_revealed")?"◆":kinds.includes("detail_paid")?"◎":kinds.includes("checkpoint_fired")?"●":kinds.includes("frame_changed")?"▲":"";
+  const showName=t.place!==prev;prev=t.place;
+  html+=`<div class="bar" style="grid-column:${c};grid-row:1;height:${Math.max(6,(t.minutes||5)/max*40)}px" title="${esc(t.clock)} ${esc(ACT[t.action]||"")} ${t.minutes||0}분"></div>
+  <div class="pl" style="grid-column:${c};grid-row:2;background:var(--p${placeColor[t.place]});overflow:visible;position:relative;z-index:${showName?1:0}">${showName?esc(t.place):""}</div>
+  <div class="tn ${t.branch?"br":t.tension?"on":""}" style="grid-column:${c};grid-row:3"></div>
+  <div class="mk" style="grid-column:${c};grid-row:4">${m}</div>
+  <button class="no${t.turn===cur?" cur":""}" style="grid-column:${c};grid-row:5" data-t="${t.turn}" aria-label="${t.turn}턴으로">${t.turn}</button>`;
+ });
+ $("day").innerHTML=html;
+ for(const b of $("day").querySelectorAll("button"))b.onclick=()=>select(+b.dataset.t,true);
+}
+function renderChat(){
+ $("chat").innerHTML=run.turns.map(t=>`<article class="t${t.turn===cur?" on":""}" data-t="${t.turn}" id="t${t.turn}">
+  <small>T${t.turn} · ${esc(t.clock)} · ${esc(t.place)} · ${esc(ACT[t.action]||"")} ${t.minutes||0}분${t.branch?` · 분기: ${esc(t.branch)}`:t.tension?" · 긴장":""}</small>
+  ${t.user?`<div class="u">${esc(t.user)}</div>`:""}
+  ${t.events.filter(e=>["checkpoint_fired","hidden_revealed","payoff_injected"].includes(e.kind)).map(evHtml).join("")}
+  <div class="c"><b>${esc(run.name)}</b> ${esc(t.reply)}</div>
+  ${t.events.filter(e=>!["checkpoint_fired","hidden_revealed","payoff_injected"].includes(e.kind)).map(evHtml).join("")}
+ </article>`).join("");
+ for(const a of $("chat").children)a.onclick=()=>select(+a.dataset.t,false);
+}
+function renderWorld(){
+ const t=run.turns.find(x=>x.turn===cur)||run.turns[0];if(!t)return;
+ const a=t.after,d=a.details;
+ $("world").innerHTML=`<div class="sky" style="background:${sky(a.clock)}">
+   <div class="clock">${esc(a.clock)}</div><div class="place">${esc(a.place)}</div><div class="rel">${esc(a.relationship)} · T${t.turn} 종료 시점</div></div>
+  <div class="body">
+   <div class="block"><h2>상태</h2><div class="chips">
+     <span class="chip${a.hunger==="배고픔"?" on":""}">배고픔: ${esc(a.hunger)}</span>
+     <span class="chip${a.temperature==="쌀쌀함"?" on":""}">날씨: ${esc(a.temperature)}</span>
+     <span class="chip${t.tension?" open":""}">${t.tension?"긴장":"평온"}</span>
+     ${(t.topics||[]).map(x=>`<span class="chip">화제: ${esc(x)}</span>`).join("")}</div></div>
+   <div class="block"><h2>체크포인트</h2><div class="chips">
+     ${Object.entries(CP).map(([k,v])=>`<span class="chip${a.fired.includes(k)?" on":""}">${a.fired.includes(k)?"●":"○"} ${v}</span>`).join("")}
+     ${a.fired.filter(k=>!(k in CP)).map(k=>`<span class="chip on">● ${esc(k)}</span>`).join("")}</div></div>
+   <div class="block"><h2>히든</h2>${run.hidden.map(h=>{const open=a.revealed.includes(h.id);return `<div class="lk"><span><span class="chip${open?" open":""}">${open?"열림":"잠김"}</span> ${esc(h.id)}</span><small>${esc(open?h.fact:"평소: "+h.cover)}</small></div>`}).join("")}</div>
+   <div class="block"><h2>떡밥 원장</h2><div class="ledger"><div><b>${d.seed}</b>대기</div><div><b>${d.planted}</b>살포</div><div><b>${d.paid}</b>회수</div><div><b>${d.expired}</b>소멸</div></div></div>
+   <div class="block"><h2>관계 기억</h2><p style="font-size:12.5px">${esc(a.bond)}</p></div>
+   ${a.today.length?`<div class="block"><h2>오늘의 에피소드</h2><ul>${a.today.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div>`:""}
+   <div class="block"><h2>이 턴에 캐릭터가 받은 순간</h2><pre>${esc(t.moment)}</pre></div>
+  </div>`;
+}
+function renderLedger(){
+ const order={paid:0,planted:1,seed:2,expired:3},name={paid:"회수",planted:"살포",seed:"대기",expired:"소멸"};
+ const rows=[...run.ledger].sort((a,b)=>order[a.status]-order[b.status]);
+ $("ledger").innerHTML=`<table><thead><tr><th>상태</th><th>디테일</th><th>출처</th><th>살포</th><th>회수</th></tr></thead><tbody>${rows.map(d=>`<tr><td class="mono">${name[d.status]}</td><td>${esc(d.text)}</td><td class="mono">${esc(d.source)}</td><td class="mono">${d.planted?"T"+d.planted.turn:""}</td><td class="mono">${d.paid?"T"+d.paid.turn:""}</td></tr>`).join("")}</tbody></table>`;
+}
+function renderJudge(){
+ const j=run.judge;$("judgeBox").hidden=!j;if(!j)return;
+ const list=(rows,fn,none)=>rows.length?`<ul>${rows.map(fn).join("")}</ul>`:`<p class="sum">${none}</p>`;
+ $("judge").innerHTML=`<p>${esc(j.summary)}</p><p class="sum">${esc(DATA.judge_model)} 채점. a ${j.a_character}/5, b ${j.b_freshness}/5 (참고용), c 붕괴 ${j.c_breaks.length}건, d 회수 ${j.d_payoffs.length}건</p>
+  <h2>a. 캐릭터답게</h2><p>${esc(j.a_reason)}</p>
+  <h2>b. 신선한 순간</h2>${list(j.fresh_moments,m=>`<li>T${m.turn} “${esc(m.quote)}”<br><span class="sum">${esc(m.why)}</span></li>`,"없음")}
+  <h2>c. 붕괴</h2>${list(j.c_breaks,m=>`<li>T${m.turn} ${esc(m.type)} “${esc(m.quote)}”<br><span class="sum">${esc(m.why)}</span></li>`,"없음")}
+  <h2>d. 떡밥 회수</h2>${list(j.d_payoffs,m=>`<li>T${m.planted_turn}→T${m.paid_turn} 자연스러움 ${esc(m.natural)}/5${m.in_log?"":" (로그 밖)"}: ${esc(m.what)}</li>`,"없음")}`;
+}
+function select(t,scroll){
+ cur=t;
+ for(const b of $("day").querySelectorAll("button"))b.classList.toggle("cur",+b.dataset.t===t);
+ for(const a of $("chat").children)a.classList.toggle("on",+a.dataset.t===t);
+ renderWorld();
+ if(scroll)$("t"+t)?.scrollIntoView({block:"center"});
+}
+let observer;
+function watch(){
+ observer?.disconnect();
+ if(!("IntersectionObserver" in window))return;
+ observer=new IntersectionObserver(items=>{
+  const seen=items.filter(i=>i.isIntersecting);
+  if(seen.length){const n=+seen[0].target.dataset.t;if(n!==cur)select(n,false)}
+ },{rootMargin:"-45% 0px -50% 0px"});
+ for(const a of $("chat").children)observer.observe(a);
+}
+function render(){colors();renderTabs();renderSum();renderDay();renderChat();renderWorld();renderLedger();renderJudge();watch()}
+render();
+</script>
