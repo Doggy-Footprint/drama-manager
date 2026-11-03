@@ -8,3 +8,4 @@ __pycache__/
 *.state.pkl
 docs/interview-*.md
 uv.lock
+runs/park/baseline/sessions/
