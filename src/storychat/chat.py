@@ -68,6 +68,25 @@ def state_text(engine: Engine) -> str:
             f"  지난 사건: {', '.join(sorted(engine.fired)) or '없음'}\n  오늘 요약: {engine.episodes.today_summary or '(아직 없음)'}{RESET}")
 
 
+PROMPT = f"\n{BOLD}나:{RESET} "
+_session = None
+
+
+def read_line() -> str:
+    """터미널에서는 prompt_toolkit으로 받는다. 기본 input()은 macOS에서 한글을 지울 때 바이트 단위로 깨진다.
+    입력을 파이프로 넣을 때는 input()을 쓴다."""
+    global _session
+    if not sys.stdin.isatty():
+        return input(PROMPT)
+    if _session is None:
+        from prompt_toolkit import PromptSession
+
+        _session = PromptSession()
+    from prompt_toolkit.formatted_text import ANSI
+
+    return _session.prompt(ANSI(PROMPT))
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--mode", default="structured", choices=MODES)
@@ -100,7 +119,7 @@ def main() -> None:
             break
         while True:
             try:
-                said = input(f"\n{BOLD}나:{RESET} ").strip()
+                said = read_line().strip()
             except (EOFError, KeyboardInterrupt):
                 said = "/quit"
                 print()
