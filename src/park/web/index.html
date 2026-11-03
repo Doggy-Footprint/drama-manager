@@ -302,7 +302,13 @@ function renderLog() {
     return;
   }
   log.innerHTML = state.log.map(e => `<div class="turn ${e.n === selected ? "sel" : ""}" data-n="${e.n}">${turnHTML(e)}</div>`).join("");
-  log.querySelectorAll(".turn").forEach(el => el.onclick = async () => { selected = +el.dataset.n; if (!traces[selected] || traces[selected].live) await getTrace(selected); renderLog(); renderTrace(); });
+  // 턴을 고르면 표시만 옮긴다. 다시 그리면 스크롤이 맨 아래로 튄다
+  log.querySelectorAll(".turn").forEach(el => el.onclick = async () => {
+    selected = +el.dataset.n;
+    if (!traces[selected] || traces[selected].live) await getTrace(selected);
+    log.querySelectorAll(".turn").forEach(x => x.classList.toggle("sel", +x.dataset.n === selected));
+    renderTrace();
+  });
   log.scrollTop = log.scrollHeight;
 }
 function addPendingTurn(n, text, clock) {

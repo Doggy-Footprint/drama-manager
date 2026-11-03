@@ -80,6 +80,8 @@ def world_for_character(world: World, dm: dict, fired_now: list[dict], facts: li
     here = world.locations[world.char_loc]
     if world.together:
         user = "곁에 있다"
+    elif dm.get("channel") == "face":
+        user = f"방금 네 곁에서 이 말을 하고 {world.loc_name(world.user_loc)} 쪽으로 떠나는 중이다"
     else:
         user = f"곁에 없다. 유저는 {world.loc_name(world.user_loc)} 쪽에 있는 것으로 안다"
     phone = f"켜짐, 배터리 {world.battery:.0f}%" if world.phone_on else f"꺼짐({world.phone_off_at}에 배터리가 다 됐다)"
@@ -158,9 +160,15 @@ def world_candidates_xml(world: World, events: list[dict], facts: list[dict]) ->
     return tag("candidates", f"\n  {tag('events', ev + chr(10) + '  ')}\n  {tag('facts', fa + chr(10) + '  ')}\n")
 
 
-def details_candidates_xml(items: list[dict]) -> str:
+def last_use_attrs(details: Details, did: str) -> dict:
+    """마지막으로 실제 쓰인 턴·방식과 그때의 쓰임. 같은 쓰임을 되풀이하지 않게 보여 준다."""
+    u = details.last_realized(did)
+    return {"last_used": f"T{u['turn']} {u['mode']}", "last_how": u.get("how")} if u else {}
+
+
+def details_candidates_xml(details: Details, items: list[dict]) -> str:
     return tag("candidates", "".join(
-        f"\n  {tag('detail', t(d['seed']), id=d['id'], status=d['status'], affordances=','.join(d['affordances']))}"
+        f"\n  {tag('detail', t(d['seed']), id=d['id'], status=d['status'], affordances=','.join(d['affordances']), **last_use_attrs(details, d['id']))}"
         for d in items) + "\n")
 
 
@@ -206,19 +214,16 @@ def dm_doc(*, world: World, details: Details, character: Character, memory: Memo
         f"\n  {tag('turns', chr(10) + turns + chr(10))}",
         "\n"]))
     tension = tag("tension_log", t(" → ".join(f"T{x['n']} {x['beat']} {x['tension']}" for x in tension_log[-10:])))
-    def last(did):
-        u = details.last_realized(did)
-        return f"T{u['turn']} {u['mode']}" if u else None
-
     planted = [x for x in details.items if x["status"] == "planted"]
+    # 이미 나온 떡밥은 참고용이다. 고를 수 있는 것은 <candidates> 안의 것뿐이라 밖에 둔다
+    known = tag("planted_details", "".join(f"\n  {tag('detail', t(x['seed']), id=x['id'], **last_use_attrs(details, x['id']))}" for x in planted) + "\n")
     cand = [
-        tag("planted_details", "".join(f"\n    {tag('detail', t(x['seed']), id=x['id'], last_used=last(x['id']))}" for x in planted) + "\n  "),
         tag("events", "".join(
             f"\n    {tag('event', t(w.event(p['id'])['text']), id=p['id'], window='~'.join(w.event(p['id'])['window']), where=','.join(w.event(p['id'])['where']), why=p['why'])}"
             for p in ev_picks) + "\n  "),
         tag("facts", "".join(f"\n    {fact_xml(w, w.fact(p['id']), why=p['why'])}" for p in fact_picks) + "\n  "),
         tag("details", "".join(
-            f"\n    {tag('detail', t(details.get(p['id'])['seed']), id=p['id'], status=details.get(p['id'])['status'], last_used=last(p['id']), affordances=','.join(details.get(p['id'])['affordances']), use_as=p['use_as'])}"
+            f"\n    {tag('detail', t(details.get(p['id'])['seed']), id=p['id'], status=details.get(p['id'])['status'], affordances=','.join(details.get(p['id'])['affordances']), use_as=p['use_as'], **last_use_attrs(details, p['id']))}"
             for p in det_picks.get("picks", [])) + "\n  ", need=det_picks.get("need")),
     ]
     candidates = tag("candidates", "".join(f"\n  {c}" for c in cand) + "\n")
@@ -227,7 +232,7 @@ def dm_doc(*, world: World, details: Details, character: Character, memory: Memo
         + ("\n" if extracted else ""))
     prop = tag("proposal", t(f"수아가 {w.loc_name(proposal)}({proposal})로 같이 가자고 했다")) if proposal else ""
     # 잘 안 바뀌는 것(기억, 수아)을 앞에, 매 턴 바뀌는 것을 뒤에 둬서 앞부분이 캐시되게 한다
-    return "\n".join(x for x in [memory_xml, char_xml, timeline, world_xml, tension, candidates, proposed, prop,
+    return "\n".join(x for x in [memory_xml, char_xml, timeline, world_xml, tension, known, candidates, proposed, prop,
                                   tag("user_input", t(user_input), turn=n, clock=w.clock)] if x)
 
 

@@ -70,6 +70,10 @@ def test_realized_detail_cools_down():
     d.realize("hill_bench", 2, "수아")
     assert all("hill_bench" not in [x["id"] for x in d.candidates(t)] for t in (3, 4))
     assert "hill_bench" in [x["id"] for x in d.candidates(5)]
+    d.attempt("hill_bench", "mention", "", 5)
+    d.realize("hill_bench", 5, "수아")                          # 두 번째로 쓰이면 쿨다운이 6턴으로 늘어난다
+    assert all("hill_bench" not in [x["id"] for x in d.candidates(t)] for t in (8, 10))
+    assert "hill_bench" in [x["id"] for x in d.candidates(11)]
 
 
 def test_facts_can_be_retired():

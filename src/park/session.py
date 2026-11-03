@@ -231,7 +231,7 @@ class Session:
         cands = self.details.candidates(n)
         if not cands:
             return {"need": "", "picks": []}
-        doc = render.situation_xml(self.world, self.memory, user_input, n) + "\n" + render.details_candidates_xml(cands)
+        doc = render.situation_xml(self.world, self.memory, user_input, n) + "\n" + render.details_candidates_xml(self.details, cands)
         out = self.llm.json(prompt("retrieve_details"), doc, detail_pick_schema(self._all_detail_ids()), label="retrieve-details")
         ids = {d["id"] for d in cands}
         out["picks"] = [p for p in out["picks"] if p["id"] in ids][:4]
@@ -301,10 +301,13 @@ class Session:
         if w.char_loc != w.user_loc and w.together:
             notes.append({"ok": False, "text": "함께 있다고 했지만 위치가 달라 떨어져 있는 것으로 고쳤다"})
             w.together = False
+        if was_together and not w.together and w.char_loc == w.user_loc:
+            notes.append({"ok": False, "text": f"떨어졌다고 했지만 둘 다 {w.loc_name(w.user_loc)}에 그대로다(같은 장소 안에서 떨어진 것이 아니라면 이동이 빠졌다)"})
         if dm["channel"] == "phone" and not w.phone_on:
             notes.append({"ok": False, "text": "수아 휴대폰이 꺼져 있어 전화/메시지가 닿지 않는다(channel phone → none)"})
             dm["channel"] = "none"
-        if dm["channel"] == "face" and not w.together:
+        # 곁에서 말하고 떠나는 중이면 수아는 들었다. 처음부터 떨어져 있었을 때만 마주 들을 수 없다
+        if dm["channel"] == "face" and not w.together and not was_together:
             dm["channel"] = "phone" if w.phone_on else "none"
             notes.append({"ok": False, "text": f"떨어져 있어 channel face → {dm['channel']}"})
         # 이벤트

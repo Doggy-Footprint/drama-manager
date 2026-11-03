@@ -17,7 +17,7 @@ DATA = Path(__file__).resolve().parent / "data"
 PHONE_USES = ["idle", "photos", "searching", "calling"]
 BEATS = ["setup", "complication", "payoff", "breather", "climax", "resolution"]
 EXPANSION_EVENT_CHANCE = 0.2
-DETAIL_COOLDOWN = 3   # 실제로 쓰인 떡밥은 이 턴 수 동안 검색 후보에서 빠진다
+DETAIL_COOLDOWN = 3   # 실제로 쓰인 떡밥은 검색 후보에서 빠진다. 처음 3턴, 쓰일 때마다 두 배(3, 6, 12…)
 
 
 def to_min(hhmm: str) -> int:
@@ -246,12 +246,18 @@ class Details:
         d = self.get(did)
         return next((u for u in reversed(d["uses"]) if u.get("realized")), None) if d else None
 
-    def candidates(self, turn: int, cooldown: int = DETAIL_COOLDOWN) -> list[dict]:
-        """아직 거두지 않았고, 최근 cooldown 턴 안에 실제로 쓰이지 않은 떡밥."""
+    def cooldown(self, did: str, base: int = DETAIL_COOLDOWN) -> int:
+        """실제로 쓰인 횟수가 늘수록 길어진다. 같은 떡밥이 몇 턴마다 되풀이되지 않게 한다."""
+        d = self.get(did)
+        k = sum(1 for u in d["uses"] if u.get("realized")) if d else 0
+        return base * 2 ** (k - 1) if k else 0
+
+    def candidates(self, turn: int, base: int = DETAIL_COOLDOWN) -> list[dict]:
+        """아직 거두지 않았고, 쿨다운이 지난 떡밥."""
         out = []
         for d in self.items:
             last = self.last_realized(d["id"])
-            if d["status"] != "paid_off" and not (last and turn - last["turn"] < cooldown):
+            if d["status"] != "paid_off" and not (last and turn - last["turn"] < self.cooldown(d["id"], base)):
                 out.append(d)
         return out
 
