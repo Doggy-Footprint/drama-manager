@@ -8,16 +8,13 @@ from dataclasses import asdict, dataclass, field
 
 @dataclass(frozen=True)
 class Axis:
-    """프레임 축 하나. 축을 더해도 엔진은 고치지 않는다. 값이 바뀌면 프레임 플랜을 새로 만든다."""
+    """프레임 축 하나. 축을 더해도 엔진은 고치지 않는다."""
     name: str               # 월드 상태의 키
     label: str
-    proposal: str           # 턴 분석에서 새 값을 제안하는 필드
-    needs_branch: bool      # 분기 신호가 켜진 턴에만 바뀌는가
-    resets_plan: bool       # 바뀌면 이전 플랜과 뿌리지 못한 디테일을 버리는가
+    proposal: str           # 턴 판단에서 새 값을 제안하는 필드
 
 
-FRAME_AXES = (Axis("place", "장소", "move_to", False, True),
-              Axis("relationship", "관계", "relationship_shift", True, False))
+FRAME_AXES = (Axis("place", "장소", "move_to"), Axis("relationship", "관계", "relationship_shift"))
 STATE_KEYS = ("place", "relationship", "hunger", "temperature")
 BASE_SIGNALS = ("tension", "branch")
 _HHMM = re.compile(r"^([01]\d|2[0-3]):[0-5]\d$")
@@ -109,8 +106,6 @@ class Checkpoint:
     id: str
     trigger: dict
     inject: str
-    source: str = "plan"  # world | plan
-    bound_to: str = "place"
     deferrable: bool = False
     deadline: str | None = None
 

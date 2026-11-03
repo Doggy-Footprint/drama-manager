@@ -1,10 +1,10 @@
-"""기억: 계층 에피소드, 관계 기억, 떡밥 원장. 캐릭터는 이것을 직접 들고 있지 않는다."""
+"""기억: 계층 에피소드, 오늘 요약, 관계 기억, 준비된 디테일의 원장. 캐릭터는 이것을 직접 들고 있지 않는다."""
 from __future__ import annotations
 
 import re
 from dataclasses import asdict, dataclass, field
 
-KEEP_RAW_TURNS = 10      # 이만큼 지나야 '지나간 이야기' 후보가 된다
+KEEP_RAW_TURNS = 6       # 이만큼 지나야 '지나간 이야기' 후보가 된다
 MIN_SEGMENT_TURNS = 3     # 작은 사건마다 조각나지 않도록 에피소드의 최소 길이
 RAW_BUDGET_TURNS = 24    # 이보다 원문이 길면 살아 있어도 가장 오래된 구간을 압축한다
 ALIVE_RECHECK_TURNS = 5
@@ -45,15 +45,13 @@ class EpisodeStore:
         for big in seed:
             smalls = [SmallEpisode(**s) for s in big.get("smalls", [])]
             self.bigs[big["id"]] = BigEpisode(big["id"], big["title"], big["oneline"], smalls)
-        self.today = BigEpisode("today", "오늘 놀이동산 데이트", "지금 이어지고 있는 오늘의 데이트")
+        self.today = BigEpisode("today", "오늘 놀이동산", "지금 이어지고 있는 오늘")
         self.bigs["today"] = self.today
+        self.today_summary = ""
+        self.revisions: list[dict] = []  # 오늘 요약이 어떻게 고쳐졌는지. 지나간 작은 에피소드는 고치지 않는다
 
-    def index_text(self) -> str:
-        return "\n".join(f"- {b.id}: {b.title}. {b.oneline}" for b in self.bigs.values()
-                         if b.id != "today" or b.smalls)
-
-    def smalls_text(self, big_id: str) -> str:
-        return "\n".join(f"- {s.id}: {s.title}" for s in self.bigs[big_id].smalls)
+    def small_index(self) -> str:
+        return "\n".join(f"- {s.id}: {b.title} / {s.title}" for b in self.bigs.values() for s in b.smalls)
 
     def small(self, small_id: str) -> SmallEpisode | None:
         return next((s for b in self.bigs.values() for s in b.smalls if s.id == small_id), None)
@@ -66,80 +64,80 @@ class EpisodeStore:
     def today_titles(self) -> list[str]:
         return [s.title for s in self.today.smalls]
 
+    def revise_today(self, text: str, turn: int) -> dict:
+        revision = {"turn": turn, "before": self.today_summary, "after": text}
+        self.today_summary = text
+        self.revisions.append(revision)
+        return revision
+
 
 class RelationshipMemory:
-    """에피소드가 '무슨 일'이라면 이것은 '그래서 우리 사이가 어떤가'다. 압축할 때 사후 갱신한다."""
+    """에피소드가 '무슨 일'이라면 이것은 '그래서 우리 사이가 어떤가'다. 사이가 바뀐 턴과 압축할 때 갱신한다."""
 
     def __init__(self, state: str) -> None:
         self.state = state
         self.history: list[dict] = []
 
-    def update(self, note: str, episode_id: str, turn: int) -> None:
+    def update(self, note: str, source: str, turn: int) -> dict:
+        change = {"turn": turn, "source": source, "before": self.state, "state": note}
         self.state = note
-        self.history.append({"turn": turn, "episode": episode_id, "state": note})
+        self.history.append(change)
+        return change
+
+    def changed_since(self, turn: int) -> bool:
+        """그 턴 이후 대화 중에 사이가 바뀌었는가. 압축이 쓴 갱신은 세지 않는다."""
+        return any(h["turn"] >= turn and h["source"] == "turn" for h in self.history)
 
 
 @dataclass
 class Detail:
     id: str
     text: str
-    source: str = "plan"  # plan | user | character
-    status: str = "seed"  # seed → planted → paid | expired
-    affordances: list[str] = field(default_factory=list)
-    plan_id: str | None = None
+    kind: str = "detail"  # detail | foreshadow
+    source: str = "scene"
+    status: str = "seed"  # seed → planted → paid. 살포 전에 결과 조건이 맞으면 dropped
+    shown_when: dict | None = None
+    trigger: dict | None = None
+    consequence: str | None = None
     shown: int = 0
     planted: dict | None = None
     paid: dict | None = None
+    dropped: dict | None = None
 
 
 class DetailLedger:
+    """장면에 준비된 것만 추적한다. 대화에서 새 디테일을 추가하는 길은 없다(지어낸 과거가 저장되는 경로)."""
     MAX_SHOWN = 2  # 두 번 보여 줘도 말하지 않으면 다음 디테일로 넘어간다
 
-    def __init__(self) -> None:
+    def __init__(self, scene: dict) -> None:
         self.items: dict[str, Detail] = {}
-        self._next = 1
+        for item in scene.get("foreshadows", []):
+            self.items[item["id"]] = Detail(item["id"], item["detail"], "foreshadow", shown_when=item.get("shown_when"),
+                                            trigger=item["trigger"], consequence=item["consequence"])
+        for i, item in enumerate(scene.get("details", []), 1):
+            detail_id = item.get("id", f"detail_{i}")
+            self.items[detail_id] = Detail(detail_id, item["text"], shown_when=item.get("shown_when"))
 
-    def _new_id(self) -> str:
-        detail_id = f"d{self._next}"
-        self._next += 1
-        return detail_id
+    def showable(self) -> list[Detail]:
+        return [d for d in self.items.values() if d.status == "seed" and d.shown < self.MAX_SHOWN]
 
-    def add_seeds(self, seeds: list[dict], plan_id: str) -> list[Detail]:
-        added = []
-        for seed in seeds:
-            detail = Detail(self._new_id(), seed["text"], affordances=list(seed.get("affordances", [])), plan_id=plan_id)
-            self.items[detail.id] = detail
-            added.append(detail)
-        return added
-
-    def add_spoken(self, text: str, source: str, affordances: list[str], quote: str, turn: int) -> Detail:
-        detail = Detail(self._new_id(), text, source=source, status="planted", affordances=affordances,
-                        planted={"turn": turn, "quote": quote})
-        self.items[detail.id] = detail
-        return detail
-
-    def next_seed(self) -> Detail | None:
-        return next((d for d in self.items.values() if d.status == "seed" and d.shown < self.MAX_SHOWN), None)
+    def foreshadows(self) -> list[Detail]:
+        return [d for d in self.items.values() if d.kind == "foreshadow"]
 
     def plant(self, detail_id: str, quote: str, turn: int) -> None:
         detail = self.items[detail_id]
         detail.status, detail.planted = "planted", {"turn": turn, "quote": quote}
 
-    def pay(self, detail_id: str, how: str, turn: int) -> None:
+    def pay(self, detail_id: str, turn: int) -> None:
         detail = self.items[detail_id]
-        detail.status, detail.paid = "paid", {"turn": turn, "how": how}
+        detail.status, detail.paid = "paid", {"turn": turn, "how": "world"}
+
+    def drop(self, detail_id: str, turn: int) -> None:
+        detail = self.items[detail_id]
+        detail.status, detail.dropped = "dropped", {"turn": turn}
 
     def planted(self) -> list[Detail]:
         return [d for d in self.items.values() if d.status == "planted"]
-
-    def expire_seeds(self) -> list[str]:
-        """프레임 플랜이 닫히면 뿌리지 못한 씨앗은 그냥 사라진다. 살포된 것은 남긴다."""
-        gone = []
-        for detail in self.items.values():
-            if detail.status == "seed":
-                detail.status = "expired"
-                gone.append(detail.id)
-        return gone
 
     def snapshot(self) -> list[dict]:
         return [asdict(d) for d in self.items.values()]

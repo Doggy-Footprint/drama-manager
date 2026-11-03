@@ -106,6 +106,7 @@ th{font-weight:500;color:var(--quiet)}
     <aside class="world" id="world" aria-label="월드 모델"></aside>
   </div>
   <details id="judgeBox"><summary>Judge 평가</summary><div id="judge"></div></details>
+  <details id="memoryBox"><summary>기억 변화: 관계와 오늘 요약의 변경 전후</summary><div id="memory"></div></details>
   <details><summary>떡밥 원장</summary><div class="scroll" id="ledger"></div></details>
 </div>
 <script>
@@ -130,7 +131,11 @@ const INLINE={
  checkpoint_deferred:e=>["사건 지연",`${CP[e.id]||e.id}: 긴장 중이라 미룸`,""],
  hidden_revealed:e=>["히든 열림",e.id,"rose"],
  hidden_spoken:e=>["히든 말함",`${e.id}: “${e.quote}”`,"rose"],
- memory_recalled:e=>e.smalls.length?["기억 검색",`${e.big} → ${e.smalls.join(", ")}`,""]:null,
+ memory_recalled:e=>e.smalls.length?["기억 검색",`${e.big?e.big+" → ":""}${e.smalls.join(", ")}`,""]:null,
+ today_summary_updated:e=>["오늘 요약 갱신",e.after,"mint"],
+ detail_dropped:e=>["떡밥 폐기",e.text,""],
+ move_rejected:e=>["이동 거부",e.proposed,""],
+ relationship_kept:e=>["관계 유지","더 새로운 변화가 있어 옛 구간의 갱신을 쓰지 않음",""],
  detail_planted:e=>["떡밥 살포",`“${e.quote}”`,"mint"],
  detail_added:e=>["디테일 추가",e.text,""],
  payoff_injected:e=>["떡밥 주입",e.fact,"mint"],
@@ -138,7 +143,7 @@ const INLINE={
  detail_paid:e=>["떡밥 회수",`“${e.quote}”`,"mint"],
  frame_changed:e=>["프레임",`${AX[e.axis]||e.axis}: ${e.old} → ${e.new}`,"spark"],
  episode_compressed:e=>["압축",`T${e.start}~T${e.end} ${e.title}${e.forced?" (강제)":""}`,""],
- relationship_updated:e=>["관계 기억",e.state,""],
+ relationship_updated:e=>["관계 기억",e.state,"rose"],
  plan_generated:e=>["새 플랜",`${e.plan}: 디테일 ${e.details}개, 사건 ${e.checkpoints.length}개`,""],
  refused:e=>["모델 거절",e.label,"rose"],
 };
@@ -203,14 +208,21 @@ function renderWorld(){
    <div class="block"><h2>히든</h2>${run.hidden.map(h=>{const open=a.revealed.includes(h.id),told=a.spoken.includes(h.id);return `<div class="lk"><span><span class="chip${open?" open":""}">${told?"말함":open?"열림":"잠김"}</span> ${esc(h.id)}</span><small>${esc(open?h.fact:"평소: "+h.cover)}</small></div>`}).join("")}</div>
    <div class="block"><h2>떡밥 원장</h2><div class="ledger"><div><b>${d.seed}</b>대기</div><div><b>${d.planted}</b>살포</div><div><b>${d.paid}</b>회수</div><div><b>${d.expired}</b>소멸</div></div></div>
    <div class="block"><h2>관계 기억</h2><p style="font-size:12.5px">${esc(a.bond)}</p></div>
+   ${a.todaySummary?`<div class="block"><h2>오늘 요약</h2><p style="font-size:12.5px">${esc(a.todaySummary)}</p></div>`:""}
    ${a.today.length?`<div class="block"><h2>오늘의 에피소드</h2><ul>${a.today.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div>`:""}
    <div class="block"><h2>이 턴에 캐릭터가 받은 순간</h2><pre>${esc(t.moment)}</pre></div>
   </div>`;
 }
 function renderLedger(){
- const order={paid:0,planted:1,seed:2,expired:3},name={paid:"회수",planted:"살포",seed:"대기",expired:"소멸"};
+ const order={paid:0,planted:1,seed:2,dropped:3,expired:4},name={paid:"회수",planted:"살포",seed:"대기",dropped:"폐기",expired:"소멸"};
  const rows=[...run.ledger].sort((a,b)=>order[a.status]-order[b.status]);
- $("ledger").innerHTML=`<table><thead><tr><th>상태</th><th>디테일</th><th>출처</th><th>살포</th><th>회수</th></tr></thead><tbody>${rows.map(d=>`<tr><td class="mono">${name[d.status]}</td><td>${esc(d.text)}</td><td class="mono">${esc(d.source)}</td><td class="mono">${d.planted?"T"+d.planted.turn:""}</td><td class="mono">${d.paid?"T"+d.paid.turn:""}</td></tr>`).join("")}</tbody></table>`;
+ $("ledger").innerHTML=`<table><thead><tr><th>상태</th><th>디테일</th><th>결과</th><th>출처</th><th>살포</th><th>회수</th></tr></thead><tbody>${rows.map(d=>`<tr><td class="mono">${name[d.status]}</td><td>${esc(d.text)}</td><td>${esc(d.consequence||"")}</td><td class="mono">${esc(d.source)}</td><td class="mono">${d.planted?"T"+d.planted.turn:""}</td><td class="mono">${d.paid?"T"+d.paid.turn:""}</td></tr>`).join("")}</tbody></table>`;
+}
+function renderMemory(){
+ const bonds=run.bonds||[],revs=run.revisions||[];
+ $("memoryBox").hidden=!bonds.length&&!revs.length;
+ const rows=(items,head)=>items.length?`<h2>${head}</h2><div class="scroll"><table><thead><tr><th>턴</th><th>전</th><th>후</th></tr></thead><tbody>${items.map(x=>`<tr><td class="mono">T${x.turn}</td><td>${esc(x.before||"(없음)")}</td><td>${esc(x.after)}</td></tr>`).join("")}</tbody></table></div>`:"";
+ $("memory").innerHTML=rows(bonds,"관계 기억")+rows(revs,"오늘 요약");
 }
 function renderJudge(){
  const j=run.judge;$("judgeBox").hidden=!j;if(!j)return;
@@ -238,6 +250,6 @@ function watch(){
  },{rootMargin:"-45% 0px -50% 0px"});
  for(const a of $("chat").children)observer.observe(a);
 }
-function render(){colors();renderTabs();renderSum();renderDay();renderChat();renderWorld();renderLedger();renderJudge();watch()}
+function render(){colors();renderTabs();renderSum();renderDay();renderChat();renderWorld();renderLedger();renderMemory();renderJudge();watch()}
 render();
 </script>

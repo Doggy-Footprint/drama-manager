@@ -1,16 +1,31 @@
 """LLM 없는 판정 테스트. 캐릭터의 행동이 아니라 코드가 정하는 것만 검사한다."""
+import pickle
+
 import pytest
 
+from storychat import play
+from storychat.director import Director, _parse_scene, review_schema, scene_problems
 from storychat.engine import Engine
 from storychat.llm import RefusalError, ScriptedLLM
 from storychat.memory import KEEP_RAW_TURNS, DetailLedger, quoted
 from storychat.schema import TriggerContext, evaluate, parse_hhmm, topics_in, validate_trigger
 
-JUDGE = {"tension": False, "branch": None, "topics": [], "recall_big": []}
-TENSE = {**JUDGE, "tension": True}
-ANALYSIS = {"action_type": "short_talk", "move_to": None, "relationship_shift": None, "parted": False,
-            "shown_said_quote": None, "payoff_used_quote": None, "new_details": []}
-PLAN = {"checkpoints": [], "details": [{"text": "옆 공연장에 사람이 많다", "affordances": ["인파로 헤어짐"]}]}
+REVIEW = {"tension": False, "branch": None, "topics": [], "recall_small": [], "action_type": "short_talk", "move_to": None,
+          "relationship_shift": None, "relationship_note": None, "parted": False, "shown_said_quote": None, "hidden_spoken": []}
+TENSE = {**REVIEW, "tension": True}
+SCENE = {
+    "intro": "저녁 놀이동산이다. 정문, 매점, 대관람차가 있다.",
+    "places": ["정문", "매점", "대관람차"],
+    "checkpoints": [
+        {"id": "evening_cold", "trigger": {"clock_gte": "19:00"}, "inject": "해가 지면서 바람이 차가워졌다."},
+        {"id": "fireworks", "trigger": {"clock_gte": "20:00"}, "inject": "하늘에 불꽃이 터지기 시작했다.", "deferrable": True, "deadline": "20:30"},
+    ],
+    "foreshadows": [{"id": "umbrella", "detail": "안내소 앞에 주인 없는 빨간 우산이 있다.", "shown_when": {"state_eq": {"place": "정문"}},
+                     "trigger": {"signal": "topic:음식"}, "consequence": "안내소 직원이 빨간 우산을 들고 주인을 찾는다."}],
+    "details": [{"text": "풍선 파는 사람이 하품을 한다.", "shown_when": {"state_eq": {"place": "매점"}}}],
+}
+TRANSFER = "부산 지사로 옮기는 제안"
+FEELINGS = "상대를 좋아한다"
 
 
 def ctx(**kw):
@@ -44,164 +59,272 @@ def test_evaluate():
     assert topics_in({"any": [{"signal": "topic:x"}, {"all": [{"signal": "tension"}, {"signal": "topic:y"}]}]}) == {"x", "y"}
 
 
-def test_quote_ignores_spacing_only():
+def test_quote_ignores_spacing_and_gesture():
     assert quoted("사람들 많다", "공연하나봐. 사람들  많다!")
     assert not quoted("사람 없다", "사람들 많다")
     assert not quoted("", "무엇이든")
+    reply = "...부산 지사. 이번 달 안에 답해야 된대. (숨을 내쉰다) 나 아직 말 안 했어."
+    assert quoted("이번 달 안에 답해야 된대. 나 아직 말 안 했어.", reply)
+    assert quoted("(숨을 내쉰다) 나 아직", reply)
+    assert not quoted("나 이미 말했어", reply)
 
 
-def make(responses=None, card="warm"):
-    llm = ScriptedLLM({"plan": [PLAN], **(responses or {})})
-    llm.responses.setdefault("analysis", [])
-    return Engine(llm, card), llm
+def make(responses=None, mode="structured", scene=None):
+    llm = ScriptedLLM(responses)
+    return Engine(llm, "tsundere_some", scene=scene or SCENE, mode=mode), llm
 
 
 def prompts(llm, label="character"):
     return [c["system"] + c["prompt"] for c in llm.calls if c["label"] == label]
 
 
-def scripted(n, **extra):
-    return {"judge": [JUDGE] * n, "analysis": [ANALYSIS] * n, **extra}
+def last_moment(llm):
+    return [c for c in llm.calls if c["label"] == "character"][-1]["messages"][-1]["content"]
 
 
-def test_hidden_not_in_prompt_until_reveal_conditions():
-    engine, llm = make({"judge": [{**JUDGE, "tension": True}, {**JUDGE, "topics": ["영화"]},
-                                  {**JUDGE, "tension": True, "topics": ["영화"]}, JUDGE],
-                        "analysis": [ANALYSIS] * 5})
-    fact = "후기를 미리 찾아 읽어"
+def seen_next_turn(engine, *texts):
+    for text in texts:
+        engine.step(text)
+
+
+def test_signal_applies_next_turn_not_same_turn():
+    engine, llm = make({"review": [{**REVIEW, "topics": ["둘의 장래"]}, REVIEW]})
+    engine.step("우리 앞으로 어떻게 될까")
+    assert all(TRANSFER not in p for p in prompts(llm))  # 판단은 응답 뒤라 이번 턴에는 아직 모른다
+    assert engine.revealed == []
+    engine.step("대답해 봐")
+    assert TRANSFER in last_moment(llm) and "지금까지 숨긴 이유" in last_moment(llm)
+    assert TRANSFER not in llm.calls[0]["system"] + llm.calls[0]["prompt"]
+
+
+def test_signal_does_not_last_beyond_next_turn():
+    engine, llm = make({"review": [{**REVIEW, "topics": ["회사 일"]}, TENSE, REVIEW]})
+    engine.step("회사 어때")
+    engine.step("왜 그래")
+    engine.step("아까부터")   # 화제와 긴장이 서로 다른 턴이면 열리지 않는다
+    assert engine.revealed == []
+
+
+def test_hidden_needs_conditions_and_review_cannot_see_it_early():
+    engine, llm = make({"review": [{**TENSE, "topics": ["회사 일"]}]})
+    engine.step("요즘 왜 이렇게 답이 늦어")
+    assert all(TRANSFER not in c["prompt"] + c["system"] for c in llm.calls)
+    engine.step("말해 봐")
+    assert TRANSFER in last_moment(llm)
+    assert TRANSFER in [c for c in llm.calls if c["label"] == "review"][-1]["prompt"]  # 열린 뒤에는 말했는지 확인해야 한다
+
+
+def test_spoken_hidden_stops_rising_but_stays_known():
+    tense_work = {**TENSE, "topics": ["회사 일"]}
+    fake = {**REVIEW, "hidden_spoken": [{"id": "transfer", "quote": "지어낸 인용"}]}
+    real = {**REVIEW, "hidden_spoken": [{"id": "transfer", "quote": "나 부산 가게 될지도"}]}
+    engine, llm = make({"review": [tense_work, fake, real], "character": ["안녕", "음.", "사실 나 부산 가게 될지도.", "응."]})
     engine.step(None)
-    engine.step("왜 그래")          # 긴장만
-    engine.step("영화 볼까")        # 화제만
-    before = prompts(llm)
-    assert all(fact not in p for p in before)
-    assert all(fact not in c["system"] + c["prompt"] for c in llm.calls)  # 드라마 매니저도 내용을 보지 않는다
-    engine.step("영화 얘기만 하면 왜 그래")  # 둘 다
-    after = prompts(llm)[-1]
-    assert fact in after and "지금까지 숨긴 이유" in after
-    engine.step("다음")
-    assert fact in prompts(llm)[-1]
-    assert "주말 데이트는 거의 항상 영화" in engine.system  # cover와 공개 히스토리는 처음부터 있다
+    engine.step("말해 봐")
+    assert engine.spoken == set()  # 대사에 없는 인용은 인정하지 않는다
+    engine.step("진짜?")
+    assert engine.spoken == {"transfer"}
+    engine.step("그랬구나")
+    call = [c for c in llm.calls if c["label"] == "character"][-1]
+    assert "올라오는 것" not in call["messages"][-1]["content"]
+    assert TRANSFER in call["system"] and "이미 상대에게 털어놓은 것" in call["system"]
 
 
-def test_checkpoint_defer_then_deadline():
-    engine, _ = make(scripted(3))
+def test_checkpoint_fires_once_and_defers_on_tension():
+    engine, _ = make({"review": [REVIEW] * 3})
     engine.state.clock = parse_hhmm("20:00")
     engine.step(None)
-    assert "fireworks" in engine.fired  # 평온하면 제시간
+    engine.step("와")
+    engine.step("예쁘다")
+    fired = [e["id"] for e in engine.log.events if e["kind"] == "checkpoint_fired"]
+    assert fired.count("fireworks") == 1 and fired.count("evening_cold") == 1
+    assert engine.new_facts == []
 
-    engine, _ = make({"judge": [TENSE, TENSE, {**TENSE, "branch": "고백"}], "analysis": [ANALYSIS] * 4})
-    engine.state.turn = 1
+    engine, _ = make({"review": [TENSE, TENSE]})
+    engine.state.clock = parse_hhmm("19:55")
+    engine.step("할 말 있어")     # 직전 긴장이 이번 턴에 없다. 아직 20시 전
     engine.state.clock = parse_hhmm("20:05")
-    engine.step("할 말 있어")
+    engine.step("저기")
     assert "fireworks" not in engine.fired  # 긴장 중이면 미룬다
     engine.state.clock = parse_hhmm("20:30")
     engine.step("저기")
     assert "fireworks" in engine.fired  # 한도에 닿으면 터진다
 
-    engine, _ = make({"judge": [{**TENSE, "branch": "고백"}], "analysis": [ANALYSIS]})
-    engine.state.turn = 1
-    engine.state.clock = parse_hhmm("20:05")
-    engine.step("좋아해")
-    assert "fireworks" in engine.fired  # 분기 순간에는 미루지 않는다
+
+def test_world_event_seen_once_by_user_and_twice_by_character():
+    engine, llm = make({"review": [REVIEW] * 4})
+    engine.state.clock = parse_hhmm("19:00")
+    engine.step(None)
+    assert engine.new_facts == ["해가 지면서 바람이 차가워졌다."]
+    assert "방금 세계에 일어난 일" in last_moment(llm)
+    engine.step("춥다")
+    assert engine.new_facts == [] and "조금 전 세계에 일어난 일" in last_moment(llm)
+    engine.step("응")
+    assert "해가 지면서" not in last_moment(llm)
+    assert "해가 지면서" in [c for c in llm.calls if c["label"] == "character"][-1]["system"]
 
 
-def test_invalid_plan_trigger_retried_and_dropped():
-    bad = {"id": "x", "inject": "비", "bound_to": "place", "deferrable": False, "deadline": None, "trigger": {"mood": "슬픔"}}
-    good = {**bad, "id": "y", "trigger": {"clock_gte": "19:00"}}
-    llm = ScriptedLLM({"plan": [{"checkpoints": [bad, good], "details": []}, {"checkpoints": [bad, good], "details": []}]})
-    engine = Engine(llm, "warm")
-    assert [c.id for c in engine.plan] == ["y"]
-    assert len(prompts(llm, "plan")) == 2
-    assert any(e["kind"] == "plan_generated" and e["rejected"] for e in engine.log.events)
-
-
-def test_seed_needs_real_quote_to_be_planted():
-    said = {**ANALYSIS, "shown_said_quote": "사람들 많다"}
-    fake = {**ANALYSIS, "shown_said_quote": "지어낸 인용"}
-    engine, _ = make({"judge": [JUDGE], "analysis": [said], "character": ["저기 사람들 많다."]})
+def test_foreshadow_paid_with_consequence_when_planted_long_enough():
+    planted = {**REVIEW, "shown_said_quote": "빨간 우산"}
+    food = {**REVIEW, "topics": ["음식"]}
+    engine, llm = make({"review": [planted, REVIEW, REVIEW, REVIEW, REVIEW, food, REVIEW, REVIEW],
+                        "character": ["저기 빨간 우산 있네."]})
     engine.last_seed_turn = -5
     engine.step(None)
-    assert [d.id for d in engine.ledger.planted()] == ["d1"]
-
-    engine, _ = make({"analysis": [fake], "character": ["오늘 좋다."]})
-    engine.last_seed_turn = -5
-    engine.step(None)
-    assert engine.ledger.planted() == [] and engine.ledger.items["d1"].status == "seed"
-
-
-def test_payoff_only_from_planted_on_tension_and_unused_is_not_paid():
-    used = {**ANALYSIS, "payoff_used_quote": "사람들"}
-    engine, llm = make({
-        "judge": [JUDGE, TENSE, TENSE, TENSE],
-        "analysis": [{**ANALYSIS, "shown_said_quote": "사람들 많다"}, ANALYSIS, ANALYSIS, used],
-        "character": ["저기 사람들 많다.", "응.", "왜?", "아까 그 사람들 봐."],
-        "payoff": [{"detail_id": "없는것", "how": "dialogue", "fact": "x"},
-                   {"detail_id": "d1", "how": "world", "fact": "공연이 끝나 인파가 몰려온다."}],
-    })
-    engine.last_seed_turn = -5
-    engine.step(None)
-    engine.step("응")   # 평온: 떡밥 판단 자체를 하지 않는다
-    assert prompts(llm, "payoff") == []
-    engine.step("너 왜 그래")  # 후보를 지어내면 버린다
-    assert engine.ledger.items["d1"].status == "planted"
-    engine.step("진짜 왜 그래")
-    assert "인파가 몰려온다" in prompts(llm)[-1]
-    assert engine.ledger.items["d1"].status == "paid"
-
-
-def test_expired_when_place_changes_but_planted_survive():
-    ledger = DetailLedger()
-    a, b = ledger.add_seeds([{"text": "a"}, {"text": "b"}], "p1")
-    ledger.plant(a.id, "q", 1)
-    assert ledger.expire_seeds() == [b.id]
-    assert ledger.items[a.id].status == "planted"
-
-
-def test_place_move_regenerates_plan():
-    moved = {**ANALYSIS, "move_to": "식당가"}
-    second = {"checkpoints": [], "details": [{"text": "식당에 줄이 길다", "affordances": []}]}
-    engine, llm = make({"plan": [PLAN, second], "analysis": [moved]})
-    engine.step(None)
-    assert engine.state.place == "식당가" and len(prompts(llm, "plan")) == 2
-    assert engine.ledger.items["d1"].status == "expired" and engine.ledger.items["d2"].status == "seed"
-
-
-def test_relationship_shift_needs_branch():
-    shift = {**ANALYSIS, "relationship_shift": "결혼을 약속한 연인"}
-    engine, _ = make({"judge": [JUDGE], "analysis": [ANALYSIS, shift]})
-    engine.step(None)
-    engine.step("안녕")
-    assert engine.state.relationship == "7개월차 연인"
-    engine, _ = make({"judge": [{**JUDGE, "branch": "청혼"}], "analysis": [ANALYSIS, shift]})
-    engine.step(None)
-    engine.step("결혼하자")
-    assert engine.state.relationship == "결혼을 약속한 연인"
-
-
-def test_compress_is_retrospective_and_keeps_recent_raw():
-    n = KEEP_RAW_TURNS + 6
-    summary = {"title": "정문에서 만남", "summary": "정문에서 만났다.", "relationship": "새 설명"}
-    engine, llm = make({"judge": [JUDGE] * n, "analysis": [ANALYSIS] * n, "compress": [summary]})
-    engine.step(None)
-    for i in range(2, 5):
-        engine.step(f"초반{i}")
-    engine.boundaries.add(5)  # T5에서 사건이 일어났다고 표시
-    for i in range(5, KEEP_RAW_TURNS + 4):
+    assert engine.ledger.items["umbrella"].status == "planted"
+    for i in range(5):
         engine.step(f"말{i}")
-        assert not prompts(llm, "compress")  # 아직 지나간 이야기가 아니다
-    engine.step("마지막")
-    assert len(prompts(llm, "compress")) == 1
-    assert engine.raw_start == 5 and engine.episodes.today_titles() == ["정문에서 만남"]
+    assert engine.ledger.items["umbrella"].status == "planted"
+    engine.step("뭐 먹지")
+    assert engine.ledger.items["umbrella"].status == "paid"
+    assert "안내소 직원이" in last_moment(llm) and "안내소 직원이" in engine.new_facts[0]
+    assert next(e for e in engine.log.events if e["kind"] == "detail_paid")["gap"] == 6
+    engine.step("저거")
+    assert sum(e["kind"] == "detail_paid" for e in engine.log.events) == 1
+
+
+def test_foreshadow_too_young_waits():
+    planted = {**REVIEW, "shown_said_quote": "빨간 우산"}
+    food = {**REVIEW, "topics": ["음식"]}
+    engine, _ = make({"review": [planted, food], "character": ["저기 빨간 우산 있네."]})
+    engine.last_seed_turn = -5
+    engine.step(None)
+    engine.step("뭐 먹지")
+    engine.step("글쎄")
+    assert engine.ledger.items["umbrella"].status == "planted"  # 살포 직후라 회수하지 않는다
+
+
+def test_foreshadow_dropped_when_trigger_comes_before_planting():
+    food = {**REVIEW, "topics": ["음식"]}
+    engine, llm = make({"review": [food, REVIEW]})
+    engine.step("뭐 먹지")   # 씨앗 간격 때문에 아직 보이지 않았다
+    engine.step("글쎄")
+    assert engine.ledger.items["umbrella"].status == "dropped"
+    assert "안내소 직원이" not in last_moment(llm)
+    engine.step("저기")
+    assert "빨간 우산" not in last_moment(llm)  # 버린 떡밥은 다시 보여 주지 않는다
+
+
+def test_seed_needs_real_quote_and_shown_when():
+    engine, llm = make({"review": [{**REVIEW, "shown_said_quote": "지어낸 인용"}], "character": ["오늘 좋다."]})
+    engine.last_seed_turn = -5
+    engine.step(None)
+    assert "빨간 우산" in last_moment(llm)
+    assert engine.ledger.items["umbrella"].status == "seed"
+    assert "풍선" not in last_moment(llm)  # 다른 장소의 디테일은 보이지 않는다
+
+
+def test_review_has_no_path_to_add_details():
+    engine, _ = make({"review": [{**REVIEW, "new_details": [{"text": "지어낸 과거", "source": "character", "quote": "안녕", "affordances": []}]}],
+                      "character": ["안녕"]})
+    before = set(engine.ledger.items)
+    engine.step(None)
+    assert set(engine.ledger.items) == before
+    assert "new_details" not in review_schema(["정문"], ["영화"])["properties"]
+
+
+def test_place_is_a_closed_list():
+    engine, _ = make({"review": [{**REVIEW, "action_type": "move", "move_to": "식당가"}, {**REVIEW, "action_type": "move", "move_to": "매점"}]})
+    engine.step(None)
+    assert engine.state.place == "정문" and any(e["kind"] == "move_rejected" for e in engine.log.events)
+    engine.step("매점 가자")
+    assert engine.state.place == "매점"
+    assert review_schema(["정문", "매점"], [])["properties"]["move_to"]["anyOf"][0]["enum"] == ["정문", "매점"]
+
+
+def test_confession_updates_relationship_memory_that_turn():
+    note = "상대가 좋아한다고 말했고 나는 아직 답하지 못했다."
+    engine, llm = make({"review": [REVIEW, {**REVIEW, "relationship_note": note}, REVIEW]})
+    engine.step(None)
+    engine.step("나 너 좋아해")
+    assert engine.relationship.state == note and 2 in engine.boundaries
+    change = next(e for e in engine.log.events if e["kind"] == "relationship_updated")
+    assert change["before"].startswith("서로 마음이") and change["state"] == note
+    engine.step("대답은?")
+    assert note in [c for c in llm.calls if c["label"] == "character"][-1]["system"]
+
+
+def test_confession_turn_counts_as_branch_and_opens_feelings():
+    note = "상대가 좋아한다고 말했다."
+    engine, llm = make({"review": [{**REVIEW, "topics": ["우리 관계"], "relationship_note": note}, REVIEW]})
+    engine.step("나 너 좋아해")
+    assert engine.pending.branch == "관계 변화"
+    engine.step("대답해 줘")
+    assert FEELINGS in last_moment(llm)
+
+    engine, llm = make({"review": [{**TENSE, "topics": ["우리 관계"]}, REVIEW]})
+    engine.step("너 저번 주말에 왜 답 안 했어")
+    engine.step("서운했어")
+    assert FEELINGS not in last_moment(llm)  # 서운함만으로는 마음이 올라오지 않는다
+
+
+def test_relationship_shift_changes_frame_and_memory():
+    engine, _ = make({"review": [{**REVIEW, "relationship_shift": "오늘부터 사귀는 사이"}]})
+    engine.step("사귀자")
+    assert engine.state.relationship == "오늘부터 사귀는 사이"
+    assert engine.relationship.state == "오늘부터 사귀는 사이"
+    assert any(e["kind"] == "frame_changed" and e["axis"] == "relationship" for e in engine.log.events)
+
+
+def run_until_compressed(responses, boundary=4):
+    n = KEEP_RAW_TURNS + boundary + 2
+    engine, llm = make({"review": [REVIEW] * n, **responses})
+    engine.boundaries.add(boundary)
+    for i in range(n):
+        engine.step(None if i == 0 else f"말{i}")
+        if prompts(llm, "compress"):
+            break
+    return engine, llm
+
+
+def test_compress_rewrites_today_summary_and_keeps_recent_raw():
+    first = {"title": "정문", "summary": "정문에서 만났다.", "today_summary": "오늘 정문에서 만났다.", "relationship": "새 설명"}
+    engine, llm = run_until_compressed({"alive": [{"alive": False}], "compress": [first]})
+    assert engine.raw_start == 4 and engine.episodes.today_titles() == ["정문"]
+    assert engine.episodes.today_summary == "오늘 정문에서 만났다."
     assert engine.relationship.state == "새 설명"
+    update = next(e for e in engine.log.events if e["kind"] == "today_summary_updated")
+    assert update["before"] == "" and update["after"] == "오늘 정문에서 만났다."
     engine.step("다음")
     final = prompts(llm)[-1]
-    assert "초반2" not in final and "말5" in final and "정문에서 만남" in final
-    assert "정문에서 만났다." not in final  # 내용은 검색될 때만 들어온다
+    assert "말1\n" not in final and "오늘 정문에서 만났다." in final and "정문에서 만났다." in final
+    engine.episodes.revise_today("오늘 달라졌다.", 99)
+    assert engine.episodes.revisions[-1]["before"] == "오늘 정문에서 만났다."
+    assert engine.episodes.today.smalls[0].summary == "정문에서 만났다."  # 지나간 에피소드는 고치지 않는다
+
+
+def test_compress_sees_only_the_segment_and_previous_summary():
+    first = {"title": "t", "summary": "s", "today_summary": "요약", "relationship": "r"}
+    engine, llm = run_until_compressed({"alive": [{"alive": False}], "compress": [first]})
+    alive = next(c["prompt"] for c in llm.calls if c["label"] == "alive")
+    written = next(c["prompt"] for c in llm.calls if c["label"] == "compress")
+    assert "상대: 말1" in written and "상대: 말2" in written and "말3" not in written
+    assert "말8" in alive and "[지금까지의 오늘 요약]\n없음" in written
+
+
+def test_old_segment_cannot_overwrite_newer_relationship():
+    note = "오늘부터 사귄다."
+    responses = [REVIEW] * 6 + [{**REVIEW, "relationship_note": note}] + [REVIEW] * 6
+    first = {"title": "t", "summary": "s", "today_summary": "요약", "relationship": "아직 썸이다."}
+    engine, llm = make({"review": responses, "alive": [{"alive": False}], "compress": [first]})
+    engine.boundaries.add(4)
+    for i in range(10):
+        engine.step(None if i == 0 else f"말{i}")
+    assert prompts(llm, "compress") and engine.relationship.state == note
+    assert any(e["kind"] == "relationship_kept" for e in engine.log.events)
+
+
+def test_compress_update_does_not_block_later_compress():
+    engine, _ = make()
+    engine.relationship.update("압축이 쓴 설명", "today-1", 9)
+    assert not engine.relationship.changed_since(8)
+    engine.relationship.update("고백 뒤", "turn", 10)
+    assert engine.relationship.changed_since(8)
 
 
 def test_alive_segment_is_postponed():
-    n = KEEP_RAW_TURNS + 4
-    engine, llm = make({"judge": [JUDGE] * n, "analysis": [ANALYSIS] * n, "alive": [{"alive": True}]})
+    n = KEEP_RAW_TURNS + 6
+    engine, llm = make({"review": [REVIEW] * n, "alive": [{"alive": True}]})
     engine.boundaries.add(4)
     for i in range(KEEP_RAW_TURNS + 3):
         engine.step(None if i == 0 else f"말{i}")
@@ -209,40 +332,40 @@ def test_alive_segment_is_postponed():
     assert engine.compress_after > engine.state.turn
 
 
-def test_recall_is_hierarchical_and_expires():
-    engine, llm = make({"judge": [{**JUDGE, "recall_big": ["trip", "없는것"]}, JUDGE, JUDGE, JUDGE],
-                        "drill": [{"ids": ["trip-1"]}], "analysis": [ANALYSIS] * 4})
-    engine.director.drill = lambda *a: ["trip-1"]
-    engine.state.turn = 1
+def test_recall_from_review_is_small_id_and_expires():
+    engine, llm = make({"review": [{**REVIEW, "recall_small": ["trip-1", "없는것"]}, REVIEW, REVIEW, REVIEW, REVIEW]})
     engine.step("강릉 기억나?")
-    assert "놓친 기차" in prompts(llm)[-1]
+    assert "놓친 기차" not in last_moment(llm)  # 판단이 응답 뒤라 다음 턴부터 떠오른다
+    for _ in range(3):
+        engine.step("응")
+        assert "놓친 기차" in last_moment(llm)
     engine.step("응")
-    engine.step("응")
-    assert "놓친 기차" in prompts(llm)[-1]  # 3턴 유지
-    engine.step("응")
-    assert "놓친 기차" not in prompts(llm)[-1]
+    assert "놓친 기차" not in last_moment(llm)
+    assert not prompts(llm, "drill")
 
 
 def test_past_not_injected_without_recall():
-    engine, llm = make(scripted(2))
+    engine, llm = make()
     engine.step(None)
-    assert "청량리역" not in prompts(llm)[-1]  # 상세 기억은 검색될 때만
+    assert "청량리역" not in prompts(llm)[-1]
 
 
-def test_refusal_is_logged_not_hidden():
-    engine, _ = make({"character": [RefusalError("character")], "analysis": [ANALYSIS]})
+def test_review_refusal_keeps_going():
+    engine, _ = make({"character": [RefusalError("character")], "review": [RefusalError("review")]})
     assert engine.step(None) == "(응답 없음)"
-    assert any(e["kind"] == "refused" for e in engine.log.events)
+    assert sum(e["kind"] == "refused" for e in engine.log.events) == 2
+    assert engine.state.clock == parse_hhmm("17:35")
 
 
-def test_no_directive_vocabulary_in_character_prompt():
-    engine, llm = make(scripted(1))
-    engine.step(None)
-    assert "지금 할 일" not in prompts(llm)[-1]
+def test_one_review_per_turn_without_other_judgement_calls():
+    engine, llm = make({"review": [REVIEW] * 3})
+    for text in (None, "안녕", "뭐 탈까"):
+        engine.step(text)
+    assert [c["label"] for c in llm.calls] == ["character", "review"] * 3
 
 
 def test_history_is_real_multiturn_and_moment_not_kept():
-    engine, llm = make(scripted(3))
+    engine, llm = make({"review": [REVIEW] * 2})
     engine.state.clock = parse_hhmm("19:00")
     engine.step(None)
     engine.step("안녕")
@@ -253,113 +376,122 @@ def test_history_is_real_multiturn_and_moment_not_kept():
     assert all("[이번 순간]" not in m["text"] for m in engine.transcript)
 
 
-def test_cover_lives_in_hidden_and_seed_has_no_hidden_content():
-    engine, _ = make()
-    assert all(h["cover"] in engine.system for h in engine.card["hidden"])
-    assert "둘의 장래" in engine.topics and "앞으로의 계획" not in engine.topics
-    seeds = " ".join(s.summary for b in engine.episodes.bigs.values() for s in b.smalls)
-    assert "후기" not in seeds and "얼버무" not in seeds and "잠들" not in seeds
-
-
-def test_world_events_remembered_and_visible_to_user():
-    engine, llm = make(scripted(4))
-    engine.state.clock = parse_hhmm("19:00")
-    engine.state.last_meal = parse_hhmm("18:00")
+def test_baseline_injects_nothing_and_only_calls_character():
+    engine, llm = make(mode="baseline")
+    engine.state.clock = parse_hhmm("20:30")
     engine.step(None)
-    assert engine.new_facts == ["해가 지면서 바람이 제법 차가워졌다."]
-    engine.step("춥다")
-    assert engine.new_facts == []
-    engine.step("응")
-    assert [e["id"] for e in engine.world_log] == ["evening_cold"]
-    assert "19:00 해가 지면서" in [c for c in llm.calls if c["label"] == "character"][-1]["system"]
+    engine.step("우리 앞으로 어떻게 될까")
+    engine.step("회사는?")
+    assert {c["label"] for c in llm.calls} == {"character"}
+    text = " ".join(c["system"] + c["prompt"] for c in llm.calls)
+    for absent in (TRANSFER, FEELINGS, "불꽃이 터지기", "[이번 순간]\n", "빨간 우산", "청량리역"):
+        assert absent not in text
+    assert engine.scene["intro"] in text and "서로 마음이" in text and "요즘 회사 일이 조금 바쁘다" in text
+    assert engine.fired == set() and engine.new_facts == []
+    assert len(engine.transcript) == 5
+    assert "방금 정문에서 만났다" in llm.calls[0]["prompt"]  # 시작 장소는 두 모드가 같다
 
 
-def test_plan_trigger_arrives_as_json_string():
-    item = {"id": "rain", "inject": "비가 온다", "bound_to": "place", "deferrable": False, "deadline": None,
-            "trigger": '{"clock_gte": "19:00"}'}
-    engine = Engine(ScriptedLLM({"plan": [{"checkpoints": [item, {**item, "id": "bad", "trigger": "어두워지면"}], "details": []}] * 2}), "warm")
-    assert [c.id for c in engine.plan] == ["rain"] and engine.plan[0].trigger == {"clock_gte": "19:00"}
+def test_baseline_output_has_no_status_line():
+    engine, _ = make({"character": ["안녕."]}, mode="baseline")
+    reply = engine.step(None)
+    assert play.view(engine, reply) == "서진: 안녕."
+    engine, _ = make({"character": ["안녕."], "review": [REVIEW]})
+    assert play.view(engine, engine.step(None)).startswith("[")
 
 
-def test_close_storyline_compresses_remaining_and_is_idempotent():
-    closed = {"last_title": "작별", "last_summary": "정문에서 헤어졌다.", "oneline": "오늘 데이트", "relationship": "더 가까워졌다"}
-    engine, llm = make({**scripted(2), "close": [closed]})
+def test_baseline_close_makes_no_call():
+    engine, llm = make(mode="baseline")
+    engine.step(None)
+    calls = len(llm.calls)
+    engine.close_storyline()
+    assert len(llm.calls) == calls and engine.closed
+
+
+def test_close_storyline_rewrites_summary_and_is_idempotent():
+    closed = {"last_title": "작별", "last_summary": "정문에서 헤어졌다.", "today_summary": "오늘 고백했다.", "oneline": "오늘", "relationship": "더 가까워졌다"}
+    engine, llm = make({"review": [REVIEW] * 2, "close": [closed]})
     engine.step(None)
     engine.step("잘 가")
     engine.close_storyline()
     engine.close_storyline()
     assert len(prompts(llm, "close")) == 1
     assert engine.transcript == [] and engine.episodes.today_titles() == ["작별"]
-    assert engine.episodes.today.oneline == "오늘 데이트" and engine.relationship.state == "더 가까워졌다"
+    assert engine.episodes.today_summary == "오늘 고백했다." and engine.relationship.state == "더 가까워졌다"
+    assert any(e["kind"] == "today_summary_updated" for e in engine.log.events)
 
 
 def test_state_survives_between_calls(tmp_path, monkeypatch):
-    from storychat import play
-
     monkeypatch.setattr(play, "RUNS", tmp_path)
-    engine, llm = make(scripted(3))
+    engine, llm = make({"review": [TENSE]})
     engine.step(None)
     play.save(engine, "x")
     assert engine.llm is llm  # 저장 뒤에도 호출 중인 엔진은 그대로다
-    restored = __import__("pickle").loads(play.state_path("x").read_bytes())
+    restored = pickle.loads(play.state_path("x").read_bytes())
     assert restored.state.turn == 1 and restored.transcript == engine.transcript and restored.llm is None
+    assert restored.pending.tension  # 다음 턴에 적용할 판단도 이어진다
 
 
-def test_spoken_hidden_stops_rising_but_stays_known():
-    fact = "후기를 미리 찾아 읽어"
-    tense_movie = {**JUDGE, "tension": True, "topics": ["영화"]}
-    fake = {**ANALYSIS, "hidden_spoken": [{"id": "movies", "quote": "지어낸 인용"}]}
-    real = {**ANALYSIS, "hidden_spoken": [{"id": "movies", "quote": "영화 별로 안 좋아해"}]}
-    hinted_then_said = {"judge": [tense_movie, JUDGE, JUDGE], "analysis": [ANALYSIS, fake, real, ANALYSIS],
-                        "character": ["안녕", "음.", "사실 나 영화 별로 안 좋아해.", "응."]}
-    engine, llm = make(hinted_then_said)
+def test_ledger_tracks_only_scene_items():
+    ledger = DetailLedger(SCENE)
+    assert set(ledger.items) == {"umbrella", "detail_1"}
+    assert ledger.items["umbrella"].kind == "foreshadow" and ledger.items["detail_1"].kind == "detail"
+
+
+@pytest.mark.parametrize("change", [
+    {"places": []},
+    {"checkpoints": [{"id": "x", "trigger": {"mood": "슬픔"}, "inject": "a"}]},
+    {"checkpoints": [{"id": "x", "trigger": {"state_eq": {"place": "식당가"}}, "inject": "a"}]},
+    {"foreshadows": [{"id": "x", "detail": "a", "shown_when": {"after": "없는것"}, "trigger": {"clock_gte": "19:00"}, "consequence": "b"}]},
+])
+def test_bad_scene_is_refused(change):
+    assert scene_problems({**SCENE, **change})
+    with pytest.raises(ValueError):
+        Engine(ScriptedLLM(), "tsundere_some", scene={**SCENE, **change})
+
+
+def test_scene_draft_parses_json_strings_and_retries():
+    raw = {"intro": "i", "places": ["정문"], "foreshadows": [], "details": [{"text": "t", "shown_when": '{"clock_gte": "18:00"}'}]}
+    bad = {**raw, "checkpoints": [{"id": "x", "inject": "a", "deferrable": False, "deadline": None, "trigger": "어두워지면"}]}
+    good = {**raw, "checkpoints": [{"id": "x", "inject": "a", "deferrable": False, "deadline": None, "trigger": '{"clock_gte": "19:00"}'}]}
+    llm = ScriptedLLM({"scene_draft": [bad, good]})
+    scene, problems = Director(llm).scene_draft("brief")
+    assert problems == [] and scene["checkpoints"][0]["trigger"] == {"clock_gte": "19:00"}
+    assert scene["details"][0]["shown_when"] == {"clock_gte": "18:00"}
+    assert "문제가 있었다" in llm.calls[1]["prompt"]
+    assert _parse_scene(good)["places"] == ["정문"]
+
+
+def test_world_event_is_staged_to_the_situation_and_core_is_kept():
+    staged = "정문 쪽으로 걸어가는데 머리 위로 바람이 차갑게 불어온다."
+    engine, llm = make({"stage": [{"text": staged}], "review": [REVIEW] * 2})
     engine.step(None)
-    engine.step("영화 얘기만 하면 왜 그래")
-    assert engine.spoken == set()  # 대사에 없는 인용은 인정하지 않는다
-    engine.step("진짜?")
-    assert engine.spoken == {"movies"}
-    engine.step("그랬구나")
-    call = [c for c in llm.calls if c["label"] == "character"][-1]
-    assert "올라오는 것" not in call["messages"][-1]["content"]
-    assert fact in call["system"] and "이미 상대에게 털어놓은 것" in call["system"]
-
-
-def test_quote_may_skip_gesture_between_sentences():
-    reply = "...부산 지사. 이번 달 안에 답해야 된대. (숨을 내쉰다) 나 아직 말 안 했어."
-    assert quoted("이번 달 안에 답해야 된대. 나 아직 말 안 했어.", reply)
-    assert quoted("(숨을 내쉰다) 나 아직", reply)
-    assert not quoted("나 이미 말했어", reply)
-
-
-def test_payoff_is_also_considered_when_world_just_changed():
-    engine, llm = make({"judge": [JUDGE, JUDGE], "analysis": [{**ANALYSIS, "shown_said_quote": "사람들 많다"}, ANALYSIS, ANALYSIS],
-                        "character": ["저기 사람들 많다.", "응.", "응."], "payoff": [{"detail_id": None, "how": "dialogue", "fact": ""}]})
-    engine.last_seed_turn = -5
-    engine.step(None)
-    engine.step("응")
-    assert prompts(llm, "payoff") == []  # 평온하고 세계도 그대로면 살피지 않는다
     engine.state.clock = parse_hhmm("19:00")
-    engine.step("춥다")
-    assert len(prompts(llm, "payoff")) == 1
+    engine.step("어디 갈까")
+    stage = next(c for c in llm.calls if c["label"] == "stage")
+    assert "해가 지면서 바람이 차가워졌다." in stage["prompt"] and "상대: 어디 갈까" in stage["prompt"]
+    assert engine.new_facts == [staged] and staged in last_moment(llm)
+    fired = next(e for e in engine.log.events if e["kind"] == "checkpoint_fired")
+    assert fired["inject"] == staged and fired["core"] == "해가 지면서 바람이 차가워졌다."
 
 
-def test_plan_knows_what_already_happened():
-    engine, llm = make({"judge": [JUDGE], "analysis": [{**ANALYSIS, "action_type": "move", "move_to": "광장"}]})
-    engine.world_log.append({"turn": 1, "clock": "17:40", "id": "parade", "text": "퍼레이드가 시작된다."})
+def test_stage_that_drops_keep_words_is_retried_then_falls_back():
+    scene = {**SCENE, "checkpoints": [{**SCENE["checkpoints"][0], "keep": ["바람"]}, SCENE["checkpoints"][1]]}
+    engine, llm = make({"stage": [{"text": "공기가 달라진다."}, {"text": "정문 쪽으로 찬 바람이 분다."}], "review": [REVIEW]}, scene=scene)
+    engine.state.clock = parse_hhmm("19:00")
     engine.step(None)
-    plan = prompts(llm, "plan")[-1]
-    assert "퍼레이드가 시작된다." in plan and "불꽃이 터지기" in plan
+    assert engine.new_facts == ["정문 쪽으로 찬 바람이 분다."]
+    assert "빠진 말: 바람" in [c for c in llm.calls if c["label"] == "stage"][1]["prompt"]
+
+    engine, _ = make({"stage": [{"text": "공기가 달라진다."}, {"text": "어두워진다."}], "review": [REVIEW]}, scene=scene)
+    engine.state.clock = parse_hhmm("19:00")
+    engine.step(None)
+    assert engine.new_facts == ["해가 지면서 바람이 차가워졌다."]
+    assert sum(e["kind"] == "stage_rejected" for e in engine.log.events) == 2
 
 
-def test_short_segments_wait_and_compress_sees_only_recent_talk():
-    summary = {"title": "t", "summary": "s", "relationship": "r"}
-    n = KEEP_RAW_TURNS + 8
-    engine, llm = make({"judge": [JUDGE] * n, "analysis": [ANALYSIS] * n, "alive": [{"alive": False}], "compress": [summary]})
-    engine.boundaries |= {2, 3, 4}
-    for i in range(KEEP_RAW_TURNS + 3):
-        engine.step(None if i == 0 else f"말{i}")
-    alive = next(c["prompt"] for c in llm.calls if c["label"] == "alive")
-    written = next(c["prompt"] for c in llm.calls if c["label"] == "compress")
-    assert engine.raw_start == 4  # T2, T3 경계는 건너뛰고 최소 길이를 채운 T4에서 자른다
-    assert f"말{KEEP_RAW_TURNS + 2}" in alive and "말5" not in alive  # 판단은 최근 대화만 본다
-    assert "말2" in written and "말3" not in written  # 요약은 그 구간만 본다
+def test_stage_failure_falls_back_to_core():
+    engine, _ = make({"stage": [RefusalError("stage")], "review": [REVIEW]})
+    engine.state.clock = parse_hhmm("19:00")
+    engine.step(None)
+    assert engine.new_facts == ["해가 지면서 바람이 차가워졌다."]

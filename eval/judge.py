@@ -49,8 +49,27 @@ def counts(events: list[dict]) -> dict:
     payoffs = of("payoff_injected")
     paid = of("detail_paid")
     planted_at = {d["id"]: d["planted"]["turn"] for d in ledger if d.get("planted")}
+    replies = {e["turn"]: e["text"] for e in of("character_reply")}
+    card = next(iter(of("card")), {"hidden": []})
+    opened = {e["id"]: e["turn"] for e in of("hidden_revealed")}
+    meta = next(iter(of("run_meta")), {})
+    llm_calls = of("llm_call")
+    world_events = [e for e in events if e["kind"] == "checkpoint_fired"] + [e for e in events if e["kind"] == "payoff_injected"]
     return {
+        "mode": meta.get("mode", "structured"),
         "turns": ends[-1]["turn"] if ends else 0,
+        "calls_per_turn": round(len(llm_calls) / ends[-1]["turn"], 2) if ends else 0,
+        # 사람이 H1을 판정할 수 있게 사건과 그 턴, 다음 턴의 대사를 함께 둔다. 반영 여부를 코드가 정하지 않는다.
+        "world_events": [{"turn": e["turn"], "id": e["id"], "text": e.get("inject") or e.get("fact"),
+                          "reply": replies.get(e["turn"]), "next_reply": replies.get(e["turn"] + 1)} for e in world_events],
+        # 공개 전 대사에 사정의 단어가 나오면 누출 후보다. 사람이 확인한다.
+        "leak_candidates": [{"turn": t, "id": h["id"], "reply": text} for h in card["hidden"] for t, text in replies.items()
+                            if t <= opened.get(h["id"], 10 ** 6) and any(word in text for word in h.get("hints", []))],
+        "relationship_changes": [{"turn": e["turn"], "source": e.get("source") or e.get("episode"), "before": e.get("before"), "after": e["state"]}
+                                 for e in of("relationship_updated")],
+        "today_revisions": [{"turn": e["turn"], "before": e["before"], "after": e["after"]} for e in of("today_summary_updated")],
+        "foreshadows_dropped": [e["id"] for e in of("detail_dropped")],
+        "moves_rejected": len(of("move_rejected")),
         "last_clock": ends[-1]["world"]["clock_text"] if ends else None,
         "ended_by_story": bool(end and end["ended"]),
         "plans": len(of("plan_generated")),
@@ -68,7 +87,7 @@ def counts(events: list[dict]) -> dict:
         "details_total": len(ledger),
         "details_shown": len(of("detail_shown")),
         "details_planted": sum(1 for d in ledger if d["status"] in ("planted", "paid")),
-        "details_expired": sum(1 for d in ledger if d["status"] == "expired"),
+        "details_expired": sum(1 for d in ledger if d["status"] in ("expired", "dropped")),
         "payoff_injected": len(payoffs),
         "payoff_paid": len(paid),
         "payoff_gaps": [e["turn"] - planted_at[e["id"]] for e in paid if e["id"] in planted_at],
@@ -126,7 +145,9 @@ def main() -> None:
         c = r["counts"]
         line = (f"{name}: {c['turns']}턴 {c['last_clock']} 체크포인트{len(c['checkpoints_fired'])} 긴장{c['tension_turns']} "
                 f"reveal{len(c['hidden_revealed'])} 말함{len(c['hidden_spoken'])} 살포{c['details_planted']}/{c['details_total']} "
-                f"회수{c['payoff_paid']}/{c['payoff_injected']} 압축{len(c['compressed'])} 거절{c['refused']}")
+                f"회수{c['payoff_paid']}/{c['payoff_injected']} 압축{len(c['compressed'])} 거절{c['refused']} "
+                f"턴당호출{c['calls_per_turn']} 관계변화{len(c['relationship_changes'])} 오늘요약{len(c['today_revisions'])} "
+                f"누출후보{len(c['leak_candidates'])}")
         if "judge" in r:
             j = r["judge"]
             line += f" | a={j['a_character']} b={j['b_freshness']} c={len(j['c_breaks'])} d={len(j['d_payoffs'])}"

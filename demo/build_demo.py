@@ -11,7 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 STYLE = {"gentle": "다정한 유저", "aloof": "무심한 유저", "fiery": "잘 따지는 유저"}
 INLINE = {"checkpoint_fired", "checkpoint_deferred", "hidden_revealed", "hidden_spoken", "memory_recalled", "detail_planted", "detail_added",
           "payoff_injected", "payoff_unused", "detail_paid", "frame_changed", "episode_compressed", "relationship_updated",
-          "plan_generated", "refused"}
+          "plan_generated", "refused", "today_summary_updated", "detail_dropped", "move_rejected", "relationship_kept"}
 
 
 def build_run(path: Path, report: dict | None, attempt: str) -> dict:
@@ -45,10 +45,11 @@ def build_run(path: Path, report: dict | None, attempt: str) -> dict:
             t["action"], t["minutes"] = e["action"], e["minutes"]
         elif kind == "turn_end":
             world, ledger = e["world"], e["ledger"]
-            counts = {s: sum(1 for d in ledger if d["status"] == s) for s in ("seed", "planted", "paid", "expired")}
+            counts = {s: sum(1 for d in ledger if d["status"] == s) for s in ("seed", "planted", "paid")}
+            counts["expired"] = sum(1 for d in ledger if d["status"] in ("expired", "dropped"))
             t["after"] = {"clock": world["clock_text"], "place": world["place"], "relationship": world["relationship"],
                           "hunger": world["hunger"], "temperature": world["temperature"], "bond": e["relationship"],
-                          "today": e["today"], "details": counts, "fired": list(fired),
+                          "today": e["today"], "todaySummary": e.get("today_summary", ""), "details": counts, "fired": list(fired),
                           "revealed": [k for k, v in revealed.items() if v <= n],
                           "spoken": [k for k, v in spoken.items() if v <= n]}
         elif kind in INLINE:
@@ -60,11 +61,16 @@ def build_run(path: Path, report: dict | None, attempt: str) -> dict:
     calls = [e for e in events if e["kind"] == "llm_call"]
     end = next((e for e in events if e["kind"] == "run_end"), None)
     ledger = next((e["ledger"] for e in reversed(events) if e["kind"] == "turn_end"), [])
+    mode = meta.get("mode", "structured")
+    label = f"{card['name']} · {STYLE[meta['style']]}" + (" · 기준선" if mode == "baseline" else "")
     return {
-        "key": f"{attempt}/{path.stem}", "attempt": attempt, "label": f"{card['name']} · {STYLE[meta['style']]}", "name": card["name"], "persona": card["label"],
+        "key": f"{attempt}/{path.stem}", "attempt": attempt, "label": label, "mode": mode, "name": card["name"], "persona": card["label"],
         "hidden": [{k: h[k] for k in ("id", "fact", "cover")} for h in card["hidden"]],
         "turns": [turns[k] for k in sorted(turns) if "reply" in turns[k] and "after" in turns[k]],
-        "ledger": [{k: d[k] for k in ("id", "text", "status", "source", "planted", "paid")} for d in ledger],
+        "ledger": [{**{k: d[k] for k in ("id", "text", "status", "source", "planted", "paid")}, "consequence": d.get("consequence"),
+                    "kind": d.get("kind", "detail")} for d in ledger],
+        "revisions": [{k: e[k] for k in ("turn", "before", "after")} for e in events if e["kind"] == "today_summary_updated"],
+        "bonds": [{"turn": e["turn"], "before": e.get("before"), "after": e["state"]} for e in events if e["kind"] == "relationship_updated"],
         "closed": closed and {"oneline": closed["oneline"], "relationship": closed["relationship"]},
         "ended": bool(end and end["ended"]), "cost": sum(c["cost_usd"] for c in calls), "calls": len(calls),
         "judge": (report or {}).get("judge"),

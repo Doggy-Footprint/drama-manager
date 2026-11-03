@@ -1,29 +1,21 @@
-"""월드 모델: 시간과 몸 상태, 시간표에 묶인 사건. LLM을 부르지 않는다."""
+"""월드 모델: 시간과 몸 상태. LLM을 부르지 않는다. 사건은 장면 파일에 있다."""
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
 
-from .schema import FRAME_AXES, Checkpoint, hhmm, parse_hhmm
+from .schema import FRAME_AXES, hhmm, parse_hhmm
 
 ACTION_MINUTES = {"short_talk": 5, "activity": 30, "move": 15, "meal": 40}
 DAY_START = parse_hhmm("17:30")
 DAY_END = parse_hhmm("23:00")
 HUNGER_AFTER_MEAL = 6 * 60
 
-# 프레임이 바뀌어도 유지되는 세계의 체크포인트. 사실만 주입하고 행동은 지시하지 않는다.
-WORLD_CHECKPOINTS = [
-    Checkpoint("hunger", {"state_eq": {"hunger": "배고픔"}}, "배가 슬슬 고파졌다.", source="world", bound_to="world"),
-    Checkpoint("evening_cold", {"clock_gte": "19:00"}, "해가 지면서 바람이 제법 차가워졌다.", source="world", bound_to="world"),
-    Checkpoint("fireworks", {"clock_gte": "20:00"}, "놀이동산 하늘에 불꽃이 터지기 시작했다.",
-               source="world", bound_to="world", deferrable=True, deadline="20:30"),
-]
-
 
 @dataclass
 class WorldState:
     clock: int = DAY_START
     place: str = "놀이동산 정문"
-    relationship: str = "7개월차 연인"
+    relationship: str = "두 달째 썸"
     temperature: str = "선선함"
     hunger: str = "없음"
     last_meal: int = parse_hhmm("12:00")
