@@ -1,0 +1,513 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>물빛공원 드라마 매니저</title>
+<style>
+:root {
+  --bg: #0f1420; --panel: #161d2c; --panel2: #1c2436; --line: #2a3449; --text: #e6e9f0; --muted: #8b95a8; --faint: #5c6679;
+  --suah: #f2a7b8; --user: #8fc1ff; --gold: #f3c969; --green: #7ed3a4; --red: #ff8a80; --violet: #b9a2ff; --cyan: #7fd8e6;
+  --bubble-suah: #2a2133; --bubble-user: #1d2c45; --bubble-base: #1a1f2a;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text);
+  font: 14px/1.55 "Pretendard", "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif; }
+button { font: inherit; color: inherit; background: var(--panel2); border: 1px solid var(--line); border-radius: 8px; padding: 6px 12px; cursor: pointer; }
+button:hover { border-color: var(--muted); }
+button.primary { background: #2b3f66; border-color: #3d5a8f; }
+button:disabled { opacity: .45; cursor: default; }
+header { display: flex; align-items: center; gap: 16px; padding: 10px 18px; border-bottom: 1px solid var(--line); background: #121826; }
+header h1 { font-size: 15px; margin: 0; font-weight: 650; letter-spacing: -.2px; }
+header .clock { font-variant-numeric: tabular-nums; font-size: 22px; font-weight: 700; color: var(--gold); }
+header .usage-total { margin-left: auto; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; display: flex; gap: 12px; }
+header .usage-total b { color: var(--text); font-weight: 600; }
+header .usage-total .base { color: var(--faint); }
+header label { color: var(--muted); font-size: 13px; display: flex; gap: 6px; align-items: center; }
+.app { display: grid; grid-template-columns: minmax(360px, 42%) 1fr; height: calc(100% - 53px); }
+/* chat */
+.chat { display: flex; flex-direction: column; border-right: 1px solid var(--line); min-height: 0; }
+.log { flex: 1; overflow-y: auto; padding: 18px 18px 8px; }
+.turn { border-radius: 12px; padding: 6px 8px 8px; margin-bottom: 8px; cursor: pointer; border: 1px solid transparent; }
+.turn:hover { background: #131a28; }
+.turn.sel { border-color: #33405a; background: #131a28; }
+.chip { font-size: 11px; color: var(--faint); margin: 0 4px 4px; display: flex; gap: 8px; }
+.chip b { color: var(--muted); font-weight: 600; }
+.chip .usage { margin-left: auto; font-variant-numeric: tabular-nums; }
+.chip .usage .hit { color: var(--green); }
+.use-try { opacity: .45; text-decoration: line-through; }
+.msg { max-width: 86%; padding: 8px 12px; border-radius: 14px; margin: 4px 0; white-space: pre-wrap; word-break: keep-all; }
+.msg.user { margin-left: auto; background: var(--bubble-user); border-bottom-right-radius: 4px; }
+.msg.suah { background: var(--bubble-suah); border-bottom-left-radius: 4px; }
+.msg.suah .who { color: var(--suah); font-weight: 650; font-size: 12px; display: block; margin-bottom: 2px; }
+.msg.suah.phone { border: 1px dashed #6b4b5c; }
+.msg.base { background: var(--bubble-base); color: var(--muted); border: 1px dashed var(--line); font-size: 13px; }
+.msg.base .who { color: var(--faint); font-size: 11px; display: block; }
+.narr { text-align: center; color: var(--cyan); font-size: 13px; margin: 6px 24px; opacity: .9; }
+.silent { text-align: center; color: var(--faint); font-size: 12px; margin: 4px; }
+.act { color: var(--muted); }
+.composer { border-top: 1px solid var(--line); padding: 10px 12px; display: flex; gap: 8px; align-items: flex-end; }
+.composer textarea { flex: 1; resize: none; height: 52px; background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; font: inherit; }
+.progress { font-size: 12px; color: var(--muted); padding: 0 14px 6px; min-height: 18px; }
+.progress span { margin-right: 10px; }
+.progress .on { color: var(--gold); }
+.progress .ok { color: var(--green); }
+/* panel */
+.panel { overflow-y: auto; padding: 14px 16px 40px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-content: start; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; min-width: 0; }
+.card.wide { grid-column: 1 / -1; }
+.card h2 { font-size: 12px; letter-spacing: .4px; color: var(--muted); margin: 0 0 8px; font-weight: 650; display: flex; align-items: center; gap: 8px; }
+.card h2 .sub { color: var(--faint); font-weight: 500; letter-spacing: 0; }
+.stats { display: flex; flex-wrap: wrap; gap: 8px 16px; font-size: 13px; }
+.stats .k { color: var(--faint); margin-right: 4px; }
+.battery { display: inline-flex; align-items: center; gap: 6px; }
+.battery .bar { width: 60px; height: 10px; border: 1px solid var(--muted); border-radius: 3px; position: relative; overflow: hidden; }
+.battery .fill { position: absolute; inset: 0 auto 0 0; background: var(--green); }
+.badge { display: inline-block; font-size: 11px; padding: 1px 7px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); }
+.badge.together { color: var(--green); border-color: #2e5a44; }
+.badge.apart { color: var(--red); border-color: #6a3434; }
+svg text { font-family: inherit; }
+/* trace */
+.steps { display: grid; gap: 10px; }
+.step { border-left: 2px solid var(--line); padding: 2px 0 2px 12px; }
+.step.live { border-left-color: var(--gold); }
+.step h3 { margin: 0 0 4px; font-size: 13px; font-weight: 650; }
+.step h3 .n { color: var(--faint); margin-right: 6px; }
+.kv { display: grid; grid-template-columns: 92px 1fr; gap: 3px 10px; font-size: 13px; }
+.kv > .k { color: var(--faint); }
+.directive { background: #231c2e; border: 1px solid #3a2d4c; border-radius: 8px; padding: 6px 10px; color: #e5d7ff; }
+ul.items { margin: 2px 0; padding-left: 16px; }
+ul.items li { margin: 2px 0; }
+.id { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; color: var(--violet); }
+.mode { font-size: 11px; padding: 0 6px; border-radius: 4px; margin-right: 4px; }
+.mode.plant { background: #3b3320; color: var(--gold); }
+.mode.mention { background: #203047; color: var(--user); }
+.mode.payoff { background: #1f3a2c; color: var(--green); }
+.note.bad { color: var(--red); }
+.note.good::before { content: "✓ "; color: var(--green); }
+.note.bad::before { content: "✗ "; }
+.beat { font-weight: 650; color: var(--gold); }
+details summary { cursor: pointer; color: var(--muted); font-size: 12px; margin-top: 4px; }
+pre.xml { white-space: pre-wrap; font-size: 11px; line-height: 1.45; color: #c9d1e0; background: #0c111b; border: 1px solid var(--line); border-radius: 8px; padding: 10px; max-height: 420px; overflow: auto; }
+table.calls { width: 100%; border-collapse: collapse; font-size: 12px; font-variant-numeric: tabular-nums; }
+table.calls td, table.calls th { padding: 2px 6px; text-align: right; border-bottom: 1px solid #222b3d; }
+table.calls td:first-child, table.calls th:first-child { text-align: left; }
+table.calls th { color: var(--faint); font-weight: 500; }
+/* tabs */
+.tabs { display: flex; gap: 6px; margin-bottom: 10px; }
+.tabs button { padding: 4px 10px; font-size: 12px; }
+.tabs button.on { background: #2b3f66; border-color: #3d5a8f; }
+.dgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px; }
+.det { border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; font-size: 12.5px; background: var(--panel2); }
+.det.unplanted { opacity: .62; }
+.det.paid_off { border-color: #2e5a44; }
+.det .top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+.st { font-size: 10.5px; padding: 0 6px; border-radius: 999px; }
+.st.unplanted { background: #2a3142; color: var(--muted); }
+.st.planted { background: #3b3320; color: var(--gold); }
+.st.paid_off { background: #1f3a2c; color: var(--green); }
+.st.locked { background: #2a3142; color: var(--muted); }
+.st.revealable { background: #3a2d4c; color: var(--violet); }
+.st.revealed { background: #1f3a2c; color: var(--green); }
+.aff { color: var(--faint); font-size: 11.5px; margin-top: 3px; }
+.uses { margin-top: 4px; font-size: 11.5px; color: var(--muted); }
+.meter { display: inline-flex; gap: 2px; vertical-align: middle; margin-right: 6px; }
+.meter i { width: 14px; height: 6px; border-radius: 2px; background: #2a3142; }
+.meter i.on { background: var(--red); }
+.empty { color: var(--faint); font-size: 13px; }
+.start { margin: auto; text-align: center; color: var(--muted); padding: 40px 20px; }
+.start h2 { color: var(--text); font-weight: 650; }
+@media (max-width: 980px) { .app { grid-template-columns: 1fr; height: auto; } .chat { height: 80vh; } .panel { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>물빛공원 · 수아와의 저녁 <span style="color:var(--faint);font-weight:500">— 드라마 매니저 시연</span></h1>
+  <label><input type="checkbox" id="baselineToggle" checked> 기준선 함께 보기</label>
+  <button id="resetBtn">새로 시작</button>
+  <div class="usage-total" id="usageTotal"></div>
+  <div class="clock" id="clock">--:--</div>
+</header>
+<div class="app">
+  <section class="chat">
+    <div class="log" id="log"></div>
+    <div class="progress" id="progress"></div>
+    <div class="composer">
+      <textarea id="input" placeholder="수아에게 말하기 · 괄호 ( ) 안은 행동  예) (키링 가게 줄에 선다)"></textarea>
+      <button class="primary" id="sendBtn">보내기</button>
+    </div>
+  </section>
+  <section class="panel" id="panel">
+    <div class="card">
+      <h2>월드 <span class="sub" id="worldSub"></span></h2>
+      <div class="stats" id="worldStats"></div>
+      <svg id="map" viewBox="0 0 340 210" style="width:100%;margin-top:6px"></svg>
+      <h2 style="margin-top:8px">장면 사실 <span class="sub">대화에서 정해진 것 · 검색으로 골라 DM과 수아에게 간다</span></h2>
+      <ul class="items" id="facts"></ul>
+    </div>
+    <div class="card">
+      <h2>긴장 곡선 <span class="sub">DM이 고른 박자</span></h2>
+      <svg id="tension" viewBox="0 0 340 120" style="width:100%"></svg>
+      <h2 style="margin-top:8px">타임라인 <span class="sub">이벤트 시간 창 · 채워진 것 = 일어남</span></h2>
+      <svg id="timeline" viewBox="0 0 340 150" style="width:100%"></svg>
+    </div>
+    <div class="card wide">
+      <h2>턴 판단 <span class="sub" id="traceSub">대화에서 턴을 누르면 그 턴의 판단을 본다</span></h2>
+      <div id="trace" class="steps"><div class="empty">아직 턴이 없다.</div></div>
+    </div>
+    <div class="card wide">
+      <div class="tabs" id="tabs">
+        <button data-tab="details" class="on">떡밥 보드</button>
+        <button data-tab="secrets">비밀</button>
+        <button data-tab="character">캐릭터 특성</button>
+        <button data-tab="memory">기억</button>
+        <button data-tab="usage">호출 합계</button>
+      </div>
+      <div id="tabBody"></div>
+    </div>
+  </section>
+</div>
+<script>
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const acts = (s) => esc(s).replace(/\(([^)]*)\)/g, '<span class="act">($1)</span>');
+const LOC_XY = { store:[28,186], gate:[62,160], market:[104,118], lawn:[160,166], foodtrucks:[176,104], fountain:[236,156], riverside:[246,72], hill:[306,34] };
+const BEAT_KO = { setup:"setup 깔기", complication:"complication 꼬임", climax:"climax 터짐", breather:"breather 숨 돌림", payoff:"payoff 거둠", resolution:"resolution 매듭" };
+const CH_KO = { face:"마주 보고", phone:"전화/메시지", none:"닿지 않음" };
+
+let state = null;            // /api/state
+let traces = {};             // n -> trace (live or fetched)
+let selected = null;
+let busy = false;
+let tab = "details";
+
+// ---------------- 네트워크 ----------------
+async function getState() { state = await (await fetch("/api/state")).json(); }
+async function getTrace(n) { traces[n] = await (await fetch(`/api/trace?n=${n}`)).json(); }
+
+async function runTurn(text) {
+  if (busy) return;
+  busy = true; setBusy(true);
+  let n = null;
+  const steps = { retrieval: "검색", dm: "드라마 매니저", reply: "수아", done: "정리" };
+  const prog = (cur) => { $("#progress").innerHTML = Object.entries(steps).map(([k, v]) =>
+      `<span class="${k === cur ? "on" : (doneSteps.has(k) ? "ok" : "")}">${doneSteps.has(k) ? "✓" : (k === cur ? "…" : "·")} ${v}</span>`).join(""); };
+  const doneSteps = new Set();
+  prog("retrieval");
+  try {
+    const res = await fetch("/api/turn", { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({ text }) });
+    const reader = res.body.getReader(); const dec = new TextDecoder(); let buf = "";
+    while (true) {
+      const { value, done } = await reader.read(); if (done) break;
+      buf += dec.decode(value, { stream: true });
+      let i;
+      while ((i = buf.indexOf("\n")) >= 0) {
+        const line = buf.slice(0, i); buf = buf.slice(i + 1);
+        if (!line.trim()) continue;
+        const e = JSON.parse(line);
+        if (e.type === "error") { alertLine(e.text); continue; }
+        n = e.n;
+        const t = traces[n] = traces[n] || { n, live: true };
+        if (e.type === "user") { t.user = e.text; t.clock_before = e.clock; addPendingTurn(n, e.text, e.clock); selected = n; }
+        if (e.type === "retrieval") { t.retrieval = e; doneSteps.add("retrieval"); prog("dm"); }
+        if (e.type === "dm") { t.dm = e.dm; doneSteps.add("dm"); prog("reply"); }
+        if (e.type === "applied") { t.applied = e; if (state) state.world = e.world; renderWorld(); }
+        if (e.type === "reply") { t.character = e.character; t.character_applied = e.character_applied; t.reply = e;
+          doneSteps.add("reply"); prog("done"); fillTurn(n, e); }
+        if (e.type === "episode") { t.episode = e; }
+        if (e.type === "done") { t.calls = e.calls; t.clock_after = e.state.world.clock; state = e.state; doneSteps.add("done"); prog(null); renderUsage(); fillTurn(n, t.reply || {}); }
+        renderTrace();
+      }
+    }
+    if (n) { await getTrace(n); }
+  } catch (err) { alertLine(String(err)); }
+  busy = false; setBusy(false);
+  renderAll();
+  $("#input").focus();
+}
+
+function alertLine(text) { $("#progress").innerHTML = `<span style="color:var(--red)">오류: ${esc(text)}</span>`; }
+function setBusy(b) { $("#sendBtn").disabled = b; $("#resetBtn").disabled = b; $("#input").disabled = b; }
+
+// ---------------- 대화 ----------------
+function turnHTML(e, pending) {
+  const t = traces[e.n] || {};
+  const dm = t.dm;
+  const chip = `<div class="chip"><b>T${e.n}</b><span>${esc(t.clock_before || e.clock)}${t.clock_after ? " → " + esc(t.clock_after) : ""}</span>
+    ${dm ? `<span>${esc(dm.beat)} · 긴장 ${dm.tension}</span><span>${esc(CH_KO[dm.channel] || "")}</span>` : ""}
+    ${chipUsage(e.usage || (t.calls && usageOf(t.calls.filter(c => c.label !== "baseline"))))}</div>`;
+  let h = chip;
+  if (e.user) h += `<div class="msg user">${acts(e.user)}</div>`;
+  if (e.narration) h += `<div class="narr">${esc(e.narration)}</div>`;
+  if (pending) h += `<div class="silent">…</div>`;
+  else if (e.reply) h += `<div class="msg suah ${e.channel === "phone" ? "phone" : ""}"><span class="who">수아${e.channel === "phone" ? " · 전화" : ""}</span>${acts(e.reply)}</div>`;
+  else h += `<div class="silent">(수아에게 닿지 않았다)</div>`;
+  if (!pending && e.baseline) h += `<div class="msg base"><span class="who">기준선 · 캐릭터 프롬프트만</span>${acts(e.baseline)}</div>`;
+  return h;
+}
+// ---------------- 사용량 ----------------
+function usageOf(calls) {
+  const sum = (k) => calls.reduce((a, c) => a + c[k], 0);
+  return { count: calls.length, input: sum("input"), cached: sum("cached"), output: sum("output"), seconds: Math.max(0, ...calls.map(c => c.seconds)) };
+}
+const kfmt = (x) => x >= 1000 ? (x / 1000).toFixed(1) + "k" : String(x);
+const hit = (u) => u.input ? Math.round(100 * u.cached / u.input) : 0;
+function chipUsage(u) {
+  if (!u || !u.count) return "";
+  return `<span class="usage" title="파이프라인 LLM 호출(기준선 제외). 입력 토큰 중 KV 캐시 적중 비율">LLM ${u.count}회 · 입력 ${kfmt(u.input)} <span class="hit">캐시 ${hit(u)}%</span> · 출력 ${kfmt(u.output)}</span>`;
+}
+function renderUsage() {
+  const el = $("#usageTotal");
+  if (!state || !state.calls || !state.calls.count) { el.innerHTML = ""; return; }
+  const c = state.calls, b = state.baseline_calls;
+  const turns = (state.log || []).length || 1;
+  el.innerHTML = `<span>누적 <b>${state.n}턴</b> · LLM <b>${c.count}회</b> (턴당 ${(c.count / turns).toFixed(1)})</span>
+    <span>입력 <b>${kfmt(c.input)}</b> · 캐시 <b style="color:var(--green)">${hit(c)}%</b> · 출력 <b>${kfmt(c.output)}</b></span>
+    ${b && b.count ? `<span class="base">기준선 ${b.count}회 · 입력 ${kfmt(b.input)} · 캐시 ${hit(b)}%</span>` : ""}`;
+}
+function renderLog() {
+  const log = $("#log");
+  if (!state || !state.log || (!state.log.length && !busy)) {
+    log.innerHTML = `<div class="start"><h2>11월 첫째 주 금요일 저녁, 물빛공원 불꽃축제</h2>
+      <p>약속은 18:30, 정문 광장. 너는 15분 늦었다. 불꽃놀이는 8시.</p>
+      <p style="font-size:13px">수아에게는 말하지 않은 사정이 있다. 드라마 매니저는 시간, 장소, 사건, 떡밥을 움직인다.</p>
+      <button class="primary" onclick="start()">시작</button></div>`;
+    return;
+  }
+  log.innerHTML = state.log.map(e => `<div class="turn ${e.n === selected ? "sel" : ""}" data-n="${e.n}">${turnHTML(e)}</div>`).join("");
+  log.querySelectorAll(".turn").forEach(el => el.onclick = async () => { selected = +el.dataset.n; if (!traces[selected] || traces[selected].live) await getTrace(selected); renderLog(); renderTrace(); });
+  log.scrollTop = log.scrollHeight;
+}
+function addPendingTurn(n, text, clock) {
+  const log = $("#log");
+  if (log.querySelector(".start")) log.innerHTML = "";
+  log.querySelectorAll(".turn.sel").forEach(x => x.classList.remove("sel"));
+  const div = document.createElement("div");
+  div.className = "turn sel"; div.dataset.n = n; div.id = "pending-" + n;
+  div.innerHTML = turnHTML({ n, user: text, clock }, true);
+  log.appendChild(div); log.scrollTop = log.scrollHeight;
+}
+function fillTurn(n, e) {
+  const div = document.getElementById("pending-" + n); if (!div) return;
+  const t = traces[n];
+  div.innerHTML = turnHTML({ n, user: t.user, clock: t.clock_before, narration: e.narration, reply: e.reply, baseline: e.baseline, channel: t.dm && t.dm.channel });
+  $("#log").scrollTop = $("#log").scrollHeight;
+}
+
+// ---------------- 월드 ----------------
+function renderWorld() {
+  if (!state || !state.world) return;
+  const w = state.world;
+  $("#clock").textContent = w.clock;
+  const bat = Math.max(0, w.battery);
+  const batColor = !w.phone_on ? "var(--red)" : bat < 10 ? "var(--red)" : bat < 20 ? "var(--gold)" : "var(--green)";
+  $("#worldSub").textContent = `${w.start} 시작 · 불꽃 20:00`;
+  $("#worldStats").innerHTML = `
+    <span><span class="k">수아</span><b style="color:var(--suah)">${esc(w.locations[w.char_loc]?.name)}</b></span>
+    <span><span class="k">나</span><b style="color:var(--user)">${esc(w.locations[w.user_loc]?.name)}</b></span>
+    <span class="badge ${w.together ? "together" : "apart"}">${w.together ? "함께" : "떨어져 있음"}</span>
+    <span class="battery"><span class="k">수아 폰</span><span class="bar"><span class="fill" style="width:${bat}%;background:${batColor}"></span></span>
+      <b style="color:${batColor}">${w.phone_on ? bat.toFixed(0) + "%" : "꺼짐 " + esc(w.phone_off_at)}</b></span>
+    <span><span class="k">기온</span>${w.temperature}℃</span>`;
+  renderMap(w);
+  renderTimeline(w);
+  const fs = w.facts || [];
+  $("#facts").innerHTML = fs.length ? fs.map(f => `<li class="${f.active ? "" : "use-try"}"><span class="id">${esc(f.id)}</span> <span class="badge">${esc(f.source)}</span> ${esc(f.text)} <span style="color:var(--faint)">T${f.turn}${f.retired_turn ? " → T" + f.retired_turn + " 지남" : ""}</span></li>`).join("") : `<li class="empty">아직 없음</li>`;
+}
+function renderMap(w) {
+  const xy = {}; let extra = 0;
+  for (const [k, v] of Object.entries(w.locations)) xy[k] = LOC_XY[k] || [50 + (extra++) * 60, 200 - 14];
+  let s = `<path d="M0 46 C 70 30, 120 60, 190 40 S 300 10, 340 18 L340 0 L0 0 Z" fill="#1b2a44" opacity=".9"/>
+           <text x="12" y="16" fill="#4d6a96" font-size="10">강</text>`;
+  const edges = new Set();
+  // 인접 정보는 state에 없으므로 고정 경로 + 추가 장소는 정문 근처로 그린다
+  const E = [["gate","market"],["gate","lawn"],["gate","store"],["market","foodtrucks"],["market","fountain"],["foodtrucks","lawn"],["foodtrucks","riverside"],["lawn","riverside"],["lawn","fountain"],["fountain","riverside"],["riverside","hill"]];
+  for (const [a, b] of E) if (xy[a] && xy[b]) s += `<line x1="${xy[a][0]}" y1="${xy[a][1]}" x2="${xy[b][0]}" y2="${xy[b][1]}" stroke="#2a3449" stroke-width="2"/>`;
+  for (const [k, v] of Object.entries(w.locations)) {
+    const [x, y] = xy[k]; const c = v.crowd;
+    const fill = c === 3 ? "#5a2e36" : c === 2 ? "#4a3d22" : "#1f2738";
+    s += `<circle cx="${x}" cy="${y}" r="${8 + c * 3}" fill="${fill}" stroke="${v.added ? "var(--violet)" : "#3a4660"}" stroke-dasharray="${v.added ? "3 2" : ""}"/>
+          <text x="${x}" y="${y + 22 + c * 2}" fill="var(--muted)" font-size="10" text-anchor="middle">${esc(v.name)}${c > 1 ? (c === 3 ? " ●●" : " ●") : ""}</text>`;
+  }
+  const pin = (loc, color, label, dx) => { const [x, y] = xy[loc] || [0, 0];
+    return `<circle cx="${x + dx}" cy="${y - 2}" r="5.5" fill="${color}"/><text x="${x + dx}" y="${y - 10}" fill="${color}" font-size="10" text-anchor="middle" font-weight="700">${label}</text>`; };
+  s += pin(w.char_loc, "var(--suah)", "수아", w.char_loc === w.user_loc ? -7 : 0);
+  s += pin(w.user_loc, "var(--user)", "나", w.char_loc === w.user_loc ? 7 : 0);
+  $("#map").innerHTML = s;
+}
+const tmin = (s) => { const [h, m] = s.split(":").map(Number); return h * 60 + m; };
+function renderTimeline(w) {
+  const x0 = tmin("18:30"), x1 = tmin("21:00"), L = 40, R = 332;
+  const X = (m) => L + (Math.min(Math.max(m, x0), x1) - x0) / (x1 - x0) * (R - L);
+  let s = "";
+  for (let m = x0; m <= x1; m += 30) s += `<line x1="${X(m)}" y1="4" x2="${X(m)}" y2="140" stroke="#222b3d"/><text x="${X(m)}" y="148" fill="var(--faint)" font-size="9" text-anchor="middle">${String(Math.floor(m/60)).padStart(2,"0")}:${String(m%60).padStart(2,"0")}</text>`;
+  const evs = w.events.slice(0, 15);
+  const rowH = 132 / Math.max(evs.length, 1);
+  evs.forEach((e, i) => {
+    const y = 6 + i * rowH, a = X(tmin(e.window[0])), b = Math.max(X(tmin(e.window[1])), a + 3);
+    const color = e.core ? "var(--gold)" : e.added ? "var(--violet)" : "var(--cyan)";
+    s += `<text x="${L - 4}" y="${y + rowH * .7}" fill="${e.fired ? color : "var(--faint)"}" font-size="7.5" text-anchor="end">${esc(e.id.slice(0, 11))}</text>
+          <rect x="${a}" y="${y + 1}" width="${b - a}" height="${Math.max(rowH - 3, 3)}" rx="2" fill="${e.fired ? color : "none"}" fill-opacity="${e.fired ? .55 : 0}" stroke="${color}" stroke-opacity=".5"><title>${esc(e.text)}</title></rect>`;
+    if (e.fired) s += `<circle cx="${X(tmin(e.fired.clock))}" cy="${y + rowH / 2}" r="2.6" fill="#fff"/>`;
+  });
+  s += `<line x1="${X(tmin(w.clock))}" y1="0" x2="${X(tmin(w.clock))}" y2="142" stroke="var(--red)" stroke-width="1.5"/>`;
+  $("#timeline").innerHTML = s;
+}
+function renderTension() {
+  const T = (state && state.tension) || [];
+  const L = 22, R = 334, top = 8, bot = 100;
+  let s = "";
+  for (let v = 0; v <= 10; v += 5) { const y = bot - v / 10 * (bot - top); s += `<line x1="${L}" y1="${y}" x2="${R}" y2="${y}" stroke="#222b3d"/><text x="${L - 4}" y="${y + 3}" fill="var(--faint)" font-size="9" text-anchor="end">${v}</text>`; }
+  if (T.length) {
+    const X = (i) => T.length === 1 ? (L + R) / 2 : L + 8 + i / (T.length - 1) * (R - L - 16);
+    const Y = (v) => bot - v / 10 * (bot - top);
+    s += `<polyline fill="none" stroke="var(--gold)" stroke-width="2" points="${T.map((t, i) => `${X(i)},${Y(t.tension)}`).join(" ")}"/>`;
+    T.forEach((t, i) => { s += `<circle cx="${X(i)}" cy="${Y(t.tension)}" r="${t.n === selected ? 4.5 : 3}" fill="${t.n === selected ? "#fff" : "var(--gold)"}"><title>T${t.n} ${t.beat} ${t.tension}</title></circle>`;
+      if (T.length <= 14 || i % 2 === 0) s += `<text x="${X(i)}" y="114" fill="var(--faint)" font-size="8" text-anchor="middle">T${t.n}</text>`; });
+  }
+  $("#tension").innerHTML = s;
+}
+
+// ---------------- 턴 판단 ----------------
+function renderTrace() {
+  const t = traces[selected];
+  if (!t) { $("#trace").innerHTML = `<div class="empty">아직 턴이 없다.</div>`; return; }
+  $("#traceSub").textContent = `T${t.n} · ${t.clock_before || ""}${t.clock_after ? " → " + t.clock_after : ""}`;
+  const parts = [];
+  // 1. 검색
+  const r = t.retrieval;
+  parts.push(step(1, "검색기 둘 + 사실 추출기 (병렬)", !r, r ? `
+    <div class="kv">
+      <div class="k">이벤트</div><div>후보 ${r.event_candidates.length}개 (지금 장소·시간 창으로 코드가 거름) → 고름 ${r.events.length}개
+        <ul class="items">${r.events.map(p => `<li><span class="id">${esc(p.id)}</span> ${esc(p.why)}</li>`).join("") || "<li class='empty'>없음</li>"}</ul></div>
+      <div class="k">장면 사실</div><div>${(r.fact_candidates || []).length ? `후보 ${r.fact_candidates.length}개 (유효한 사실 전부) → 고름 ${r.facts.length}개
+        <ul class="items">${r.facts.map(p => `<li><span class="id">${esc(p.id)}</span> ${esc(factText(p.id))} <span style="color:var(--faint)">${esc(p.why)}</span></li>`).join("") || "<li class='empty'>없음</li>"}</ul>` : "<span class='empty'>아직 없음</span>"}</div>
+      <div class="k">새 사실 추출</div><div>${(r.extracted || []).length ? `<ul class="items">${r.extracted.map(x => `<li><span class="badge">${esc(x.source)}</span> ${esc(x.kind)}: ${esc(x.name ? x.name + " — " : "")}${esc(x.text)}</li>`).join("")}</ul>` : "<span class='empty'>없음</span>"} <span style="color:var(--faint);font-size:12px">지난 수아 말 + 이번 입력에서. 받을지는 DM이 판단</span></div>
+      <div class="k">떡밥</div><div><i style="color:var(--muted)">필요: ${esc(r.details.need)}</i>
+        <ul class="items">${r.details.picks.map(p => `<li><span class="id">${esc(p.id)}</span> ${esc(p.use_as)}</li>`).join("") || "<li class='empty'>없음</li>"}</ul></div>
+    </div>` : ""));
+  // 2. 드라마 매니저
+  const d = t.dm;
+  if (d) {
+    const cu = d.character_update || {};
+    const cuItems = [cu.mood && `기분 → ${esc(cu.mood)}`, cu.attitude && `태도 → ${esc(cu.attitude)}`, cu.want && `원하는 것 → ${esc(cu.want)}`,
+      ...(cu.grievances || []).map(g => `서운함 <span class="id">${esc(g.id)}</span> → ${g.intensity} <span style="color:var(--faint)">${esc(g.why)}</span>`),
+      cu.new_grievance && `새 서운함: ${esc(cu.new_grievance)}`].filter(Boolean);
+    parts.push(step(2, "드라마 매니저", false, `
+      <div class="kv">
+        <div class="k">장면</div><div>${esc(d.scene_read)}</div>
+        <div class="k">박자</div><div><span class="beat">${esc(BEAT_KO[d.beat] || d.beat)}</span> · 긴장 ${d.tension} · ${esc(CH_KO[d.channel])}${d.together ? "" : " · 떨어져 있음"}</div>
+        <div class="k">시간</div><div>+${d.minutes}분 <span style="color:var(--faint)">${esc(d.minutes_why)}</span></div>
+        ${d.offscreen ? `<div class="k">그동안 수아</div><div>${esc(d.offscreen)} <span class="badge">폰 ${esc(d.character_phone_use)}</span></div>` : ""}
+        <div class="k">이벤트</div><div>${d.events.length ? `<ul class="items">${d.events.map(e => `<li><span class="id">${esc(e.id)}</span> ${esc(e.how)}</li>`).join("")}</ul>` : "<span class='empty'>없음</span>"}</div>
+        <div class="k">떡밥</div><div>${d.details.length ? `<ul class="items">${d.details.map(x => `<li><span class="mode ${x.mode}">${x.mode}</span><span class="id">${esc(x.id)}</span> <span class="badge">${x.via === "narration" ? "지문으로" : "수아에게"}</span> ${esc(x.how)}</li>`).join("")}</ul>` : "<span class='empty'>없음</span>"}</div>
+        ${d.reveal.length ? `<div class="k">비밀 열기</div><div>${d.reveal.map(x => `<span class="st revealable">${esc(x.id)}</span> ${esc(x.why)}`).join("<br>")}</div>` : ""}
+        <div class="k">수아의 속</div><div class="directive">${esc(d.directive)}</div>
+        ${cuItems.length ? `<div class="k">특성 갱신</div><div><ul class="items">${cuItems.map(x => `<li>${x}</li>`).join("")}</ul><span style="color:var(--faint);font-size:12px">일관성: ${esc(cu.consistency)}</span></div>` : ""}
+        ${d.goal_updates.length ? `<div class="k">목표</div><div>${d.goal_updates.map(g => `<span class="id">${esc(g.id)}</span> → ${esc(g.status)}`).join(", ")}</div>` : ""}
+        ${d.user_facts.length ? `<div class="k">유저 디테일</div><div><ul class="items">${d.user_facts.map(f => `<li>${esc(f.text)} <span class="aff">${esc(f.affordances.join(", "))}</span></li>`).join("")}</ul></div>` : ""}
+        ${(d.world_additions || []).length ? `<div class="k">세계 확장</div><div><ul class="items">${d.world_additions.map(x => `<li class="note ${x.accept ? "good" : "bad"}"><span class="badge">${esc(x.source)}</span> ${esc(x.kind)}: ${esc(x.name ? x.name + " — " : "")}${esc(x.text)}${x.affordances.length ? ` <span class="aff">→ 떡밥 쓸모: ${esc(x.affordances.join(", "))}</span>` : ""}${x.accept ? "" : ` <span style="color:var(--faint)">${esc(x.why)}</span>`}</li>`).join("")}</ul></div>` : ""}
+        ${(d.show_facts || []).length ? `<div class="k">수아에게 보일 사실</div><div>${d.show_facts.map(id => `<span class="id">${esc(id)}</span> ${esc(factText(id))}`).join("<br>")}</div>` : ""}
+        ${(d.retire_facts || []).length ? `<div class="k">지난 사실 정리</div><div>${d.retire_facts.map(x => `<span class="id">${esc(x.id)}</span> ${esc(factText(x.id))} <span style="color:var(--faint)">${esc(x.why)}</span>`).join("<br>")}</div>` : ""}
+      </div>
+      ${t.dm_doc ? `<details><summary>드라마 매니저가 받은 XML 보기</summary><pre class="xml">${esc(t.dm_doc)}</pre></details>` : ""}`));
+  } else parts.push(step(2, "드라마 매니저", !!r, ""));
+  // 3. 코드 검증
+  const a = t.applied;
+  if (a) parts.push(step(3, "코드 검증과 반영", false, `<ul class="items">${a.notes.map(n => `<li class="note ${n.ok ? "good" : "bad"}">${esc(n.text)}</li>`).join("")}</ul>`));
+  // 4. 캐릭터
+  const c = t.character;
+  if (c) parts.push(step(4, "캐릭터 (수아)", false, `
+    <div class="kv">
+      <div class="k">말</div><div>${acts(c.say)}</div>
+      ${c.move ? `<div class="k">움직임</div><div>${esc(c.move.to)} ${c.move.alone ? "<b style='color:var(--red)'>혼자 간다</b>" : "같이 가자"}</div>` : ""}
+      <div class="k">쓴 떡밥</div><div>${(c.used_details || []).length ? c.used_details.map(x => `<span class="id">${esc(x)}</span>`).join(" ") : "<span class='empty'>없음</span>"} <span style="color:var(--faint);font-size:12px">받은 떡밥 중 실제로 쓴 것만 상태가 바뀐다. 수아가 새로 지어낸 사실은 다음 턴 드라마 매니저가 대사에서 직접 뽑는다</span></div>
+      ${c.revealed.length ? `<div class="k">털어놓음</div><div>${c.revealed.map(x => `<span class="st revealed">${esc(x)}</span>`).join(" ")}</div>` : ""}
+    </div>
+    ${(t.character_applied || []).length ? `<ul class="items">${t.character_applied.map(n => `<li class="note ${n.ok ? "good" : "bad"}">${esc(n.text)}</li>`).join("")}</ul>` : ""}
+    ${c._doc ? `<details><summary>수아가 받은 XML 보기 (선별된 정보만)</summary><pre class="xml">${esc(c._doc)}</pre></details>` : ""}`));
+  else if (d && d.channel === "none") parts.push(step(4, "캐릭터 (수아)", false, `<span class="empty">수아에게 닿지 않아 부르지 않았다.</span>`));
+  else if (d) parts.push(step(4, "캐릭터 (수아)", true, ""));
+  // 5. 에피소드
+  if (t.episode) parts.push(step(5, "에피소드 정리 (10턴마다)", false, `${esc(t.episode.text)}${t.episode.raw && t.episode.raw.summary ? `<div style="color:var(--muted);margin-top:4px">${esc(t.episode.raw.summary)}</div>` : ""}`));
+  // 6. 호출
+  if (t.calls) parts.push(step(t.episode ? 6 : 5, "LLM 호출", false, callsTable(t.calls)));
+  $("#trace").innerHTML = parts.join("");
+}
+function factText(id) {
+  const f = state && state.world && (state.world.facts || []).find(x => x.id === id);
+  return f ? f.text + (f.active ? "" : " (지난 사실)") : "";
+}
+function step(i, title, live, body) {
+  return `<div class="step ${live ? "live" : ""}"><h3><span class="n">${i}</span>${title}${live ? ' <span style="color:var(--gold);font-weight:400">…</span>' : ""}</h3>${body}</div>`;
+}
+function callsTable(calls) {
+  const rows = calls.map(c => `<tr><td>${esc(c.label)}</td><td>${c.input.toLocaleString()}</td><td>${c.input ? Math.round(100 * c.cached / c.input) : 0}%</td><td>${c.output.toLocaleString()}</td><td>${c.seconds}s</td></tr>`).join("");
+  const sum = (k) => calls.reduce((a, c) => a + c[k], 0);
+  return `<table class="calls"><tr><th>호출</th><th>입력</th><th>캐시</th><th>출력</th><th>시간</th></tr>${rows}
+    <tr><td><b>합계 ${calls.length}회</b></td><td>${sum("input").toLocaleString()}</td><td>${sum("input") ? Math.round(100 * sum("cached") / sum("input")) : 0}%</td><td>${sum("output").toLocaleString()}</td><td></td></tr></table>`;
+}
+
+// ---------------- 탭 ----------------
+function renderTab() {
+  document.querySelectorAll("#tabs button").forEach(b => b.classList.toggle("on", b.dataset.tab === tab));
+  const body = $("#tabBody");
+  if (!state || !state.details) { body.innerHTML = `<div class="empty">시작하면 채워진다.</div>`; return; }
+  if (tab === "details") {
+    const order = { paid_off: 0, planted: 1, unplanted: 2 };
+    const ds = [...state.details].sort((a, b) => order[a.status] - order[b.status]);
+    const cnt = (s) => state.details.filter(d => d.status === s).length;
+    body.innerHTML = `<div style="font-size:12px;color:var(--muted);margin-bottom:8px">뿌림 ${cnt("planted")} · 거둠 ${cnt("paid_off")} · 아직 ${cnt("unplanted")} — 트리거 없이 쓸모(affordances)만 적어 두고, DM이 장면에 필요한 쓸모로 고른다. 거두지 못한 떡밥은 디테일로 남는다.</div>
+      <div class="dgrid">${ds.map(d => `<div class="det ${d.status}">
+        <div class="top"><span class="id">${esc(d.id)}${d.source === "유저" ? " · 유저가 말함" : ""}</span><span class="st ${d.status}">${{unplanted:"아직",planted:"뿌림",paid_off:"거둠"}[d.status]}</span></div>
+        <div>${esc(d.seed)}</div><div class="aff">쓸모: ${esc((d.affordances || []).join(", "))}</div>
+        ${d.uses && d.uses.length ? `<div class="uses">${d.uses.map(u => `<span class="${u.realized === false ? "use-try" : ""}" title="${u.realized === false ? "DM이 골랐지만 대사·지문에 나오지 않음" : esc(u.by || "")}">T${u.turn} <span class="mode ${u.mode}">${u.mode}</span></span>`).join(" ")}</div>` : ""}
+      </div>`).join("")}</div>`;
+  } else if (tab === "secrets") {
+    body.innerHTML = `<div class="dgrid">${state.character.secrets.map(s => `<div class="det">
+      <div class="top"><span class="id">${esc(s.id)} · ${s.mode === "hinted" ? "수아는 알지만 말 못 함" : "묻혀 있음(열리기 전엔 수아에게도 안 보임)"}</span><span class="st ${s.status}">${{locked:"잠김",revealable:"드러날 수 있음",revealed:"털어놓음"}[s.status]}</span></div>
+      <div><span class="k" style="color:var(--faint)">cover</span> ${esc(s.cover)}</div>
+      <div style="margin-top:4px"><span class="k" style="color:var(--faint)">fact</span> ${esc(s.fact)}</div>
+      <div class="uses">${s.opened_turn ? `T${s.opened_turn}에 DM이 엶` : ""}${s.revealed_turn ? ` · T${s.revealed_turn}에 수아가 털어놓음` : ""}</div></div>`).join("")}</div>`;
+  } else if (tab === "character") {
+    const dy = state.character.dynamic;
+    body.innerHTML = `<div class="kv">
+      <div class="k">기분</div><div>${esc(dy.mood)}</div><div class="k">태도</div><div>${esc(dy.attitude)}</div><div class="k">원하는 것</div><div>${esc(dy.want)}</div>
+      <div class="k">서운함</div><div>${dy.grievances.map(g => `<div><span class="meter">${[1,2,3].map(i => `<i class="${g.intensity >= i ? "on" : ""}"></i>`).join("")}</span>${esc(g.text)}</div>`).join("")}</div>
+      <div class="k">목표</div><div>${state.character.goals.map(g => `<div><span class="badge">${esc(g.status)}</span> ${esc(g.text)}</div>`).join("")}</div></div>`;
+  } else if (tab === "memory") {
+    const m = state.memory;
+    body.innerHTML = `<div class="kv">
+      <div class="k">원문 턴</div><div>${m.raw_turns.length ? `T${m.raw_turns[0]} ~ T${m.raw_turns[m.raw_turns.length - 1]} (${m.raw_turns.length}턴, 최소 5턴은 원문으로 남김 · 10턴마다 DM이 에피소드로 묶음)` : "없음"}</div>
+      <div class="k">에피소드</div><div>${m.episodes.length ? m.episodes.map(e => `<div><b>${esc(e.title)}</b> <span style="color:var(--faint)">T${e.turns[0]}~T${e.turns[1]} · ${esc(e.clock.join("~"))}</span><br>${esc(e.summary)}</div>`).join("") : "<span class='empty'>아직 없음</span>"}</div>
+      <div class="k">장기 기억</div><div><ul class="items">${m.long_term.map((x, i) => `<li ${i >= 5 ? 'style="color:var(--gold)"' : ""}>${esc(x)}</li>`).join("")}</ul><span style="color:var(--faint);font-size:12px">노란 줄은 오늘 새로 생긴 기억</span></div></div>`;
+  } else if (tab === "usage") {
+    const c = state.calls;
+    body.innerHTML = `<div class="stats"><span><span class="k">호출</span>${c.count}회</span><span><span class="k">입력</span>${c.input.toLocaleString()}</span>
+      <span><span class="k">캐시</span>${c.input ? Math.round(100 * c.cached / c.input) : 0}%</span><span><span class="k">출력</span>${c.output.toLocaleString()}</span></div>`;
+  }
+}
+
+function renderAll() { renderUsage(); renderWorld(); renderTension(); renderLog(); renderTrace(); renderTab(); }
+
+// ---------------- 시작 ----------------
+async function start() {
+  const baseline = $("#baselineToggle").checked;
+  state = await (await fetch("/api/reset", { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({ baseline }) })).json();
+  traces = {}; selected = null; renderAll();
+  $("#log").innerHTML = "";
+  await runTurn("");
+}
+$("#resetBtn").onclick = () => start();
+$("#sendBtn").onclick = () => { const v = $("#input").value.trim(); if (!v) return; $("#input").value = ""; runTurn(v); };
+$("#input").addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); $("#sendBtn").click(); } });
+document.querySelectorAll("#tabs button").forEach(b => b.onclick = () => { tab = b.dataset.tab; renderTab(); });
+
+(async () => {
+  await getState();
+  if (state && state.log && state.log.length) { selected = state.log[state.log.length - 1].n; await getTrace(selected); }
+  renderAll();
+})();
+</script>
+</body>
+</html>

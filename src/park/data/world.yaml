@@ -1,0 +1,104 @@
+# 물빛공원, 11월 첫째 주 금요일 저녁. 가을 불꽃축제 날이다.
+# 시각은 "HH:MM". 사건과 기억 문장에는 누가 했는지(수아/유저)를 적는다.
+
+park: 물빛공원
+date: 11월 첫째 주 금요일
+start: "18:45"
+promised: "18:30"          # 수아와 유저가 정문에서 만나기로 한 시각
+end: "21:30"               # 데모가 다루는 끝 시각
+
+locations:
+  gate:       {name: 정문 광장,  desc: "공원 입구. 축제 안내판과 벤치가 있다. 수아가 기다리던 곳.", near: {lawn: 4, market: 3, store: 2}}
+  market:     {name: 기념품 거리, desc: "천막 가게가 줄지어 선 플리마켓. 수제 키링, 즉석사진 부스, 캐리커처 화가.", near: {gate: 3, foodtrucks: 3, fountain: 5}}
+  foodtrucks: {name: 푸드트럭 존, desc: "어묵, 회오리감자, 츄러스 트럭. 풍선 다트 게임.", near: {market: 3, lawn: 3, riverside: 5}}
+  lawn:       {name: 잔디광장,   desc: "가운데 무대가 있는 넓은 잔디밭. 돗자리 손님이 많다.", near: {gate: 4, foodtrucks: 3, riverside: 4, fountain: 3}}
+  fountain:   {name: 음악분수,   desc: "둥근 분수대. 정해진 시각에 음악과 조명이 나온다.", near: {lawn: 3, market: 5, riverside: 4}}
+  riverside:  {name: 강변 산책로, desc: "강을 따라 난 길. 바람이 차다. 소원등 부스가 있다.", near: {lawn: 4, foodtrucks: 5, fountain: 4, hill: 8}}
+  hill:       {name: 전망 언덕,  desc: "강 건너 불꽃이 정면으로 보이는 언덕. 꼭대기에 벤치 두 개.", near: {riverside: 8}}
+  store:      {name: 공원 편의점, desc: "정문 옆 작은 편의점. 보조배터리 대여기가 있다.", near: {gate: 2}}
+
+# 장소별 인파. level 1 한산, 2 붐빔, 3 걷기 힘듦. 목록에 없는 시간은 1.
+crowd:
+  lawn:      [{from: "18:50", to: "19:40", level: 3}]
+  riverside: [{from: "19:40", to: "20:25", level: 3}, {from: "20:25", to: "20:45", level: 2}]
+  hill:      [{from: "19:45", to: "20:25", level: 2}]
+  foodtrucks: [{from: "18:45", to: "19:30", level: 2}]
+  gate:      [{from: "20:20", to: "20:50", level: 3}]
+
+# 코드가 분 단위로 바꾸는 수치. 시간은 거꾸로 가지 않고, 배터리는 줄기만 한다.
+states:
+  battery:
+    owner: 수아
+    start: 23              # %. 수아는 퇴근하고 바로 와서 충전을 못 했다
+    drain_per_min: {idle: 0.15, photos: 0.6, searching: 0.8, calling: 1.2}
+  temperature:
+    start: 13              # ℃. 해가 진 뒤라 조금씩 떨어진다
+    per_hour: -2
+
+events:
+  - id: fireworks
+    core: true
+    where: [riverside, hill, lawn, fountain]
+    window: ["20:00", "20:20"]
+    text: "강 건너에서 불꽃놀이가 시작된다. 첫 불꽃이 하늘을 가른다."
+    tags: [절정, 불꽃, 함께 보기, 고백할 순간]
+  - id: busking
+    where: [lawn, gate, foodtrucks]
+    window: ["18:50", "19:40"]
+    text: "잔디광장 무대에서 밴드 공연이 시작되고, 사람들이 무대 쪽으로 몰린다."
+    tags: [인파, 음악, 구경]
+  - id: lost_child_announcement
+    where: [any]
+    window: ["19:15", "19:35"]
+    text: "공원 스피커에서 미아 방송이 나온다. '노란 점퍼를 입은 일곱 살 여자아이 보호자를 찾습니다.'"
+    tags: [방송, 아이, 잃어버림, 기다림]
+  - id: fountain_show
+    where: [fountain, lawn]
+    window: ["19:30", "19:40"]
+    text: "음악분수 쇼가 시작된다. 물줄기가 조명 색을 바꾸며 솟는다."
+    tags: [구경, 낭만]
+  - id: crowd_surge
+    where: [lawn, riverside, foodtrucks, fountain]
+    window: ["19:40", "19:58"]
+    text: "공연이 끝나자 잔디광장의 인파가 불꽃놀이를 보러 한꺼번에 강변으로 몰린다. 길이 막히고 서로 밀린다."
+    tags: [인파, 길 막힘, 헤어짐, 엇갈림]
+  - id: powerbank_soldout
+    where: [store]
+    window: ["19:35", "21:30"]
+    text: "편의점 보조배터리 대여기에 '대여 가능 0'이 떠 있다. 축제 손님이 다 빌려 갔다."
+    tags: [배터리, 연락, 곤란]
+  - id: lantern_booth
+    where: [riverside]
+    window: ["18:45", "19:55"]
+    text: "강변 소원등 부스에서 종이등에 소원을 적어 강에 띄운다. 한 개 삼천 원."
+    tags: [소원, 속마음, 고백]
+  - id: test_shot
+    where: [any]
+    window: ["19:50", "19:56"]
+    text: "강 건너에서 시험 불꽃 한 발이 '펑' 하고 터진다. 사람들이 일제히 고개를 든다."
+    tags: [불꽃, 예고, 시간 압박]
+  - id: lights_dim
+    where: [any]
+    window: ["19:57", "20:00"]
+    text: "불꽃놀이를 위해 공원 가로등이 하나둘 꺼진다. 주변이 어두워진다."
+    tags: [어둠, 길 찾기, 엇갈림]
+  - id: caricature
+    where: [market]
+    window: ["18:45", "19:45"]
+    text: "캐리커처 화가가 지나가는 커플에게 '두 분 그려 드릴까요? 십 분이면 돼요' 하고 말을 건다."
+    tags: [커플, 사진 대신, 관계]
+  - id: food_last_order
+    where: [foodtrucks]
+    window: ["19:45", "20:00"]
+    text: "어묵 트럭 사장님이 '불꽃 시작하면 문 닫아요, 마지막 주문 받아요!' 하고 외친다."
+    tags: [음식, 마감, 시간 압박]
+  - id: going_home_rush
+    where: [riverside, gate, lawn, hill]
+    window: ["20:20", "21:00"]
+    text: "불꽃놀이가 끝나자 사람들이 한꺼번에 정문 쪽으로 빠져나간다."
+    tags: [귀가, 인파, 마무리]
+  - id: cold_wind
+    where: [riverside, hill]
+    window: ["19:20", "21:30"]
+    text: "강바람이 갑자기 세게 분다. 얇은 겉옷으로는 춥다."
+    tags: [추위, 겉옷, 배려]

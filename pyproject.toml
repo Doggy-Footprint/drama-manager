@@ -1,9 +1,9 @@
 [project]
 name = "bunkerkids-chat"
 version = "0.3.0"
-description = "캐릭터 채팅 터미널 인터페이스. 다음 시도의 세션을 붙인다"
+description = "공원 데이트 RP: 월드 모델, 떡밥, 드라마 매니저, 캐릭터"
 requires-python = ">=3.12"
-dependencies = ["anthropic>=2.4,<3", "python-dotenv>=1.2", "prompt_toolkit>=3.0.43,<4"]
+dependencies = ["anthropic>=2.4,<3", "openai>=3,<4", "pyyaml>=6", "python-dotenv>=1.2", "prompt_toolkit>=3.0.43,<4"]
 
 [project.optional-dependencies]
 dev = ["pytest>=9"]
@@ -14,6 +14,9 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+park = ["data/*.yaml", "prompts/*.md", "web/*.html"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

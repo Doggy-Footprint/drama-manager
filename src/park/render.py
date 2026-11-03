@@ -1,0 +1,238 @@
+"""LLM에 보낼 XML 문서를 만든다. 캐릭터에게는 드라마 매니저가 고른 것만, 드라마 매니저에게는 전부 보낸다.
+
+캐릭터 문서는 바뀌지 않는 것(기억, 에피소드, 지난 턴)을 앞에, 매 턴 바뀌는 것(details, world_model, characteristic)을 뒤에 둬서
+서버 쪽 프롬프트 캐시가 앞부분을 다시 쓰게 한다.
+"""
+from __future__ import annotations
+
+from html import escape
+
+from .state import Character, Details, Memory, World, to_min
+
+CROWD = {1: "한산", 2: "붐빔", 3: "걷기 힘들 만큼 붐빔"}
+
+
+def tag(_tag: str, body: str = "", **attrs) -> str:
+    a = "".join(f' {k}="{escape(str(v))}"' for k, v in attrs.items() if v is not None and v != "")
+    return f"<{_tag}{a}>{body}</{_tag}>"
+
+
+def t(s) -> str:
+    return escape(str(s), quote=False)
+
+
+def lines(name: str, items: list[str], child: str) -> str:
+    return tag(name, "".join(f"\n  {tag(child, t(i))}" for i in items) + ("\n" if items else ""))
+
+
+def turn_xml(turn: dict) -> str:
+    body = ""
+    if turn.get("narration"):
+        body += tag("narration", t(turn["narration"]))
+    if turn.get("user"):
+        body += tag("user", t(turn["user"]), channel=turn.get("channel"))
+    if turn.get("reply"):
+        body += tag("suah", t(turn["reply"]))
+    return tag("turn", body, n=turn["n"], clock=turn["clock"])
+
+
+def episodes_xml(memory: Memory) -> str:
+    return tag("recent_episodes", "".join(
+        f"\n  {tag('episode', t(e['summary']), title=e['title'], clock='~'.join(e['clock']))}" for e in memory.episodes)
+        + ("\n" if memory.episodes else ""))
+
+
+# ---------------- 캐릭터 ----------------
+
+def character_doc(*, world: World, details: Details, character: Character, memory: Memory, now: dict,
+                  dm: dict, picked_details: list[dict], fired_now: list[dict], facts: list[dict]) -> str:
+    past = "\n".join(turn_xml(x) for x in memory.turns)
+    current = tag("turn", (tag("narration", t(now["narration"])) if now.get("narration") else "")
+                  + tag("user", t(now["user"]), channel=now["channel"]), n=now["n"], clock=now["clock"])
+    parts = [
+        lines("long_term_memory", memory.long_term, "memory"),
+        episodes_xml(memory),
+        tag("current_turns", f"\n{past}\n{current}\n" if past else f"\n{current}\n"),
+        details_for_character(details, picked_details),
+        world_for_character(world, dm, fired_now, facts),
+        characteristic_for_character(character, dm.get("directive", "")),
+    ]
+    return "\n".join(parts)
+
+
+def details_for_character(details: Details, picked: list[dict]) -> str:
+    out = []
+    for p in picked:
+        d = details.get(p["id"])
+        if not d:
+            continue
+        if p["mode"] == "plant":
+            body = tag("seed", t(d["seed"])) + (tag("use", t(p["how"])) if p.get("how") else "")
+        else:  # 이미 나온 것은 원문을 다시 주지 않는다. 같은 문장을 되풀이하지 않게
+            body = tag("use", t(p.get("how") or d["seed"]))
+        out.append(tag("detail", body, id=d["id"], mode=p["mode"]))
+    return tag("details", "".join(f"\n  {x}" for x in out) + ("\n" if out else ""))
+
+
+def world_for_character(world: World, dm: dict, fired_now: list[dict], facts: list[dict]) -> str:
+    left = to_min("20:00") - world.minute
+    when = f"{world.clock} (불꽃놀이까지 {left}분)" if left > 0 else world.clock
+    here = world.locations[world.char_loc]
+    if world.together:
+        user = "곁에 있다"
+    else:
+        user = f"곁에 없다. 유저는 {world.loc_name(world.user_loc)} 쪽에 있는 것으로 안다"
+    phone = f"켜짐, 배터리 {world.battery:.0f}%" if world.phone_on else f"꺼짐({world.phone_off_at}에 배터리가 다 됐다)"
+    body = [
+        tag("time", t(when)),
+        tag("you", t(f"{here['name']}. {here['desc']} 인파: {CROWD[world.crowd(world.char_loc)]}")),
+        tag("user", t(user)),
+        tag("channel", dm.get("channel", "face")),
+        tag("phone", t(phone)),
+        tag("weather", t(f"기온 {world.temperature():.0f}℃, 11월 저녁")),
+    ]
+    if dm.get("offscreen"):
+        body.append(tag("while_apart", t(dm["offscreen"])))
+    now_ids = {e["id"] for e in fired_now}
+    for e in fired_now:
+        body.append(tag("just_now", t(e["how"])))
+    for e in world.ongoing():
+        if e["id"] not in now_ids:
+            body.append(tag("ongoing", t(e["how"]), since=e["clock"]))
+    for f in facts:
+        body.append(tag("fact", t(f["text"]), where=world.loc_name(f["where"]) if f["where"] else None))
+    body.append(tag("places", t(", ".join(f"{k}={v['name']}" for k, v in world.locations.items()))))
+    return tag("world_model", "".join(f"\n  {b}" for b in body) + "\n")
+
+
+def characteristic_for_character(character: Character, directive: str) -> str:
+    d = character.data
+    core = [tag("trait", t(x)) for x in d["core"]["traits"]]
+    secrets = []
+    for s in d["secrets"]:
+        if s["mode"] == "buried" and s["status"] == "locked":
+            core.append(tag("trait", t(s["cover"])))  # 숨기는 게 없는 듯 지낸다. 비밀이라는 표시도 주지 않는다
+            continue
+        secrets.append(tag("secret", tag("cover", t(s["cover"])) + tag("fact", t(s["fact"])), id=s["id"], status=s["status"]))
+    core.append(tag("speech", t(d["core"]["speech"])))
+    dyn = d["dynamic"]
+    now = tag("mood", t(dyn["mood"])) + tag("attitude", t(dyn["attitude"])) + tag("want", t(dyn["want"]))
+    griev = "".join(f"\n    {tag('grievance', t(g['text']), intensity=g['intensity'])}" for g in dyn["grievances"])
+    goals = "".join(f"\n    {tag('goal', t(g['text']), status=g['status'])}" for g in d["goals"])
+    body = [
+        tag("profile", t(d["profile"])),
+        tag("core", "".join(f"\n    {c}" for c in core) + "\n  "),
+        tag("now", now),
+        tag("grievances", griev + "\n  "),
+        tag("goals", goals + "\n  "),
+        tag("secrets", "".join(f"\n    {s}" for s in secrets) + "\n  "),
+        tag("now_driving", t(directive)),
+    ]
+    return tag("characteristic", "".join(f"\n  {b}" for b in body) + "\n")
+
+
+# ---------------- 드라마 매니저와 검색기 ----------------
+
+def situation_xml(world: World, memory: Memory, user_input: str, n: int, tail: int = 4) -> str:
+    recent = "\n".join(turn_xml(x) for x in memory.turns[-tail:])
+    where = (f"수아와 유저 모두 {world.loc_name(world.char_loc)}" if world.together
+             else f"수아는 {world.loc_name(world.char_loc)}, 유저는 {world.loc_name(world.user_loc)} (떨어져 있음)")
+    return "\n".join([
+        tag("situation", t(f"{world.clock}. {where}. 수아 휴대폰 "
+                           + (f"배터리 {world.battery:.0f}%" if world.phone_on else "꺼짐"))),
+        tag("recent_turns", f"\n{recent}\n"),
+        tag("user_input", t(user_input), turn=n),
+    ])
+
+
+def fact_xml(world: World, f: dict, **extra) -> str:
+    return tag("fact", t(f["text"]), id=f["id"], source=f["source"], where=world.loc_name(f["where"]) if f["where"] else "공원 전체",
+               since=f"T{f['turn']}", **extra)
+
+
+def world_candidates_xml(world: World, events: list[dict], facts: list[dict]) -> str:
+    ev = "".join(
+        f"\n    {tag('event', t(e['text']), id=e['id'], where=','.join(e['where']), window='~'.join(e['window']), tags=','.join(e.get('tags', [])))}"
+        for e in events)
+    fa = "".join(f"\n    {fact_xml(world, f)}" for f in facts)
+    return tag("candidates", f"\n  {tag('events', ev + chr(10) + '  ')}\n  {tag('facts', fa + chr(10) + '  ')}\n")
+
+
+def details_candidates_xml(items: list[dict]) -> str:
+    return tag("candidates", "".join(
+        f"\n  {tag('detail', t(d['seed']), id=d['id'], status=d['status'], affordances=','.join(d['affordances']))}"
+        for d in items) + "\n")
+
+
+def dm_doc(*, world: World, details: Details, character: Character, memory: Memory, user_input: str, n: int,
+           ev_picks: list[dict], fact_picks: list[dict], det_picks: dict, tension_log: list[dict], extracted: list[dict] = (),
+           proposal: str | None = None) -> str:
+    w = world
+    locs = "".join(
+        f"\n    {tag('place', t(v['desc']), id=k, name=v['name'], crowd_now=w.crowd(k), crowd_in_30m=w.crowd(k, w.minute + 30), near=','.join(f'{a}:{m}분' for a, m in v.get('near', {}).items()))}"
+        for k, v in w.locations.items())
+    rates = w.data["states"]["battery"]["drain_per_min"]
+    lasts = ", ".join(f"{k}면 약 {int(w.battery / r)}분" for k, r in rates.items()) if w.phone_on else "이미 꺼짐"
+    world_xml = tag("world", "".join([
+        f"\n  {tag('clock', w.clock)}",
+        f"\n  {tag('promised', t(w.data['promised'] + ' 정문에서 만나기로 했다'))}",
+        f"\n  {tag('positions', t(f'수아={w.char_loc}, 유저={w.user_loc}, 함께={w.together}'))}",
+        f"\n  {tag('phone', t(('켜짐 ' + f'{w.battery:.0f}% (버티는 시간: {lasts})') if w.phone_on else f'꺼짐 ({w.phone_off_at})'), owner='수아')}",
+        f"\n  {tag('temperature', f'{w.temperature():.0f}℃')}",
+        f"\n  {tag('places', locs + chr(10) + '  ')}",
+        f"\n  {tag('routes', t(' / '.join(f'{w.loc_name(k)} {m}분' for k, m in sorted(w.routes(w.char_loc).items(), key=lambda x: x[1]))), origin='수아')}",
+        f"\n  {tag('routes', t(' / '.join(f'{w.loc_name(k)} {m}분' for k, m in sorted(w.routes(w.user_loc).items(), key=lambda x: x[1]))), origin='유저')}" if w.user_loc != w.char_loc else "",
+        "\n"]))
+    timeline = tag("timeline", "".join(
+        f"\n  {tag('event', t(e['text']), id=e['id'], window='~'.join(e['window']), core='yes' if e.get('core') else None, happened=w.fired[e['id']]['clock'] if e['id'] in w.fired else None)}"
+        for e in w.data["events"]) + "\n")
+    d = character.data
+    secrets = "".join(
+        f"\n    {tag('secret', tag('cover', t(s['cover'])) + tag('fact', t(s['fact'])), id=s['id'], mode=s['mode'], status=s['status'])}"
+        for s in d["secrets"])
+    dyn = d["dynamic"]
+    char_xml = tag("character", "".join([
+        f"\n  {tag('profile', t(d['profile']))}",
+        f"\n  {tag('core', ' / '.join(map(t, d['core']['traits'])) + ' / 말투: ' + t(d['core']['speech']))}",
+        f"\n  {tag('mood', t(dyn['mood']))}{tag('attitude', t(dyn['attitude']))}{tag('want', t(dyn['want']))}",
+        "".join(f"\n  {tag('grievance', t(g['text']), id=g['id'], intensity=g['intensity'])}" for g in dyn["grievances"]),
+        "".join(f"\n  {tag('goal', t(g['text']), id=g['id'], status=g['status'])}" for g in d["goals"]),
+        f"\n  {tag('secrets', secrets + chr(10) + '  ')}",
+        "\n"]))
+    turns = "\n".join(turn_xml(x) for x in memory.turns)
+    memory_xml = tag("memory", "".join([
+        "\n  " + lines("long_term", memory.long_term, "m"),
+        "\n  " + episodes_xml(memory),
+        f"\n  {tag('turns', chr(10) + turns + chr(10))}",
+        "\n"]))
+    tension = tag("tension_log", t(" → ".join(f"T{x['n']} {x['beat']} {x['tension']}" for x in tension_log[-10:])))
+    def last(did):
+        u = details.last_realized(did)
+        return f"T{u['turn']} {u['mode']}" if u else None
+
+    planted = [x for x in details.items if x["status"] == "planted"]
+    cand = [
+        tag("planted_details", "".join(f"\n    {tag('detail', t(x['seed']), id=x['id'], last_used=last(x['id']))}" for x in planted) + "\n  "),
+        tag("events", "".join(
+            f"\n    {tag('event', t(w.event(p['id'])['text']), id=p['id'], window='~'.join(w.event(p['id'])['window']), where=','.join(w.event(p['id'])['where']), why=p['why'])}"
+            for p in ev_picks) + "\n  "),
+        tag("facts", "".join(f"\n    {fact_xml(w, w.fact(p['id']), why=p['why'])}" for p in fact_picks) + "\n  "),
+        tag("details", "".join(
+            f"\n    {tag('detail', t(details.get(p['id'])['seed']), id=p['id'], status=details.get(p['id'])['status'], last_used=last(p['id']), affordances=','.join(details.get(p['id'])['affordances']), use_as=p['use_as'])}"
+            for p in det_picks.get("picks", [])) + "\n  ", need=det_picks.get("need")),
+    ]
+    candidates = tag("candidates", "".join(f"\n  {c}" for c in cand) + "\n")
+    proposed = tag("proposed_additions", "".join(
+        f"\n  {tag('item', t(x['text']), source=x['source'], kind=x['kind'], name=x['name'], near=x['near'])}" for x in extracted)
+        + ("\n" if extracted else ""))
+    prop = tag("proposal", t(f"수아가 {w.loc_name(proposal)}({proposal})로 같이 가자고 했다")) if proposal else ""
+    # 잘 안 바뀌는 것(기억, 수아)을 앞에, 매 턴 바뀌는 것을 뒤에 둬서 앞부분이 캐시되게 한다
+    return "\n".join(x for x in [memory_xml, char_xml, timeline, world_xml, tension, candidates, proposed, prop,
+                                  tag("user_input", t(user_input), turn=n, clock=w.clock)] if x)
+
+
+def episode_doc(memory: Memory) -> str:
+    turns = "\n".join(turn_xml(x) for x in memory.turns)
+    closable = memory.turns[:-memory.keep_raw]
+    return "\n".join([episodes_xml(memory), tag("turns", f"\n{turns}\n"),
+                      tag("closable", f"T{closable[0]['n']} ~ T{closable[-1]['n']}" if closable else "없음")])
