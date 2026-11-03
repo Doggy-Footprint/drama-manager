@@ -13,6 +13,7 @@
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text);
   font: 14px/1.55 "Pretendard", "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif; }
+body { display: flex; flex-direction: column; }
 button { font: inherit; color: inherit; background: var(--panel2); border: 1px solid var(--line); border-radius: 8px; padding: 6px 12px; cursor: pointer; }
 button:hover { border-color: var(--muted); }
 button.primary { background: #2b3f66; border-color: #3d5a8f; }
@@ -20,13 +21,17 @@ button:disabled { opacity: .45; cursor: default; }
 header { display: flex; align-items: center; gap: 16px; padding: 10px 18px; border-bottom: 1px solid var(--line); background: #121826; }
 header h1 { font-size: 15px; margin: 0; font-weight: 650; letter-spacing: -.2px; }
 header .clock { font-variant-numeric: tabular-nums; font-size: 22px; font-weight: 700; color: var(--gold); }
-header .usage-total { margin-left: auto; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; display: flex; gap: 12px; }
+header .usage-total { margin-left: auto; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; display: flex; flex-direction: column; align-items: flex-end; gap: 1px; }
+header .usage-total .row { display: flex; gap: 12px; }
+header .usage-total .labels { font-size: 11px; color: var(--faint); gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
+.lbl b { color: var(--muted); font-weight: 600; }
+.lbl .c { color: var(--green); }
 header .usage-total b { color: var(--text); font-weight: 600; }
 header .usage-total .base { color: var(--faint); }
 header label { color: var(--muted); font-size: 13px; display: flex; gap: 6px; align-items: center; }
 header select { font: inherit; font-size: 12.5px; color: var(--text); background: var(--panel2); border: 1px solid var(--line); border-radius: 8px; padding: 5px 8px; max-width: 280px; }
 .viewing-badge { font-size: 12px; color: var(--violet); border: 1px solid var(--violet); border-radius: 6px; padding: 2px 6px; }
-.app { display: grid; grid-template-columns: minmax(360px, 42%) 1fr; height: calc(100% - 53px); }
+.app { display: grid; grid-template-columns: minmax(360px, 42%) 1fr; flex: 1; min-height: 0; }
 /* chat */
 .chat { display: flex; flex-direction: column; border-right: 1px solid var(--line); min-height: 0; }
 .log { flex: 1; overflow-y: auto; padding: 18px 18px 8px; }
@@ -37,6 +42,7 @@ header select { font: inherit; font-size: 12.5px; color: var(--text); background
 .chip b { color: var(--muted); font-weight: 600; }
 .chip .usage { margin-left: auto; font-variant-numeric: tabular-nums; }
 .chip .usage .hit { color: var(--green); }
+.chip-labels { font-size: 10.5px; color: var(--faint); margin: -3px 4px 4px; display: flex; flex-wrap: wrap; gap: 2px 10px; font-variant-numeric: tabular-nums; }
 .use-try { opacity: .45; text-decoration: line-through; }
 .msg { max-width: 86%; padding: 8px 12px; border-radius: 14px; margin: 4px 0; white-space: pre-wrap; word-break: keep-all; }
 .msg.user { margin-left: auto; background: var(--bubble-user); border-bottom-right-radius: 4px; }
@@ -121,6 +127,24 @@ table.calls th { color: var(--faint); font-weight: 500; }
 .meter i { width: 14px; height: 6px; border-radius: 2px; background: #2a3142; }
 .meter i.on { background: var(--red); }
 .empty { color: var(--faint); font-size: 13px; }
+/* 관계 */
+.stages { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 8px; }
+.stages span { font-size: 11.5px; padding: 1px 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--faint); }
+.stages span.on { color: var(--suah); border-color: var(--suah); font-weight: 650; }
+.stages span.past { color: var(--muted); }
+.meter.rel i.on { background: var(--suah); }
+.st.open { background: #3b3320; color: var(--gold); }
+.st.kept { background: #1f3a2c; color: var(--green); }
+.st.broken { background: #3a2226; color: var(--red); }
+.st.recalled { background: #1f3a2c; color: var(--green); }
+.st.waiting { background: #2a3142; color: var(--muted); }
+.ep { border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; background: var(--panel2); font-size: 12.5px; margin-bottom: 8px; }
+.ep .when { color: var(--faint); font-size: 11.5px; }
+.ep ul { margin: 4px 0 0; padding-left: 0; list-style: none; }
+.ep li { margin: 3px 0; display: flex; gap: 6px; align-items: baseline; }
+.ep li .kind { color: var(--faint); font-size: 11px; min-width: 52px; }
+.rel-grid { display: grid; grid-template-columns: 1fr 1.25fr; gap: 14px; }
+@media (max-width: 1200px) { .rel-grid { grid-template-columns: 1fr; } }
 .start { margin: auto; text-align: center; color: var(--muted); padding: 40px 20px; }
 .start h2 { color: var(--text); font-weight: 650; }
 .start .scenario { border: 1px solid var(--line, #2a3449); border-radius: 10px; padding: 14px 18px; margin: 0 auto 14px; max-width: 520px; }
@@ -130,7 +154,7 @@ table.calls th { color: var(--faint); font-weight: 500; }
 .idea ul { margin: 6px 0 0; padding-left: 18px; color: var(--muted); }
 .idea li { margin: 3px 0; }
 .idea code { font-size: 12px; color: var(--cyan); }
-@media (max-width: 980px) { .app { grid-template-columns: 1fr; height: auto; } .chat { height: 80vh; } .panel { grid-template-columns: 1fr; } }
+@media (max-width: 980px) { .app { grid-template-columns: 1fr; height: auto; flex: none; } .chat { height: 80vh; } .panel { grid-template-columns: 1fr; } }
 </style>
 </head>
 <body>
@@ -166,6 +190,10 @@ table.calls th { color: var(--faint); font-weight: 500; }
       <svg id="tension" viewBox="0 0 340 120" style="width:100%"></svg>
       <h2 style="margin-top:8px">타임라인 <span class="sub">이벤트 시간 창 · 채워진 것 = 일어남</span></h2>
       <svg id="timeline" viewBox="0 0 340 150" style="width:100%"></svg>
+    </div>
+    <div class="card wide" id="relCard" hidden>
+      <h2>관계와 지난 만남 <span class="sub">DM이 제안하고 코드가 검증한다 · 수치는 턴당 ±1, 단계는 한 칸씩, 약속은 있는 것만</span></h2>
+      <div class="rel-grid"><div id="relState"></div><div id="pastEps"></div></div>
     </div>
     <div class="card wide">
       <h2>턴 판단 <span class="sub" id="traceSub">대화에서 턴을 누르면 그 턴의 판단을 본다</span></h2>
@@ -238,7 +266,7 @@ async function runTurn(text) {
         if (e.type === "reply") { t.character = e.character; t.character_applied = e.character_applied; t.reply = e;
           doneSteps.add("reply"); prog("done"); fillTurn(n, e); }
         if (e.type === "episode") { t.episode = e; }
-        if (e.type === "done") { t.calls = e.calls; t.clock_after = e.state.world.clock; state = e.state; doneSteps.add("done"); prog(null); renderUsage(); fillTurn(n, t.reply || {}); }
+        if (e.type === "done") { t.calls = e.calls; t.clock_after = e.state.world.clock; state = e.state; doneSteps.add("done"); prog(null); renderUsage(); renderRelation(); fillTurn(n, t.reply || {}); }
         renderTrace();
       }
     }
@@ -278,9 +306,11 @@ async function openRun(file) {
 function turnHTML(e, pending) {
   const t = traces[e.n] || {};
   const dm = t.dm;
+  const by = t.calls ? byLabel(t.calls.filter(c => c.label !== "baseline")) : (e.usage && e.usage.by_label);
   const chip = `<div class="chip"><b>T${e.n}</b><span>${esc(t.clock_before || e.clock)}${t.clock_after ? " → " + esc(t.clock_after) : ""}</span>
     ${dm ? `<span>${esc(dm.beat)} · 긴장 ${dm.tension}</span><span>${esc(CH_KO[dm.channel] || "")}</span>` : ""}
-    ${chipUsage(e.usage || (t.calls && usageOf(t.calls.filter(c => c.label !== "baseline"))))}</div>`;
+    ${chipUsage(e.usage || (t.calls && usageOf(t.calls.filter(c => c.label !== "baseline"))))}</div>
+    ${by && Object.keys(by).length ? `<div class="chip-labels">${labelsHTML(by)}</div>` : ""}`;
   let h = chip;
   if (e.user) h += `<div class="msg user">${acts(e.user)}</div>`;
   if (e.narration) h += `<div class="narr">${esc(e.narration)}</div>`;
@@ -296,6 +326,20 @@ function usageOf(calls) {
   return { count: calls.length, input: sum("input"), cached: sum("cached"), output: sum("output"), seconds: Math.max(0, ...calls.map(c => c.seconds)) };
 }
 const kfmt = (x) => x >= 1000 ? (x / 1000).toFixed(1) + "k" : String(x);
+const ktok = (x) => (x / 1000).toFixed(1) + "k";
+const LABEL_KO = { "retrieve-world": "검색기(월드)", "retrieve-details": "검색기(떡밥)", "extract-facts": "사실 추출", "drama-manager": "DM",
+  "character": "캐릭터", "character-guard": "캐릭터(다시 쓰기)", "dm-episode": "에피소드 묶기", "baseline": "기준선" };
+// 호출 label마다 입력/캐시/출력을 k tok로. 예) DM 4.2k/3.1k캐시/0.6k
+function byLabel(calls) {
+  const out = {};
+  for (const c of calls) { const u = out[c.label] = out[c.label] || { count: 0, input: 0, cached: 0, output: 0 };
+    u.count++; u.input += c.input; u.cached += c.cached; u.output += c.output; }
+  return out;
+}
+function labelsHTML(by) {
+  if (!by) return "";
+  return Object.entries(by).map(([lb, u]) => `<span class="lbl" title="${esc(lb)} ${u.count}회 · 입력/캐시된 입력/출력 토큰"><b>${esc(LABEL_KO[lb] || lb)}</b> ${ktok(u.input)}/<span class="c">${ktok(u.cached)}캐시</span>/${ktok(u.output)}</span>`).join("");
+}
 const hit = (u) => u.input ? Math.round(100 * u.cached / u.input) : 0;
 function chipUsage(u) {
   if (!u || !u.count) return "";
@@ -306,9 +350,10 @@ function renderUsage() {
   if (!state || !state.calls || !state.calls.count) { el.innerHTML = ""; return; }
   const c = state.calls, b = state.baseline_calls;
   const turns = (state.log || []).length || 1;
-  el.innerHTML = `<span>누적 <b>${state.n}턴</b> · LLM <b>${c.count}회</b> (턴당 ${(c.count / turns).toFixed(1)})</span>
+  el.innerHTML = `<div class="row"><span>누적 <b>${state.n}턴</b> · LLM <b>${c.count}회</b> (턴당 ${(c.count / turns).toFixed(1)})</span>
     <span>입력 <b>${kfmt(c.input)}</b> · 캐시 <b style="color:var(--green)">${hit(c)}%</b> · 출력 <b>${kfmt(c.output)}</b></span>
-    ${b && b.count ? `<span class="base">기준선 ${b.count}회 · 입력 ${kfmt(b.input)} · 캐시 ${hit(b)}%</span>` : ""}`;
+    ${b && b.count ? `<span class="base">기준선 ${b.count}회 · 입력 ${kfmt(b.input)} · 캐시 ${hit(b)}%</span>` : ""}</div>
+    ${c.by_label ? `<div class="row labels">${labelsHTML(c.by_label)}</div>` : ""}`;
 }
 function renderLog() {
   const log = $("#log");
@@ -361,7 +406,9 @@ function renderWorld() {
     <span class="badge ${w.together ? "together" : "apart"}">${w.together ? "함께" : "떨어져 있음"}</span>
     <span class="battery"><span class="k">${esc(NAME())} 폰${w.charging ? " ⚡충전 중" : ""}</span><span class="bar"><span class="fill" style="width:${bat}%;background:${batColor}"></span></span>
       <b style="color:${batColor}">${w.phone_on ? bat.toFixed(0) + "%" : "꺼짐 " + esc(w.phone_off_at)}</b></span>
-    <span><span class="k">기온</span>${w.temperature}℃</span>`;
+    <span><span class="k">기온</span>${w.temperature}℃</span>
+    ${(w.flags || []).map(f => `<span><span class="k">${esc(f.name)}</span><b>${esc(f.value)}</b></span>`).join("")}
+    ${(w.items || []).length ? `<span style="flex-basis:100%"><span class="k">소지품</span>${w.items.map(it => `${esc(it.name)} <span class="badge" style="color:${it.holder === "user" ? "var(--user)" : it.holder === "character" ? "var(--suah)" : "var(--muted)"}">${esc(it.holder === "user" ? "나" : it.holder_name)}</span>`).join(" · ")}</span>` : ""}`;
   renderMap(w);
   renderTimeline(w);
   // 지금 유효한 사실은 최근 것이 위로. 지난 사실은 접어 둔다(길어지면 턴 판단이 화면 밖으로 밀린다)
@@ -441,8 +488,9 @@ function renderTrace() {
   const r = t.retrieval;
   parts.push(step(1, "검색기 둘 + 사실 추출기 (병렬)", !r, r ? `
     <div class="kv">
-      <div class="k">이벤트</div><div>후보 ${r.event_candidates.length}개 (지금 장소·시간 창으로 코드가 거름) → 고름 ${r.events.length}개
-        <ul class="items">${r.events.map(p => `<li><span class="id">${esc(p.id)}</span> ${esc(eventText(p.id))}${p.why ? ` <span style="color:var(--faint)">${esc(p.why)}</span>` : ""}</li>`).join("") || "<li class='empty'>없음</li>"}</ul></div>
+      <div class="k">이벤트</div><div>후보 ${r.event_candidates.length}개 (지금 장소·시간 창${r.event_blocked ? "·전제 조건" : ""}으로 코드가 거름) → 고름 ${r.events.length}개
+        <ul class="items">${r.events.map(p => `<li><span class="id">${esc(p.id)}</span> ${esc(eventText(p.id))}${p.why ? ` <span style="color:var(--faint)">${esc(p.why)}</span>` : ""}</li>`).join("") || "<li class='empty'>없음</li>"}</ul>
+        ${(r.event_blocked || []).length ? `<div style="font-size:12px;color:var(--faint)">전제 조건(requires)에 막힘: ${r.event_blocked.map(b => `<span class="id">${esc(b.id)}</span> ${esc(b.why)}`).join(" · ")}</div>` : ""}</div>
       <div class="k">장면 사실</div><div>${(r.fact_candidates || []).length ? `후보 ${r.fact_candidates.length}개 (유효한 사실 전부) → 고름 ${r.facts.length}개
         <ul class="items">${r.facts.map(p => `<li><span class="id">${esc(p.id)}</span> ${esc(factText(p.id))}${p.why ? ` <span style="color:var(--faint)">${esc(p.why)}</span>` : ""}</li>`).join("") || "<li class='empty'>없음</li>"}</ul>` : "<span class='empty'>아직 없음</span>"}</div>
       <div class="k">새 사실 추출</div><div>${(r.extracted || []).length ? `<ul class="items">${r.extracted.map(x => `<li><span class="badge">${esc(x.source)}</span> ${esc(x.kind)}: ${esc(x.name ? x.name + " — " : "")}${esc(x.text)}</li>`).join("")}</ul>` : "<span class='empty'>없음</span>"} <span style="color:var(--faint);font-size:12px">지난 ${esc(NAME())} 말 + 이번 입력에서. 받을지는 DM이 판단</span></div>
@@ -470,6 +518,8 @@ function renderTrace() {
         ${d.goal_updates.length ? `<div class="k">목표</div><div>${d.goal_updates.map(g => `<span class="id">${esc(g.id)}</span> → ${esc(g.status)}`).join(", ")}</div>` : ""}
         ${d.user_facts.length ? `<div class="k">유저 디테일</div><div><ul class="items">${d.user_facts.map(f => `<li>${esc(f.text)} <span class="aff">${esc(f.affordances.join(", "))}</span></li>`).join("")}</ul></div>` : ""}
         ${(d.world_additions || []).length ? `<div class="k">세계 확장</div><div><ul class="items">${d.world_additions.map(x => `<li class="note ${x.accept ? "good" : "bad"}"><span class="badge">${esc(x.source)}</span> ${esc(x.kind)}: ${esc(x.name ? x.name + " — " : "")}${esc(x.text)}${x.affordances.length ? ` <span class="aff">→ 떡밥 쓸모: ${esc(x.affordances.join(", "))}</span>` : ""}${x.accept ? "" : ` <span style="color:var(--faint)">${esc(x.why)}</span>`}</li>`).join("")}</ul></div>` : ""}
+        ${(d.item_moves || []).length ? `<div class="k">소지품</div><div>${d.item_moves.map(m => `<span class="id">${esc(m.id)}</span> → ${esc(m.to)} <span style="color:var(--faint)">${esc(m.why)}</span>`).join("<br>")}</div>` : ""}
+        ${relUpdateHTML(d.relationship_update)}
         ${(d.show_facts || []).length ? `<div class="k">${esc(NAME())}에게 보일 사실</div><div>${d.show_facts.map(id => `<span class="id">${esc(id)}</span> ${esc(factText(id))}`).join("<br>")}</div>` : ""}
         ${(d.retire_facts || []).length ? `<div class="k">지난 사실 정리</div><div>${d.retire_facts.map(x => `<span class="id">${esc(x.id)}</span> ${esc(factText(x.id))}${x.why ? ` <span style="color:var(--faint)">${esc(x.why)}</span>` : ""}`).join("<br>")}</div>` : ""}
       </div>
@@ -497,6 +547,45 @@ function renderTrace() {
   if (t.calls) parts.push(step(t.episode ? 6 : 5, "LLM 호출", false, callsTable(t.calls)));
   $("#trace").innerHTML = parts.join("");
 }
+function relUpdateHTML(ru) {
+  if (!ru) return "";
+  const items = [...(ru.stats || []).map(x => `${esc(statName(x.id))} ${x.delta > 0 ? "+" : ""}${x.delta} <span style="color:var(--faint)">${esc(x.why)}</span>`),
+    ru.stage && `단계 → ${esc(stageName(ru.stage.to))} <span style="color:var(--faint)">${esc(ru.stage.why)}</span>`,
+    ...(ru.address || []).map(x => `호칭(${x.who === "character" ? esc(NAME()) + "→나" : "나→" + esc(NAME())}) → ${esc(x.to)} <span style="color:var(--faint)">${esc(x.why)}</span>`),
+    ...(ru.promises || []).map(x => `약속 <span class="id">${esc(x.id)}</span> → <span class="st ${esc(x.status)}">${esc(x.status)}</span> <span style="color:var(--faint)">${esc(x.why)}</span>`),
+    ...(ru.new_promises || []).map(x => `새 약속(${esc(x.by)}): ${esc(x.text)}`)].filter(Boolean);
+  return items.length ? `<div class="k">관계 제안</div><div><ul class="items">${items.map(x => `<li>${x}</li>`).join("")}</ul><span style="color:var(--faint);font-size:12px">받았는지는 3. 코드 검증에</span></div>` : "";
+}
+const statName = (id) => (state && state.relationship && state.relationship.stats[id] || {}).name || id;
+const stageName = (id) => ((state && state.relationship && state.relationship.stages.find(s => s.id === id)) || {}).name || id;
+const PROMISE_KO = { open: "남음", kept: "지킴", broken: "어김" };
+const KIND_ORDER = ["대사", "물건", "몸짓", "약속", "농담", "안 풀린 일"];
+function renderRelation() {
+  const card = $("#relCard");
+  const r = state && state.relationship;
+  card.hidden = !r;
+  if (!r) return;
+  const idx = r.stages.findIndex(s => s.id === r.stage);
+  const needs = (s) => s.needs ? Object.entries(s.needs).map(([k, v]) => `${statName(k)}≥${v}`).join(", ") : "";
+  const recent = (r.log || []).slice(-4).reverse();
+  $("#relState").innerHTML = `
+    <div class="stages">${r.stages.map((s, i) => `<span class="${i === idx ? "on" : i < idx ? "past" : ""}" title="${esc(needs(s))}">${esc(s.name)}${i === idx + 1 && s.needs ? ` <small style="color:var(--faint)">(${esc(needs(s))})</small>` : ""}</span>`).join("→")}</div>
+    <div class="kv">
+      ${Object.entries(r.stats).map(([k, v]) => `<div class="k">${esc(v.name)}</div><div><span class="meter rel">${[1,2,3,4,5].map(i => `<i class="${v.value >= i ? "on" : ""}"></i>`).join("")}</span>${v.value}/5</div>`).join("")}
+      <div class="k">호칭</div><div>${esc(NAME())}→나 <b>${esc(r.address.character)}</b> · 나→${esc(NAME())} <b>${esc(r.address.user)}</b></div>
+      <div class="k">약속</div><div><ul class="items">${r.promises.map(p => `<li><span class="st ${p.status}">${PROMISE_KO[p.status] || p.status}</span> ${esc(p.text)} <span style="color:var(--faint)">${esc(p.episode)}${p.turn ? " · T" + p.turn : ""}</span></li>`).join("")}</ul></div>
+      ${recent.length ? `<div class="k">최근 변화</div><div><ul class="items">${recent.map(x => `<li>T${x.turn} ${esc(x.text)} <span style="color:var(--faint)">${esc(x.why)}${x.by && x.by !== "DM" ? " · " + esc(x.by) : ""}</span></li>`).join("")}</ul></div>` : ""}
+    </div>`;
+  const prior = (state.memory.episodes || []).filter(e => e.prior);
+  const det = (id) => state.details.find(d => d.id === id) || {};
+  const recalled = (d) => (d.uses || []).filter(u => u.realized);
+  const total = prior.reduce((a, e) => a + e.details.length, 0);
+  const got = prior.reduce((a, e) => a + e.details.filter(id => recalled(det(id)).length).length, 0);
+  $("#pastEps").innerHTML = `<div style="font-size:12px;color:var(--muted);margin-bottom:6px">지난 만남 ${prior.length}개 · 디테일 회수 ${got}/${total} — 시작부터 떡밥 풀에 '뿌림'으로 들어가, 검색기와 DM이 지금 장면에 엮어 꺼낸다</div>` +
+    prior.map(e => `<div class="ep"><b>${esc(e.title)}</b> <span class="when">${esc(e.when)}</span>
+      <ul>${e.details.map(id => { const d = det(id), r2 = recalled(d);
+        return `<li><span class="st ${r2.length ? "recalled" : "waiting"}">${r2.length ? "T" + r2.map(u => u.turn).join(",T") + " 회수" : "아직"}</span><span class="kind">${esc(d.kind || "")}</span><span title="${esc(d.seed)}">${esc((d.seed || "").slice(0, 46))}${(d.seed || "").length > 46 ? "…" : ""}</span></li>`; }).join("")}</ul></div>`).join("");
+}
 function eventText(id) {
   const e = state && state.world && (state.world.events || []).find(x => x.id === id);
   return e ? e.text : "";
@@ -509,10 +598,10 @@ function step(i, title, live, body) {
   return `<div class="step ${live ? "live" : ""}"><h3><span class="n">${i}</span>${title}${live ? ' <span style="color:var(--gold);font-weight:400">…</span>' : ""}</h3>${body}</div>`;
 }
 function callsTable(calls) {
-  const rows = calls.map(c => `<tr><td>${esc(c.label)}</td><td>${c.input.toLocaleString()}</td><td>${c.input ? Math.round(100 * c.cached / c.input) : 0}%</td><td>${c.output.toLocaleString()}</td><td>${c.seconds}s</td></tr>`).join("");
+  const rows = calls.map(c => `<tr><td>${esc(LABEL_KO[c.label] || c.label)}</td><td>${ktok(c.input)}</td><td>${ktok(c.cached)}</td><td>${c.input ? Math.round(100 * c.cached / c.input) : 0}%</td><td>${ktok(c.output)}</td><td>${c.seconds}s</td></tr>`).join("");
   const sum = (k) => calls.reduce((a, c) => a + c[k], 0);
-  return `<table class="calls"><tr><th>호출</th><th>입력</th><th>캐시</th><th>출력</th><th>시간</th></tr>${rows}
-    <tr><td><b>합계 ${calls.length}회</b></td><td>${sum("input").toLocaleString()}</td><td>${sum("input") ? Math.round(100 * sum("cached") / sum("input")) : 0}%</td><td>${sum("output").toLocaleString()}</td><td></td></tr></table>`;
+  return `<table class="calls"><tr><th>호출</th><th>입력</th><th>캐시된 입력</th><th>캐시</th><th>출력</th><th>시간</th></tr>${rows}
+    <tr><td><b>합계 ${calls.length}회</b></td><td>${ktok(sum("input"))}</td><td>${ktok(sum("cached"))}</td><td>${sum("input") ? Math.round(100 * sum("cached") / sum("input")) : 0}%</td><td>${ktok(sum("output"))}</td><td></td></tr></table>`;
 }
 
 // ---------------- 탭 ----------------
@@ -527,7 +616,7 @@ function renderTab() {
     const cnt = (s) => state.details.filter(d => d.status === s).length;
     body.innerHTML = `<div style="font-size:12px;color:var(--muted);margin-bottom:8px">뿌림 ${cnt("planted")} · 거둠 ${cnt("paid_off")} · 아직 ${cnt("unplanted")} — 트리거 없이 쓸모(affordances)만 적어 두고, DM이 장면에 필요한 쓸모로 고른다. 거두지 못한 떡밥은 디테일로 남는다.</div>
       <div class="dgrid">${ds.map(d => `<div class="det ${d.status}">
-        <div class="top"><span class="id">${esc(d.id)}${d.source === "유저" ? " · 유저가 말함" : ""}</span><span class="st ${d.status}">${{unplanted:"아직",planted:"뿌림",paid_off:"거둠"}[d.status]}</span></div>
+        <div class="top"><span class="id">${esc(d.id)}${d.source === "유저" ? " · 유저가 말함" : ""}${d.episode ? " · 지난 만남(" + esc(d.kind || "") + ")" : ""}</span><span class="st ${d.status}">${{unplanted:"아직",planted:"뿌림",paid_off:"거둠"}[d.status]}</span></div>
         <div>${esc(d.seed)}</div><div class="aff">쓸모: ${esc((d.affordances || []).join(", "))}</div>
         ${d.uses && d.uses.length ? `<div class="uses">${d.uses.map(u => `<span class="${u.realized === false ? "use-try" : ""}" title="${u.realized === false ? "DM이 골랐지만 대사·지문에 나오지 않음" : esc(u.by || "")}">T${u.turn} <span class="mode ${u.mode}">${u.mode}</span></span>`).join(" ")}</div>` : ""}
       </div>`).join("")}</div>`;
@@ -547,12 +636,15 @@ function renderTab() {
     const m = state.memory;
     body.innerHTML = `<div class="kv">
       <div class="k">원문 턴</div><div>${m.raw_turns.length ? `T${m.raw_turns[0]} ~ T${m.raw_turns[m.raw_turns.length - 1]} (${m.raw_turns.length}턴, 최소 5턴은 원문으로 남김 · 10턴마다 DM이 에피소드로 묶음)` : "없음"}</div>
-      <div class="k">에피소드</div><div>${m.episodes.length ? m.episodes.map(e => `<div><b>${esc(e.title)}</b> <span style="color:var(--faint)">T${e.turns[0]}~T${e.turns[1]} · ${esc(e.clock.join("~"))}</span><br>${esc(e.summary)}</div>`).join("") : "<span class='empty'>아직 없음</span>"}</div>
-      <div class="k">장기 기억</div><div><ul class="items">${m.long_term.map((x, i) => `<li ${i >= 5 ? 'style="color:var(--gold)"' : ""}>${esc(x)}</li>`).join("")}</ul><span style="color:var(--faint);font-size:12px">노란 줄은 오늘 새로 생긴 기억</span></div></div>`;
+      ${m.episodes.some(e => e.prior) ? `<div class="k">지난 만남</div><div>${m.episodes.filter(e => e.prior).map(e => `<div><b>${esc(e.title)}</b> <span style="color:var(--faint)">${esc(e.when)} · 오늘 전</span><br>${esc(e.summary)}</div>`).join("")}</div>` : ""}
+      <div class="k">에피소드</div><div>${m.episodes.filter(e => !e.prior).length ? m.episodes.filter(e => !e.prior).map(e => `<div><b>${esc(e.title)}</b> <span style="color:var(--faint)">T${e.turns[0]}~T${e.turns[1]} · ${esc(e.clock.join("~"))}</span><br>${esc(e.summary)}</div>`).join("") : "<span class='empty'>아직 없음</span>"}</div>
+      <div class="k">장기 기억</div><div><ul class="items">${m.long_term.map((x, i) => `<li ${i >= (m.long_term_start ?? 5) ? 'style="color:var(--gold)"' : ""}>${esc(x)}</li>`).join("")}</ul><span style="color:var(--faint);font-size:12px">노란 줄은 오늘 새로 생긴 기억</span></div></div>`;
   } else if (tab === "usage") {
     const c = state.calls;
     body.innerHTML = `<div class="stats"><span><span class="k">호출</span>${c.count}회</span><span><span class="k">입력</span>${c.input.toLocaleString()}</span>
-      <span><span class="k">캐시</span>${c.input ? Math.round(100 * c.cached / c.input) : 0}%</span><span><span class="k">출력</span>${c.output.toLocaleString()}</span></div>`;
+      <span><span class="k">캐시</span>${c.input ? Math.round(100 * c.cached / c.input) : 0}%</span><span><span class="k">출력</span>${c.output.toLocaleString()}</span></div>
+      ${c.by_label ? `<table class="calls" style="margin-top:8px"><tr><th>LLM(label)</th><th>호출</th><th>입력</th><th>캐시된 입력</th><th>캐시</th><th>출력</th></tr>${Object.entries(c.by_label).map(([lb, u]) =>
+        `<tr><td>${esc(LABEL_KO[lb] || lb)} <span class="id">${esc(lb)}</span></td><td>${u.count}</td><td>${ktok(u.input)}</td><td>${ktok(u.cached)}</td><td>${hit(u)}%</td><td>${ktok(u.output)}</td></tr>`).join("")}</table>` : ""}`;
   }
 }
 
@@ -581,7 +673,7 @@ function renderHeader() {
   $("#title").textContent = sc ? `${sc.title} · ${NAME()}` : (state && state.name ? `물빛공원 · ${NAME()}` : "하룻밤 RP 엔진");
   $("#input").placeholder = `${NAME()}에게 말하기 · 괄호 ( ) 안은 행동` + (sc && sc.input_hint ? `  예) ${sc.input_hint}` : "");
 }
-function renderAll() { renderHeader(); renderUsage(); renderWorld(); renderTension(); renderLog(); renderTrace(); renderTab(); }
+function renderAll() { renderHeader(); renderUsage(); renderWorld(); renderRelation(); renderTension(); renderLog(); renderTrace(); renderTab(); }
 
 // ---------------- 시작 ----------------
 async function start(scenario) {

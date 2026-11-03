@@ -1,0 +1,165 @@
+# 을지로 광고대행사 14층, 11월 셋째 주 목요일 밤. 내일 오전 10시 경쟁 PT. 입사 동기 도하와 유저(채원)만 남았다.
+# 둘은 지난 세 번의 만남(history.yaml)을 지나 '야근 메이트'가 됐다. 23시에 14층 전원이 내려간다.
+# 시각은 "HH:MM". 사건과 기억 문장에는 누가 했는지(도하/유저)를 적는다.
+
+scenario:
+  title: 14층의 야근
+  order: 2
+  place: 회사 건물과 을지로 골목    # "이 ○○에 새로 생긴 장소"처럼 쓰인다
+  setting: "11월 셋째 주 목요일 밤, 을지로 광고대행사 14층이다. 내일 오전 10시 경쟁 PT를 앞두고 입사 동기 도하와 유저(채원)만 사무실에 남았다. 둘은 지난 세 번의 밤(회식 날 택시, 옥상 컵라면, 비 오던 퇴근길)을 지나 야근 메이트가 됐다. 밤 11시에 14층 전원이 내려간다."
+  opening: "(20:30, 편의점 봉투를 들고 불이 반쯤 꺼진 14층 사무실로 돌아와 자리에 앉는다)"
+  appointment: "오늘 밤 안에 PT 최종본(메인 카피 포함)을 끝내기로 했다"
+  countdown: {at: "23:00", label: 14층 전원 차단}
+  season: 11월 셋째 주 밤
+  input_hint: "(봉투를 내밀며) 도하 씨, 저녁 아직이죠?"
+  intro:
+    - "11월 셋째 주 목요일 밤, 을지로 광고대행사 14층"
+    - "내일 오전 10시 경쟁 PT. 사무실엔 너와 입사 동기 도하만 남았다. 밤 11시에 층 전원이 내려간다."
+    - "회식 날 택시, 옥상 컵라면, 비 오던 퇴근길. 그는 그 세 번의 밤을 하나도 잊지 않았다."
+  arc: |
+    - 20:30~21:00 setup: 둘만 남은 사무실, 저녁, PT 장표. 긴장 2~3. 지난 만남의 디테일(바나나우유, 3분, 검은 우산)이 오늘 장면에 자연스럽게 다시 나와, 도하가 그날들을 다 기억한다는 게 보이게 한다. 유저가 아직 돌려주지 않은 우산이 여기 있다.
+    - 21:00~21:40 complication: 광고주가 메인 카피를 반려하고, 경비 순찰이 11시 전원 차단을 알린다. 도하의 서운함(팀장 앞 '그냥 동기예요')은 업무 말투로만 샌다. 둘이 가까워졌다면 옥상 컵라면 같은 지난 장소로 다시 간다. 긴장 3~5.
+    - 21:30 비: 비가 쏟아진다. 우산은 도하의 검은 장우산 하나뿐이다(지금 누가 들고 있는지는 상태를 본다).
+    - 21:40~22:40 정점으로: 리허설, 펼쳐진 검은 노트, 팀장이 돌아와 둘을 본다. 메인 카피가 어디서 왔는지(main_copy)는 노트 마지막 장이나 반려된 카피를 두고 채원이 그날 택시를 떠올릴 때 연다. 관계가 썸으로 넘어갈 수 있다. 긴장 6~8.
+    - 23:00 전원 차단: 형광등과 콘센트가 꺼진다. 이 뒤로 사무실 콘센트 충전은 안 된다. 휴대폰 불빛, 비상계단, 막차. 긴장 7~8.
+    - 23:00 이후 resolution: 한 우산, 국밥집, 막차. 약속을 지키거나 새로 하고, 호칭이 바뀔 수 있다. taxi_wait는 막차나 귀갓길에 그날 밤 이야기가 나올 때 연다. 긴장 5~7로 내려오며 끝낸다.
+
+start: "20:30"
+end: "23:59"                # 자정을 넘기면 시각 계산이 깨지므로 23:59에서 멈춘다
+start_loc: {character: office, user: office}
+
+locations:
+  office:  {name: 14층 기획팀 자리, xy: [70, 84], desc: "파티션 하나를 사이에 둔 채원과 도하의 책상. 듀얼 모니터, 쌓인 출력물, 책상 콘센트. 다른 자리는 불이 꺼졌다.", near: {meeting: 1, pantry: 1, rooftop: 2, lobby: 3}}
+  meeting: {name: 14층 대회의실, xy: [160, 62], desc: "PT 리허설용 대회의실. 빔프로젝터와 긴 테이블, 창밖으로 을지로 간판들이 보인다.", near: {office: 1, pantry: 1}}
+  pantry:  {name: 14층 탕비실, xy: [128, 132], desc: "커피머신, 전자레인지, 정수기. 냉장고에 누가 남긴 반찬통. 컵라면 물 붓는 곳.", near: {office: 1, meeting: 1, rooftop: 2}}
+  rooftop: {name: 15층 옥상 정원, xy: [40, 26], desc: "직원용 옥상 정원. 벤치 두 개와 화분, 을지로 불빛과 멀리 남산타워. 2주 전 둘이 컵라면을 먹은 곳.", near: {office: 2, pantry: 2}}
+  lobby:   {name: 1층 로비, xy: [96, 182], desc: "보안 게이트와 경비실, 회전문. 밤에는 경비 아저씨 한 명뿐이다. 지난주 도하가 우산을 건넨 곳.", near: {office: 3, store: 1, gukbap: 4, subway: 5}}
+  store:   {name: 건물 앞 편의점, xy: [186, 170], desc: "24시간 편의점. 바나나우유, 컵라면, 우산, 보조배터리를 판다.", near: {lobby: 1, gukbap: 3, subway: 4}}
+  gukbap:  {name: 골목 24시 국밥집, xy: [268, 108], desc: "건너편 골목의 24시간 국밥집. 김 서린 유리문, 깍두기, 늦은 직장인들.", near: {lobby: 4, store: 3, subway: 3}}
+  subway:  {name: 을지로3가역 입구, xy: [304, 182], desc: "지하철 2·3호선 을지로3가역 1번 출구. 막차는 23:48.", near: {lobby: 5, store: 4, gukbap: 3}}
+
+# 장소별 인파. level 1 한산, 2 붐빔, 3 걷기 힘듦. 목록에 없는 시간은 1.
+crowd:
+  gukbap: [{from: "21:00", to: "22:30", level: 2}]
+  subway: [{from: "23:30", to: "23:50", level: 2}]
+
+# 시나리오 고유 상태(스키마의 확장 부분). 이벤트 effects의 set으로만 바뀌고, values 밖의 값은 코드가 받지 않는다.
+flags:
+  weather:     {name: 날씨, value: 맑음, values: [맑음, 비]}
+  floor_power: {name: 14층 전원, value: 켜짐, values: [켜짐, 꺼짐]}
+  main_copy:   {name: 메인 카피, value: 초안, values: [초안, 반려, 새 안]}
+
+# 소지품. holder는 user, character, 또는 장소 id(그 장소에 놓여 있음). 건네기는 함께 있을 때만 된다.
+items:
+  umbrella:   {name: 도하의 검은 장우산, holder: user, desc: "손잡이에 'DH' 이니셜 스티커. 지난주 도하가 빌려줬고, 채원이 오늘 돌려주려고 들고 왔다."}
+  notebook:   {name: 도하의 검은 노트, holder: character, desc: "도하가 카피를 적는 검은 노트. 마지막 장은 보여 주지 않는다."}
+  power_bank: {name: 보조배터리, holder: store, desc: "편의점 계산대 옆에 걸린 보조배터리."}
+
+# 코드가 분 단위로 바꾸는 수치. 시간은 거꾸로 가지 않는다. 배터리는 쓰면 줄고, 충전 중이면 charge_per_min만큼 오른다.
+states:
+  battery:
+    owner: 도하
+    start: 24              # %. 하루 종일 광고주 통화와 단톡을 했다
+    drain_per_min: {idle: 0.12, photos: 0.6, searching: 0.8, calling: 1.2}
+    charge_per_min: 1.0
+    # 충전할 수 있는 조건(하나라도 맞으면). 14층 책상·회의실·탕비실 콘센트는 전원이 켜져 있을 때만, 아니면 보조배터리를 도하가 들고 있을 때.
+    charge_from:
+      - {char_at: [office, meeting, pantry], flags: {floor_power: 켜짐}}
+      - {has: {power_bank: character}}
+  temperature:
+    start: 7               # ℃. 바깥 기온. 밤이 깊을수록 떨어진다
+    per_hour: -1
+
+# 이벤트. where·window는 예전과 같다. 선택 필드:
+#   requires: 전제 조건. together, char_at, user_at, flags, has(물건: 누가), relation(stage_min, min), memory(promises, recalled, not_recalled), after
+#   effects: 상태 변화. set(플래그), give(물건: 누구/어디), relation(수치: 변화), promise(약속: kept/broken), plant(떡밥 id)
+#   duration: 일어난 뒤 진행 중으로 남는 분
+events:
+  - id: team_chat
+    where: [any]
+    window: ["20:30", "20:50"]
+    text: "팀 단톡방이 울린다. 팀장: '최종본 내일 9시 반까지 공유. 메인 카피는 도하 씨가 오늘 밤 확정해 줘요. 둘 다 고생.'"
+    tags: [마감, 일, 시간 압박]
+  - id: umbrella_spotted
+    where: [office]
+    window: ["20:30", "21:20"]
+    requires: {has: {umbrella: user}, memory: {promises: {umbrella_back: open}}}
+    text: "채원 자리 파티션에 걸린 검은 장우산 손잡이의 'DH' 스티커가 스탠드 불빛에 반짝인다. 도하의 눈이 그 우산에 잠깐 머물렀다가 모니터로 돌아간다."
+    tags: [지난 만남, 약속, 우산, 빌린 것]
+  - id: copy_rejected
+    where: [office, meeting, pantry]
+    window: ["20:45", "21:40"]
+    text: "광고주 담당자의 메일이 뜬다. '메인 카피 「퇴근길이 제일 긴 하루」, 너무 쓸쓸합니다. 대안 세 개 내일 아침까지 부탁드립니다.' 도하가 볼펜을 딸깍거리다 멈춘다."
+    effects: {set: {main_copy: 반려}}
+    tags: [갈등, 일, 위기, 카피]
+  - id: rooftop_ramen
+    where: [office, pantry]
+    window: ["20:50", "22:00"]
+    requires: {together: true, relation: {min: {trust: 3}}, memory: {promises: {dinner: open}}}
+    text: "도하가 탕비실에서 물을 부은 컵라면 두 개를 들고 와 턱으로 비상계단 쪽을 가리킨다. '3분만요. 옥상.'"
+    effects: {relation: {closeness: 1}}
+    duration: 20
+    tags: [지난 만남, 쉬자는 신호, 둘만의 장소, 가까워짐]
+  - id: security_round
+    where: [office, meeting, pantry]
+    window: ["21:00", "22:00"]
+    text: "경비 아저씨가 손전등을 들고 순찰을 돈다. '14층 아직 계시네. 11시에 층 전원 내려가요. 엘리베이터도 같이 서고.'"
+    tags: [시간 압박, 예고]
+  - id: rain_starts
+    core: true
+    where: [any]
+    window: ["21:30", "21:50"]
+    text: "창밖으로 비가 쏟아지기 시작한다. 일기예보에 없던 비다. 을지로 간판 불빛이 젖은 유리에 번진다."
+    effects: {set: {weather: 비}}
+    tags: [비, 우산, 지난 만남]
+  - id: rehearsal
+    where: [meeting]
+    window: ["21:40", "22:50"]
+    requires: {together: true, flags: {floor_power: 켜짐}}
+    text: "대회의실 빔프로젝터가 켜지고, 첫 장에 메인 카피가 크게 뜬다. 관객은 한 명뿐이다."
+    duration: 30
+    tags: [리허설, 일, 가까워짐, 카피]
+  - id: notebook_open
+    where: [office, meeting]
+    window: ["21:50", "23:30"]
+    requires: {flags: {main_copy: 반려}, has: {notebook: character}}
+    text: "도하의 책상 위 검은 노트가 펼쳐진 채 놓여 있다. 늘 손바닥으로 덮던 마지막 장이다."
+    effects: {plant: [notebook_last_page]}
+    tags: [숨긴 사정의 단서, 지난 만남, 카피]
+  - id: gukbap_together
+    where: [gukbap]
+    window: ["21:00", "23:40"]
+    requires: {together: true, memory: {promises: {dinner: open}}}
+    text: "국밥집 아주머니가 김이 오르는 국밥 두 그릇과 깍두기를 내려놓는다. 도하가 계산대에 카드를 먼저 내민다. '컵라면 말고, 제대로 된 밥.'"
+    effects: {promise: {dinner: kept}, relation: {trust: 1}}
+    duration: 30
+    tags: [약속, 밥, 지난 만남, 가까워짐]
+  - id: lead_returns
+    where: [office, meeting, pantry, lobby]
+    window: ["22:10", "22:50"]
+    requires: {relation: {stage_min: some}}
+    text: "엘리베이터 문이 열리고 두고 간 노트북을 가지러 온 팀장이 들어선다. '어? 둘이 아직 있었어? …둘이 요즘 뭐 있어?'"
+    tags: [관계 확인, 선 긋기, 들킴]
+  - id: power_off
+    core: true
+    where: [any]
+    window: ["23:00", "23:10"]
+    text: "밤 11시. 14층 형광등이 한 줄씩 꺼지고 모니터가 툭 꺼진다. 책상 콘센트도 죽었다. 경비실 방송: '엘리베이터 운행을 종료합니다.'"
+    effects: {set: {floor_power: 꺼짐}}
+    tags: [어둠, 시간 압박, 충전, 정점]
+  - id: one_umbrella
+    where: [lobby, store, gukbap]
+    window: ["21:35", "23:59"]
+    requires: {together: true, flags: {weather: 비}, has: {umbrella: either}}
+    text: "유리문 밖으로 빗줄기가 굵다. 둘 사이에 우산은 도하의 검은 장우산 하나뿐이다."
+    tags: [우산, 비, 가까워짐, 지난 만남]
+  - id: rooftop_view
+    where: [rooftop]
+    window: ["20:30", "23:00"]
+    text: "옥상 벤치 너머로 을지로 간판 불빛과 멀리 남산타워가 보인다. 2주 전 그 벤치 그대로다."
+    tags: [야경, 둘만의 장소, 지난 만남, 고요]
+  - id: last_subway
+    where: [lobby, store, subway]
+    window: ["23:25", "23:50"]
+    text: "을지로3가역 안내 방송이 출구까지 울린다. '오늘 열차 운행이 곧 종료됩니다. 막차는 23시 48분…'"
+    tags: [귀가, 시간 압박, 데려다주기]

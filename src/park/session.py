@@ -16,7 +16,8 @@ from typing import Callable
 
 from . import render
 from .llm import LLM, ROOT
-from .state import BEATS, DEFAULT_SCENARIO, PHONE_USES, Character, Details, Memory, World, fill, josa
+from .state import (BEATS, DEFAULT_SCENARIO, PHONE_USES, Character, Details, Memory, Relationship, World, apply_effects,
+                    fill, josa, load_history, requires_ok, validate_schema)
 
 PROMPTS = Path(__file__).resolve().parent / "prompts"
 EPISODE_EVERY = 10
@@ -69,7 +70,23 @@ def detail_pick_schema(ids):
     return obj({"need": S, "picks": {"type": "array", "items": obj({"id": enum(ids), "use_as": S})}})
 
 
-def dm_schema(*, name, locations, event_ids, detail_ids, secret_ids, grievance_ids, goal_ids):
+def relation_schema(name, stat_ids, stage_ids):
+    # 약속 id는 대화 중에 늘어나므로 enum으로 묶지 않는다. 있는 약속인지는 코드가 본다
+    return obj({
+        "stats": {"type": "array", "items": obj({"id": enum(stat_ids), "delta": {"type": "integer"}, "why": S})},
+        "stage": nullable(obj({"to": enum(stage_ids), "why": S})),
+        "address": {"type": "array", "items": obj({"who": enum(["character", "user"]), "to": S, "why": S})},
+        "promises": {"type": "array", "items": obj({"id": S, "status": enum(["kept", "broken"]), "why": S})},
+        "new_promises": {"type": "array", "items": obj({"by": enum(["유저", name]), "text": S})},
+    })
+
+
+def dm_schema(*, name, locations, event_ids, detail_ids, secret_ids, grievance_ids, goal_ids, item_ids=(), relation=None):
+    extra = {}
+    if item_ids:   # 소지품과 관계가 있는 이야기에서만 더한다(없는 이야기는 예전 스키마 그대로)
+        extra["item_moves"] = {"type": "array", "items": obj({"id": enum(list(item_ids)), "to": enum(["user", "character", *locations]), "why": S})}
+    if relation:
+        extra["relationship_update"] = relation_schema(name, list(relation.stats), [x["id"] for x in relation.stages])
     return obj({
         "scene_read": S,
         "minutes": {"type": "integer"},
@@ -102,6 +119,7 @@ def dm_schema(*, name, locations, event_ids, detail_ids, secret_ids, grievance_i
         "retire_facts": {"type": "array", "items": obj({"id": S})},
         "user_facts": {"type": "array", "items": obj({"text": S, "affordances": {"type": "array", "items": S}})},
         "narration": SN,
+        **extra,
     })
 
 
@@ -120,9 +138,14 @@ EPISODE_SCHEMA = obj({"why": S, "close": {"type": "boolean"}, "until_turn": {"ty
                       "memories": {"type": "array", "items": S}})
 
 
-def usage(calls: list[dict]) -> dict:
-    return {"count": len(calls), "input": sum(c["input"] for c in calls), "cached": sum(c["cached"] for c in calls),
-            "output": sum(c["output"] for c in calls), "seconds": round(sum(c["seconds"] for c in calls), 1)}
+def usage(calls: list[dict], by_label: bool = True) -> dict:
+    """호출 합계. by_label이면 호출 label(검색기, DM, 캐릭터 등)마다의 합계도 함께."""
+    out = {"count": len(calls), "input": sum(c["input"] for c in calls), "cached": sum(c["cached"] for c in calls),
+           "output": sum(c["output"] for c in calls), "seconds": round(sum(c["seconds"] for c in calls), 1)}
+    if by_label:
+        labels = list(dict.fromkeys(c["label"] for c in calls))
+        out["by_label"] = {lb: usage([c for c in calls if c["label"] == lb], by_label=False) for lb in labels}
+    return out
 
 
 # ---------------- 세션 ----------------
@@ -134,8 +157,12 @@ class Session:
         self.scenario = scenario
         self.character = Character.fresh(scenario)
         self.world = World.fresh(scenario, self.character.name)
-        self.details = Details.fresh(scenario)
-        self.memory = Memory.fresh(self.character)
+        history = load_history(scenario)   # 지난 만남과 관계 상태(없는 이야기는 None)
+        self.relation = Relationship.fresh(history) if history else None
+        self.details = Details.fresh(scenario, history)
+        self.memory = Memory.fresh(self.character, history)
+        if errors := validate_schema(self.world, self.relation, self.details):
+            raise ValueError(f"{scenario} 스키마 오류: " + "; ".join(errors))
         self.rng = random.Random(seed)
         self.n = 0
         self.proposal: str | None = None   # 캐릭터가 같이 가자고 한 장소. 다음 턴 드라마 매니저가 유저가 따라왔는지 판단한다
@@ -155,8 +182,17 @@ class Session:
 
     def prompt(self, name: str) -> str:
         c, sc = self.character.data, self.world.scenario
-        return prompt(name, {"name": self.name, "place": sc["place"], "setting": sc["setting"], "arc": sc["arc"].strip(),
-                             "profile": c["profile"], "traits": " ".join(c["core"]["traits"]), "speech": c["core"]["speech"]})
+        values = {"name": self.name, "place": sc["place"], "setting": sc["setting"], "arc": sc["arc"].strip(),
+                  "profile": c["profile"], "traits": " ".join(c["core"]["traits"]), "speech": c["core"]["speech"]}
+        # 지난 만남·관계·플래그·소지품 안내는 그런 상태가 있는 이야기에서만 붙인다. 없는 이야기의 프롬프트는 예전 그대로다
+        guides = {"dm": ["dm_items" if self.world.items else "", "dm_relation" if self.relation else ""],
+                  "character": ["character_relation" if self.relation else "", "character_items" if self.world.items or self.world.flags else ""]}
+        values["state_guide"] = "\n\n".join(prompt(g, values) for g in guides.get(name, []) if g)
+        return prompt(name, values)
+
+    def gate(self, e: dict) -> tuple[bool, str]:
+        """이벤트의 전제 조건(requires)을 지금 상태에 대어 본다."""
+        return requires_ok(e.get("requires"), world=self.world, relation=self.relation, details=self.details)
 
     # CLI가 턴 사이에 세션을 파일로 들고 있도록. LLM 클라이언트는 빼고, 호출 기록만 남긴다
     def __getstate__(self) -> dict:
@@ -167,6 +203,7 @@ class Session:
 
     def __setstate__(self, state: dict) -> None:
         calls = state.pop("_calls", [])
+        state.setdefault("relation", None)   # 관계 상태를 넣기 전에 저장된 세션
         self.__dict__.update(state)
         self.llm = LLM()
         self.llm.calls = calls
@@ -187,10 +224,10 @@ class Session:
             world_future = pool.submit(self._retrieve_world, user_input, n)
             det_future = pool.submit(self._retrieve_details, user_input, n)
             ext_future = pool.submit(self._extract, user_input, n)
-            ev_picks, fact_picks, ev_cands, fact_cands = world_future.result()
+            ev_picks, fact_picks, ev_cands, fact_cands, ev_blocked = world_future.result()
             det_picks = det_future.result()
             extracted = ext_future.result()
-            trace["retrieval"] = {"event_candidates": [e["id"] for e in ev_cands], "events": ev_picks,
+            trace["retrieval"] = {"event_candidates": [e["id"] for e in ev_cands], "event_blocked": ev_blocked, "events": ev_picks,
                                   "fact_candidates": [f["id"] for f in fact_cands], "facts": fact_picks, "details": det_picks,
                                   "extracted": extracted}
             emit({"type": "retrieval", "n": n, **trace["retrieval"]})
@@ -238,15 +275,18 @@ class Session:
 
     # ---- 검색기 ----
     def _retrieve_world(self, user_input: str, n: int):
-        """월드 모델에서 지금 필요한 조각을 고른다. 이벤트는 코드가 장소와 시간 창으로 먼저 거르고, 장면 사실은 유효한 것 전부가 후보다."""
-        ev_cands, fact_cands = self.world.event_candidates(horizon=60), self.world.active_facts()
+        """월드 모델에서 지금 필요한 조각을 고른다. 이벤트는 코드가 장소·시간 창·전제 조건(requires)으로 먼저 거르고,
+        장면 사실은 유효한 것 전부가 후보다. 전제 조건을 못 넘은 이벤트는 검색기에 가지 않고 이유와 함께 trace에 남는다."""
+        blocked: list[dict] = []
+        ev_cands = self.world.event_candidates(horizon=60, gate=self.gate, blocked=blocked)
+        fact_cands = self.world.active_facts()
         if not ev_cands and not fact_cands:
-            return [], [], [], []
+            return [], [], [], [], blocked
         doc = render.situation_xml(self.world, self.memory, user_input, n) + "\n" + render.world_candidates_xml(self.world, ev_cands, fact_cands)
         out = self.llm.json(self.prompt("retrieve_world"), doc, world_pick_schema(self._all_event_ids()), label="retrieve-world")
         ev_ids, fact_ids = {e["id"] for e in ev_cands}, {f["id"] for f in fact_cands}
         return ([p for p in out["picks"] if p["id"] in ev_ids][:4], [p for p in out["facts"] if p["id"] in fact_ids][:6],
-                ev_cands, fact_cands)
+                ev_cands, fact_cands, blocked)
 
     def _retrieve_details(self, user_input: str, n: int):
         cands = self.details.candidates(n)
@@ -286,12 +326,13 @@ class Session:
                             user_input=user_input, n=n, ev_picks=ev_picks, fact_picks=fact_picks, det_picks=det_picks,
                             extracted=extracted,
                             tension_log=self.tension_log,
-                            proposal=self.proposal)
+                            proposal=self.proposal, relation=self.relation)
         c = self.character.data
         schema = dm_schema(
             name=self.name, locations=list(self.world.locations), event_ids=self._all_event_ids(),
             detail_ids=self._all_detail_ids(), secret_ids=[s["id"] for s in c["secrets"]],
-            grievance_ids=[g["id"] for g in c["dynamic"]["grievances"]], goal_ids=[g["id"] for g in c["goals"]])
+            grievance_ids=[g["id"] for g in c["dynamic"]["grievances"]], goal_ids=[g["id"] for g in c["goals"]],
+            item_ids=list(self.world.items), relation=self.relation)
         out = self.llm.json(self.prompt("dm"), doc, schema, label="drama-manager", effort=DM_EFFORT)
         self.traces[n]["dm_doc"] = doc
         return out
@@ -317,6 +358,11 @@ class Session:
             notes.append({"ok": False, "text": f"시작 턴이라 +{dm['minutes']}분 → 0분 (도착 시각 {w.clock}이 이미 반영됨)"})
             dm["minutes"], dm["minutes_why"] = 0, "시작 장면"
         before = w.clock
+        if dm["phone_charging"] and not w.charging:
+            ok, why = w.can_charge(self.relation, self.details)
+            if not ok:   # 월드 상태와 맞지 않는 충전(전원이 내려간 콘센트 등)은 코드가 거절한다
+                notes.append({"ok": False, "text": f"충전 거절: {why}"})
+                dm["phone_charging"] = False
         if dm["phone_charging"] != w.charging:
             notes.append({"ok": True, "text": f"{self.name}의 휴대폰 충전 " + ("시작" if dm["phone_charging"] else "끝")})
         w.charging = dm["phone_charging"]
@@ -344,17 +390,25 @@ class Session:
         if dm["channel"] == "face" and not w.together and not was_together:
             dm["channel"] = "phone" if w.phone_on else "none"
             notes.append({"ok": False, "text": f"떨어져 있어 channel face → {dm['channel']}"})
-        # 이벤트
+        # 소지품. 건네기는 함께 있을 때만, 장소에 놓인 것은 그 장소에 있는 사람만 집는다
+        for m in dm.get("item_moves") or []:
+            note(w.give(m["id"], m["to"]))
+        # 이벤트. 일어나는 순간 전제 조건을 다시 보고, 일어나면 효과를 반영한다
         valid_ev = {p["id"] for p in ev_picks}
         fired_now = []
         for e in dm["events"]:
             if e["id"] not in valid_ev:
                 notes.append({"ok": False, "text": f"이벤트 거절: {e['id']}는 이번 후보가 아니다"})
-            elif note(w.fire(e["id"], n, e["how"])):
+            elif note(w.fire(e["id"], n, e["how"], gate=self.gate)):
                 fired_now.append({"id": e["id"], "how": e["how"]})
-        for e in w.forced_core(n):
+                self._effects(e["id"], n, notes)
+        for e in w.forced_core(n, gate=self.gate):
             fired_now.append({"id": e["id"], "how": e["text"]})
             notes.append({"ok": True, "text": f"핵심 이벤트 {e['id']}를 코드가 일으켰다(시작 5분 경과)"})
+            self._effects(e["id"], n, notes)
+        if w.charging and not (ok_why := w.can_charge(self.relation, self.details))[0]:
+            w.charging = False
+            notes.append({"ok": False, "text": f"충전이 끊겼다: {ok_why[1]}"})
         # 떡밥. 고른 것은 시도로만 남기고, 지문에 담았으면 바로, 캐릭터에게 맡겼으면 캐릭터가 실제로 쓴 뒤에 확정한다
         valid_det = {p["id"] for p in det_picks.get("picks", [])}
         picked = []
@@ -378,6 +432,9 @@ class Session:
             notes.append({"ok": True, "text": f"특성: {msg}"})
         for g in dm["goal_updates"]:
             note(self.character.set_goal(g["id"], g["status"]))
+        # 관계. DM은 제안만 하고, 규칙(±1, 근거, 한 칸씩, 있는 약속만)은 코드가 본다
+        if self.relation and (ru := dm.get("relationship_update")):
+            self._apply_relation(ru, n, notes)
         # 대화로 넓혀진 세계(유저의 말, 지난 턴 캐릭터의 말). 장면 사실은 항상 보이게 세계에 두고, 쓸모가 있으면 떡밥 풀에도 넣는다
         additions = []
         for add in dm["world_additions"]:
@@ -423,6 +480,30 @@ class Session:
         return {"notes": notes, "fired_now": fired_now, "picked_details": picked, "additions": additions, "shown_facts": shown_facts,
                 "user_facts": user_facts, "narration": dm["narration"], "channel": dm["channel"]}
 
+    def _effects(self, event_id: str, n: int, notes: list) -> None:
+        e = self.world.event(event_id)
+        for ok, msg in apply_effects(e.get("effects"), world=self.world, relation=self.relation, details=self.details,
+                                     turn=n, source=f"이벤트 {event_id}"):
+            notes.append({"ok": ok, "text": msg})
+
+    def _apply_relation(self, ru: dict, n: int, notes: list) -> None:
+        r = self.relation
+
+        def add(ok_msg):
+            ok, msg = ok_msg
+            if msg:
+                notes.append({"ok": ok, "text": msg})
+        for x in ru.get("stats") or []:
+            add(r.change_stat(x["id"], x["delta"], x["why"], n))
+        if ru.get("stage"):
+            add(r.set_stage(ru["stage"]["to"], ru["stage"]["why"], n))
+        for x in ru.get("address") or []:
+            add(r.set_address(x["who"], x["to"], x["why"], n))
+        for x in ru.get("promises") or []:
+            add(r.set_promise(x["id"], x["status"], x["why"], n))
+        for x in ru.get("new_promises") or []:
+            add(r.add_promise(x["by"], x["text"], n))
+
     def _arrive(self, loc: str, who: str, notes: list) -> None:
         """이번 턴에 새로 생긴 장소로 바로 옮긴다. 위치 필드는 이미 있는 장소만 고를 수 있어서, 새 장소로 가는 이동은 여기서 반영한다."""
         w = self.world
@@ -439,7 +520,7 @@ class Session:
     # ---- 캐릭터 ----
     def _character(self, now: dict, dm: dict, picked: list, fired_now: list, facts: list) -> dict:
         doc = render.character_doc(world=self.world, details=self.details, character=self.character, memory=self.memory,
-                                   now=now, dm=dm, picked_details=picked, fired_now=fired_now, facts=facts)
+                                   now=now, dm=dm, picked_details=picked, fired_now=fired_now, facts=facts, relation=self.relation)
         schema = character_schema(list(self.world.locations), [s["id"] for s in self.character.data["secrets"]])
         out = self.llm.json(self.prompt("character"), doc, schema, label="character", effort="low")
         # 가드레일: 다른 언어가 섞이면 같은 문서 끝에 다시 쓰라는 지시를 붙여 다시 쓰게 한다(앞부분이 같아 캐시는 그대로 탄다)
@@ -509,11 +590,12 @@ class Session:
         return {
             "n": self.n, "name": self.name, "scenario": {"id": self.scenario, **self.world.scenario},
             "world": self.world.snapshot(), "baseline": self.baseline_on,
-            "details": [{k: d.get(k) for k in ("id", "seed", "affordances", "status", "uses", "source")} for d in self.details.items],
+            "details": [{k: d.get(k) for k in ("id", "seed", "affordances", "status", "uses", "source", "episode", "kind")} for d in self.details.items],
+            "relationship": self.relation.snapshot() if self.relation else None,
             "character": {"dynamic": c["dynamic"], "goals": c["goals"],
                           "secrets": [{k: s.get(k) for k in ("id", "mode", "cover", "fact", "status", "opened_turn", "revealed_turn")} for s in c["secrets"]]},
             "memory": {"long_term": self.memory.long_term, "episodes": self.memory.episodes,
-                       "raw_turns": [t["n"] for t in self.memory.turns]},
+                       "long_term_start": len(c["long_term_memory"]), "raw_turns": [t["n"] for t in self.memory.turns]},
             "tension": self.tension_log, "log": self.log,
             "calls": usage([c for c in self.llm.calls if c["label"] != "baseline"]),
             "baseline_calls": usage([c for c in self.llm.calls if c["label"] == "baseline"]),

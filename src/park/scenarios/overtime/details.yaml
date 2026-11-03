@@ -1,0 +1,41 @@
+# 떡밥. 미리 많이 뿌려 두고, 회수는 드라마 매니저가 고른다. 회수되지 않은 떡밥은 그냥 디테일로 남는다.
+# seed: 처음 흘릴 때의 사실(주어를 적는다). affordances: 이 떡밥이 나중에 쓰일 수 있는 쓸모. 트리거는 적지 않는다.
+# planted: 시작부터 이미 드러나 있는지. where: 흘리기 좋은 장소(없으면 어디서나).
+# 지난 만남의 디테일은 history.yaml의 episodes에 있고, 시작할 때 이 풀에 '뿌림' 상태로 더해진다.
+# 잠긴 비밀의 단서가 되는 떡밥에는 비밀 내용을 쓸모로 적지 않는다. 단서 수준만 적는다.
+
+- id: pt_tomorrow
+  seed: "내일 오전 10시가 경쟁 PT다. 14층에는 채원과 도하만 남았고, 메인 카피는 아직 확정되지 않았다."
+  planted: true
+  affordances: [시간 압박, 일, 둘만 남음]
+- id: banana_desk
+  seed: "도하가 채원 키보드 옆에 바나나우유 하나를 놓아 두었다. 노란 포스트잇에 도하 글씨로 '위로용. 해장 아님.'"
+  where: [office]
+  affordances: [지난 만남 회수, 둘만 아는 농담, 챙겨 주기, 위로]
+- id: dead_phone
+  seed: "도하의 휴대폰 배터리가 얼마 없다. 충전기는 도하 책상 콘센트에 꽂혀 있는데, 11시 전원 차단 뒤엔 쓸 수 없다."
+  affordances: [충전, 연락 두절, 시간 압박, 어둠]
+- id: clicking_pen
+  seed: "도하가 귀에 꽂아 둔 볼펜을 빼서 딸깍거린다. 카피가 막힐 때의 버릇이다."
+  affordances: [막힘, 숨긴 마음의 단서, 말을 돌림]
+- id: notebook_last_page
+  seed: "도하의 검은 노트 마지막 장 맨 위에 날짜 '10/30'과 한 줄이 적혀 있다. '퇴근길이 제일 길다는 사람.' 그 아래로 지운 문장이 여러 줄이다."
+  affordances: [숨긴 사정의 단서, 지난 만남 회수, 카피]
+- id: hoarse_voice
+  seed: "도하의 목소리가 아직 조금 쉬어 있다. 책상 위에 목캔디 통이 있다."
+  where: [office]
+  affordances: [미안함, 지난 만남 회수, 말없이 챙김]
+- id: rooftop_bench
+  seed: "옥상 정원 왼쪽 벤치 팔걸이에 컵라면 국물 자국이 희미하게 남아 있다. 2주 전 둘이 앉았던 자리다."
+  where: [rooftop]
+  affordances: [둘만의 장소, 지난 만남 회수, 고요]
+- id: power_bank_store
+  seed: "건물 앞 편의점 계산대 옆에 보조배터리가 걸려 있다."
+  where: [store, lobby]
+  affordances: [충전, 챙겨 주기]
+- id: gukbap_kkakdugi
+  seed: "건너편 골목 24시 국밥집은 밤새 연다. 도하가 '거기 깍두기가 진짜'라고 한 적이 있다."
+  affordances: [약속, 밥, 데려가기]
+- id: last_train_time
+  seed: "을지로3가역 막차는 23:48이다. 채원은 지하철을 타야 집에 간다."
+  affordances: [시간 압박, 귀가, 데려다주기]

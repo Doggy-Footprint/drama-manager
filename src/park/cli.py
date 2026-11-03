@@ -1,6 +1,6 @@
 """터미널에서 세션을 진행한다. 웹 화면과 같은 로그(runs/park/<시각>_<이름>.jsonl)를 남기므로, 웹의 "저장된 로그"에서 그대로 볼 수 있다.
 
-  PYTHONPATH=src .venv/bin/python -m park.cli new 이름 [--scenario hometown|park|surgeon] [--baseline]   새 세션을 열고 시작 턴을 진행한다
+  PYTHONPATH=src .venv/bin/python -m park.cli new 이름 [--scenario hometown|park|surgeon|overtime] [--baseline]   새 세션을 열고 시작 턴을 진행한다
   PYTHONPATH=src .venv/bin/python -m park.cli say 이름 "말 (행동)"     한 턴
   PYTHONPATH=src .venv/bin/python -m park.cli log 이름                 지금까지의 대화
 

@@ -335,3 +335,239 @@ def test_every_scenario_fills_prompts_and_runs_a_turn(runs, scenario):
     s.turn(None)
     assert s.log[0]["user"] == s.world.scenario["opening"] and s.log[0]["reply"] == SAY["say"]
     assert s.record.stem.split("_")[2] == scenario
+
+
+# ---------------- 이벤트 스키마, 관계, 지난 만남 (overtime) ----------------
+
+from park.state import Relationship, apply_effects, load_history, requires_ok, validate_schema  # noqa: E402
+
+
+def overtime(llm=None, dm_out=None):
+    return session_mod.Session(scenario="overtime", llm=llm or FakeLLM(dm_out or dm(), SAY))
+
+
+def cand_ids(s):
+    blocked = []
+    return [e["id"] for e in s.world.event_candidates(60, gate=s.gate, blocked=blocked)], {b["id"]: b["why"] for b in blocked}
+
+
+def test_legacy_scenarios_keep_working_without_new_fields(runs):
+    for sc in ("park", "hometown", "surgeon"):
+        s = session_mod.Session(scenario=sc, llm=FakeLLM(dm(), SAY))
+        assert s.relation is None and s.world.flags == {} and s.world.items == {}
+        assert not any(d.get("episode") for d in s.details.items) and s.memory.prior == []
+        assert s.world.can_charge() == (True, "")                     # charge_from가 없으면 충전은 DM 판단 그대로
+        assert s.world.event_candidates(60, gate=s.gate) == s.world.event_candidates(60)
+        assert "<past_episodes>" not in s.prompt("dm") and "relationship_update" not in s.prompt("dm")
+    schema = session_mod.dm_schema(name="수아", locations=["a"], event_ids=[], detail_ids=[], secret_ids=[], grievance_ids=[], goal_ids=[])
+    assert "relationship_update" not in schema["properties"] and "item_moves" not in schema["properties"]
+
+
+def test_requires_filters_candidates_with_reasons(runs):
+    s = overtime()
+    ids, blocked = cand_ids(s)
+    assert "umbrella_spotted" in ids                                  # 유저가 우산을 들고 있고 약속이 open
+    assert blocked["rooftop_ramen"] == "신뢰 2 < 3"                  # 관계 조건
+    s.world.items["umbrella"]["holder"] = "character"                 # 우산을 돌려주면 그 이벤트는 더는 후보가 아니다
+    ids, blocked = cand_ids(s)
+    assert "umbrella_spotted" not in ids and "umbrella_spotted" in blocked
+    s.relation.stats["trust"]["value"] = 3
+    s.world.minute = to_min("20:55")
+    assert "rooftop_ramen" in cand_ids(s)[0]
+    s.relation.set_promise("dinner", "kept", "국밥을 샀다", 3)        # 기억 조건: 밥 약속이 이미 지켜졌으면 열리지 않는다
+    assert "약속 dinner" in cand_ids(s)[1]["rooftop_ramen"]
+
+
+def test_requires_vocabulary_covers_presence_items_flags_memory(runs):
+    s = overtime()
+    w, r, d = s.world, s.relation, s.details
+    ok = lambda req: requires_ok(req, world=w, relation=r, details=d)[0]
+    assert ok({"together": True}) and not ok({"together": False})
+    assert ok({"char_at": ["office"]}) and not ok({"user_at": ["lobby"]})
+    assert ok({"flags": {"weather": "맑음"}}) and not ok({"flags": {"weather": "비"}})
+    assert ok({"has": {"umbrella": "either"}}) and not ok({"has": {"umbrella": "character"}})
+    assert ok({"relation": {"stage_min": "overtime_mates", "max": {"flutter": 1}}}) and not ok({"relation": {"stage_min": "some"}})
+    assert ok({"memory": {"not_recalled": ["ep1_banana"]}}) and not ok({"memory": {"recalled": ["ep1_banana"]}})
+    assert not ok({"after": ["rain_starts"]})
+    assert not requires_ok({"relation": {"min": {"trust": 1}}}, world=w)[0]   # 관계 상태가 없는 이야기에서는 통과 못 한다
+
+
+def test_effects_change_flags_items_relation_promises_and_plant(runs):
+    s = overtime()
+    notes = apply_effects({"set": {"weather": "비"}, "give": {"power_bank": "character"}, "relation": {"trust": 1},
+                           "promise": {"dinner": "kept"}, "plant": ["notebook_last_page"]},
+                          world=s.world, relation=s.relation, details=s.details, turn=4, source="이벤트 x")
+    assert all(ok for ok, _ in notes) and len(notes) == 5
+    assert s.world.flags["weather"] == "비" and s.world.items["power_bank"]["holder"] == "character"
+    assert s.relation.value("trust") == 3 and s.relation.promise("dinner")["status"] == "kept"
+    assert s.details.get("notebook_last_page")["status"] == "planted"
+    bad = apply_effects({"set": {"weather": "눈"}}, world=s.world, relation=s.relation, details=s.details, turn=4, source="x")
+    assert not bad[0][0] and s.world.flags["weather"] == "비"       # 값 목록 밖의 상태는 받지 않는다
+
+
+def test_core_event_effects_apply_when_forced_and_duration_keeps_it_ongoing(runs):
+    s = overtime()
+    s.world.minute = to_min("21:33")
+    s.llm.dm = dm(minutes=5)
+    s.turn("(창밖을 본다)")                                          # 21:33 → 21:38, rain_starts(21:30~) 강제
+    assert s.world.flags["weather"] == "비"
+    assert any("효과(이벤트 rain_starts)" in x["text"] for x in s.traces[1]["applied"]["notes"])
+    s.world.fired["rehearsal"] = {"turn": 1, "clock": "21:40", "how": ""}
+    s.world.minute = to_min("22:05")
+    assert "rehearsal" in [e["id"] for e in s.world.ongoing()]        # duration 30분 안
+    s.world.minute = to_min("22:15")
+    assert "rehearsal" not in [e["id"] for e in s.world.ongoing()]    # 창(~22:50)은 남았지만 30분이 지났다
+
+
+def test_dm_cannot_fire_event_whose_requires_fail_after_state_changes(runs):
+    s = overtime()
+    s.relation.stats["trust"]["value"] = 3
+    s.world.minute = to_min("20:55")
+    s.world.fired["team_chat"] = {"turn": 0, "clock": "20:30", "how": ""}
+    ok, msg = s.world.fire("rooftop_ramen", 1, "", gate=s.gate)
+    assert ok
+    s2 = overtime()
+    s2.world.minute = to_min("20:55")
+    ok, msg = s2.world.fire("rooftop_ramen", 1, "", gate=s2.gate)   # 신뢰 2: 후보가 아니었던 것을 DM이 골라도 막힌다
+    assert not ok and "전제 조건" in msg
+
+
+def test_charging_is_refused_when_power_is_off(runs):
+    s = overtime(dm_out=dm(phone_charging=True, minutes=10))
+    s.turn("(충전기를 꽂아 준다)")                                     # 전원 켜짐, 사무실 → 충전된다
+    assert s.world.charging and s.world.battery > 24
+    s.world.flags["floor_power"] = "꺼짐"
+    s.world.charging = False
+    before = s.world.battery
+    s.turn("(콘센트에 꽂는다)")
+    assert not s.world.charging and s.world.battery < before
+    assert any(x["text"].startswith("충전 거절") and "14층 전원" in x["text"] for x in s.traces[2]["applied"]["notes"])
+    s.world.items["power_bank"]["holder"] = "character"               # 보조배터리를 들고 있으면 된다
+    s.turn("(보조배터리를 건넨다)")
+    assert s.world.charging
+
+
+def test_power_off_effect_unplugs_a_charging_phone(runs):
+    s = overtime(dm_out=dm(phone_charging=True, minutes=8))
+    s.world.minute = to_min("23:00")
+    s.world.charging = True
+    s.turn("(계속 작업한다)")                                           # 23:00 → 23:08, power_off 강제 → 콘센트 끊김
+    assert s.world.flags["floor_power"] == "꺼짐" and not s.world.charging
+    assert any("충전이 끊겼다" in x["text"] for x in s.traces[1]["applied"]["notes"])
+
+
+def test_item_moves_need_both_people_together(runs):
+    move = [{"id": "umbrella", "to": "character", "why": "돌려줬다"}]
+    s = overtime(dm_out=dm(item_moves=move))
+    s.turn("(우산을 내민다) 이거, 늦었죠.")
+    assert s.world.items["umbrella"]["holder"] == "character"
+    s2 = overtime(dm_out=dm(item_moves=move))
+    s2.world.together, s2.world.user_loc = False, "lobby"
+    s2.turn("(로비에서 우산을 흔든다)")
+    assert s2.world.items["umbrella"]["holder"] == "user"
+    assert any("소지품 거절" in x["text"] for x in s2.traces[1]["applied"]["notes"])
+    s3 = overtime(dm_out=dm(item_moves=[{"id": "power_bank", "to": "user", "why": "샀다"}]))
+    s3.turn("(편의점에 가지 않고 자리에서) 보조배터리 샀어요")          # 편의점에 없는 사람은 집지 못한다
+    assert s3.world.items["power_bank"]["holder"] == "store"
+
+
+def rel_update(**over):
+    base = {"stats": [], "stage": None, "address": [], "promises": [], "new_promises": []}
+    return {**base, **over}
+
+
+def test_relationship_updates_are_validated_by_code(runs):
+    up = rel_update(
+        stats=[{"id": "trust", "delta": 2, "why": "우산을 돌려줬다"},           # ±1을 넘는다
+               {"id": "closeness", "delta": 1, "why": ""},                       # 근거가 없다
+               {"id": "flutter", "delta": 1, "why": "채원이 바나나우유 농담을 받아쳤다"}],
+        stage={"to": "lovers", "why": "고백"},                                   # 두 칸
+        address=[{"who": "character", "to": "채원 씨", "why": "같음"}, {"who": "user", "to": "도하야", "why": "채원이 처음 반말로 불렀다"}],
+        promises=[{"id": "nope", "status": "kept", "why": "x"}, {"id": "umbrella_back", "status": "kept", "why": "우산을 돌려줬다"}],
+        new_promises=[{"by": "도하", "text": "도하가 PT 끝나면 국밥을 사기로 했다."}])
+    s = overtime(dm_out=dm(relationship_update=up))
+    s.turn("(우산을 돌려주며) 도하야, 이거.")
+    notes = [x for x in s.traces[1]["applied"]["notes"] if "관계" in x["text"] or "약속" in x["text"] or "호칭" in x["text"]]
+    bad = [x["text"] for x in notes if not x["ok"]]
+    r = s.relation
+    assert r.value("trust") == 2 and r.value("closeness") == 2 and r.value("flutter") == 2
+    assert any("±1" in b for b in bad) and any("근거" in b for b in bad) and any("한 칸씩" in b for b in bad)
+    assert any("없는 약속 nope" in b for b in bad)
+    assert r.stage == "overtime_mates" and r.address["user"] == "도하야"
+    assert r.promise("umbrella_back")["status"] == "kept" and r.promises[-1]["by"] == "도하"
+    assert not r.set_promise("umbrella_back", "open", "다시", 2)[0]          # kept/broken은 되돌리지 않는다
+    assert not r.change_stat("flutter", 1, "또", 1)[0]                        # 한 턴에 한 번
+    # 단계는 needs를 채워야 올라간다
+    assert not r.set_stage("some", "가까워졌다", 2)[0]                         # 친밀 2 < 3
+    r.stats["closeness"]["value"] = 3
+    assert r.set_stage("some", "옥상에서 손을 잡았다", 2)[0] and r.stage == "some"
+    assert not r.set_stage("overtime_mates", "", 3)[0]                         # 근거 없이 내리지 않는다
+    assert r.log and r.log[-1]["what"] == "stage"
+
+
+def test_event_effect_counts_toward_the_one_change_per_turn_rule(runs):
+    s = overtime()
+    s.world.minute, s.world.user_loc, s.world.char_loc = to_min("21:10"), "gukbap", "gukbap"
+    s.llm.dm = dm(events=[{"id": "gukbap_together", "how": "국밥이 나온다"}],
+                  relationship_update=rel_update(stats=[{"id": "trust", "delta": 1, "why": "밥을 샀다"}]))
+    s._retrieve_world = lambda u, n: ([{"id": "gukbap_together"}], [], [], [], [])
+    s.turn("(국밥을 받는다)")
+    assert s.relation.promise("dinner")["status"] == "kept" and s.relation.value("trust") == 3   # 효과로 +1, DM의 +1은 거절
+    assert any("이미 바뀌었다" in x["text"] for x in s.traces[1]["applied"]["notes"] if not x["ok"])
+
+
+def test_prior_episodes_are_loaded_as_memory_and_planted_details(runs):
+    s = overtime()
+    hist = load_history("overtime")
+    assert [e["id"] for e in s.memory.prior] == [e["id"] for e in hist["episodes"]]
+    assert s.memory.session_episodes == []
+    prior = [d for d in s.details.items if d.get("episode")]
+    assert len(prior) == sum(len(e["details"]) for e in hist["episodes"])
+    assert all(d["status"] == "planted" and d["uses"] == [] and d["source"] == "지난 만남" for d in prior)
+    assert {"ep1_banana", "ep3_umbrella"} <= {d["id"] for d in s.details.candidates(1)}   # 검색 후보가 된다
+    # 회수: DM이 고르고 캐릭터가 쓰면 회수된 것으로 친다. 캐릭터에게는 그때의 원문이 <past>로 간다
+    pick = {"need": "", "picks": [{"id": "ep1_banana", "use_as": "둘만 아는 농담"}]}
+    s.llm.detail_picks = pick
+    s.llm.dm = dm(details=[{"id": "ep1_banana", "mode": "mention", "via": "character", "how": "바나나우유를 내밀며 위로라고 한다"}])
+    s.llm.character_out = {**SAY, "used_details": ["ep1_banana"]}
+    s.turn("(한숨을 쉰다)")
+    doc = s.llm.docs["character"]
+    assert "<past episode=\"회식 날 택시\">" in doc and "해장이 아니라 위로" in doc
+    assert s.details.recalled("ep1_banana") and not s.details.recalled("ep2_egg")
+    # 바뀌지 않는 것이 앞: 지난 만남 → 기억 → 관계 → 지난 턴. 자주 바뀌는 수치는 뒤쪽
+    assert doc.index("<past_episodes>") < doc.index("<long_term_memory>") < doc.index("<relationship>") < doc.index("<current_turns>")
+    assert doc.index("<closeness") > doc.index("<world_model>") and "<stat " not in doc
+    dm_doc = s.llm.docs["drama-manager"]
+    assert dm_doc.startswith("<past_episodes>") and "needs 친밀≥3" in dm_doc and 'episode="회식 날 택시"' in dm_doc
+    # 세션 안 에피소드 묶기 문서에는 지난 만남이 섞이지 않는다
+    assert "<past_episodes>" not in render_episode_doc(s)
+
+
+def render_episode_doc(s):
+    from park import render
+    return render.episode_doc(s.memory)
+
+
+def test_schema_validation_rejects_unknown_vocabulary(runs):
+    s = overtime()
+    assert validate_schema(s.world, s.relation, s.details) == []
+    s.world.data["events"].append({"id": "bad", "where": ["any"], "window": ["21:00", "22:00"], "text": "",
+                                   "requires": {"mood": "좋음", "flags": {"weather": "눈"}, "relation": {"min": {"love": 3}}},
+                                   "effects": {"teleport": "x", "promise": {"ghost": "kept"}, "plant": ["nope"]}, "duration": -5})
+    errors = validate_schema(s.world, s.relation, s.details)
+    for frag in ("모르는 전제 조건 mood", "플래그 weather=눈", "관계 수치 love", "모르는 효과 teleport", "약속 ghost", "떡밥 nope", "duration"):
+        assert any(frag in e for e in errors), frag
+    legacy = session_mod.Session(scenario="hometown", llm=FakeLLM(dm(), SAY))
+    legacy.world.data["events"][0]["requires"] = {"relation": {"min": {"trust": 1}}}
+    assert any("history.yaml" in e for e in validate_schema(legacy.world, legacy.relation, legacy.details))
+
+
+def test_usage_is_split_by_llm_label(runs):
+    s = overtime()
+    entry = s.turn(None)
+    by = entry["usage"]["by_label"]
+    assert set(by) == {"retrieve-world", "retrieve-details", "extract-facts", "drama-manager", "character"}
+    assert by["drama-manager"] == {"count": 1, "input": 1, "cached": 0, "output": 1, "seconds": 0}
+    assert s.snapshot()["calls"]["by_label"]["character"]["count"] == 1
+    snap = s.snapshot()
+    assert snap["relationship"]["stage"] == "overtime_mates" and snap["world"]["flags"] and snap["world"]["items"]
