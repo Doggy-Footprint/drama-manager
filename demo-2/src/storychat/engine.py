@@ -313,6 +313,7 @@ class Engine:
                             for m in self.transcript[-REVIEW_CONTEXT_MESSAGES:]) or "없음"
         active = ", ".join(r["id"] for r in self.recalled) or "없음"
         parts = [f"화제 목록: {', '.join(self.topics)}", f"장소 목록: {', '.join(self.places)}",
+                 f"[오늘 장소]\n{self.scene['intro'].strip()}",
                  f"과거 에피소드 목록:\n{self.episodes.small_index()}", f"이미 떠오른 에피소드: {active}",
                  f"현재 장소: {s.place}", f"지금 둘의 사이: {self.relationship.state}",
                  f"[앞선 대화]\n{earlier}", f"[이번 턴]\n유저: {turn.user_text or '(말 없음)'}\n캐릭터: {reply}"]
@@ -366,6 +367,8 @@ class Engine:
 
     def _update_frame(self, review: dict) -> None:
         s = self.state
+        if review.get("action_type") == "move" and not review.get("move_to"):
+            self.log.emit("move_unresolved")  # 옮겼다고 봤는데 목적지를 목록에서 못 골랐다. 장소는 그대로다
         for axis in FRAME_AXES:
             proposed, current = review.get(axis.proposal), getattr(s, axis.name)
             if not proposed or squash(proposed) == squash(current):

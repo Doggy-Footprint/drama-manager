@@ -1,9 +1,9 @@
 """터미널에서 캐릭터(기본: 여자 버전 카드의 수아)와 직접 대화한다.
 
-  cd /Users/hwansu/today/261031/bunkerkids
-  PYTHONPATH=src .venv/bin/python -m storychat.chat                 # 구조 켬
-  PYTHONPATH=src .venv/bin/python -m storychat.chat --mode baseline # 캐릭터만
-  PYTHONPATH=src .venv/bin/python -m storychat.chat --debug         # 시스템 판단도 보기
+  cd /Users/hwansu/today/261031/bunkerkids/demo-2
+  PYTHONPATH=src ../.venv/bin/python -m storychat.chat                 # 구조 켬
+  PYTHONPATH=src ../.venv/bin/python -m storychat.chat --mode baseline # 캐릭터만
+  PYTHONPATH=src ../.venv/bin/python -m storychat.chat --debug         # 시스템 판단도 보기
 
 대화 중 명령: /debug 판단 보기 켜고 끄기, /state 지금 상태, /quit 또는 !종료 끝내기(Ctrl-D도 같다)
 기록은 runs/live/<시각>_<모드>.jsonl(전체 이벤트)과 .txt(사람이 읽는 대화록, 판단 줄 포함)에 남는다.
@@ -24,7 +24,7 @@ from .schema import hhmm
 
 DIM, BOLD, RESET = "\033[2m", "\033[1m", "\033[0m"
 SHOWN = {"signals", "checkpoint_fired", "checkpoint_deferred", "hidden_revealed", "hidden_spoken", "detail_shown",
-         "detail_planted", "detail_dropped", "payoff_injected", "frame_changed", "move_rejected", "memory_recalled",
+         "detail_planted", "detail_dropped", "payoff_injected", "frame_changed", "move_rejected", "move_unresolved", "memory_recalled",
          "relationship_updated", "episode_compressed", "today_summary_updated", "stage_rejected", "refused"}
 
 
@@ -67,6 +67,7 @@ def describe(e: dict, engine: Engine) -> str | None:
         "payoff_injected": lambda: f"떡밥 회수 {e['id']}: {e['core']}",
         "frame_changed": lambda: f"{'장소' if e['axis'] == 'place' else '관계'} {e['old']} → {e['new']}",
         "move_rejected": lambda: f"이동 거부 {e['proposed']} (갈 수 있는 곳 목록에 없다)",
+        "move_unresolved": lambda: "이동 못 함 (옮긴다고 봤지만 목적지를 장소 목록에서 못 골라 그대로다)",
         "relationship_updated": lambda: f"관계 기억 갱신: {e['before']} → {e['state']}",
         "episode_compressed": lambda: f"압축 T{e['start']}~T{e['end']} {e['title']} (지난 대화를 기억으로 접음)",
         "today_summary_updated": lambda: f"오늘 요약: {e['after']}",

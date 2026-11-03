@@ -59,7 +59,7 @@ class ClaudeLLM:
         import anthropic
         from dotenv import dotenv_values
 
-        key = dotenv_values(Path(__file__).resolve().parents[2] / ".env").get("ANTHROPIC_API_KEY")
+        key = dotenv_values(Path(__file__).resolve().parents[3] / ".env").get("ANTHROPIC_API_KEY")
         if not key:
             raise RuntimeError(".env에 ANTHROPIC_API_KEY가 없습니다")
         self.client = anthropic.Anthropic(api_key=key, max_retries=4, timeout=180.0)
@@ -121,7 +121,7 @@ class GeminiJudgeLLM:
         from dotenv import load_dotenv
         from google import genai
 
-        load_dotenv(Path(__file__).resolve().parents[2] / ".env")
+        load_dotenv(Path(__file__).resolve().parents[3] / ".env")
         key = os.environ.get("GEMINI_API_KEY")
         if not key:
             raise RuntimeError(".env에 GEMINI_API_KEY가 없습니다")

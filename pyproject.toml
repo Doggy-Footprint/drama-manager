@@ -1,9 +1,9 @@
 [project]
-name = "storychat"
-version = "0.2.0"
-description = "스토리라인이 상호작용에서 자라는 캐릭터 채팅 데모"
+name = "bunkerkids-chat"
+version = "0.3.0"
+description = "캐릭터 채팅 터미널 인터페이스. 다음 시도의 세션을 붙인다"
 requires-python = ">=3.12"
-dependencies = ["anthropic>=2.4,<3", "google-genai>=2.34", "python-dotenv>=1.2", "pyyaml>=6", "prompt_toolkit>=3.0.43,<4"]
+dependencies = ["anthropic>=2.4,<3", "python-dotenv>=1.2", "prompt_toolkit>=3.0.43,<4"]
 
 [project.optional-dependencies]
 dev = ["pytest>=9"]
@@ -14,9 +14,6 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 where = ["src"]
-
-[tool.setuptools.package-data]
-storychat = ["prompts/*.yaml", "data/*.yaml", "data/cards/*.yaml", "data/scenes/*.yaml"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
