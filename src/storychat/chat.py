@@ -5,7 +5,7 @@
   PYTHONPATH=src .venv/bin/python -m storychat.chat --mode baseline # 캐릭터만
   PYTHONPATH=src .venv/bin/python -m storychat.chat --debug         # 시스템 판단도 보기
 
-대화 중 명령: /debug 판단 보기 켜고 끄기, /state 지금 상태, /quit 끝내기(Ctrl-D도 같다)
+대화 중 명령: /debug 판단 보기 켜고 끄기, /state 지금 상태, /quit 또는 !종료 끝내기(Ctrl-D도 같다)
 기록은 runs/live/<시각>_<모드>.jsonl(전체 이벤트)과 .txt(사람이 읽는 대화록, 판단 줄 포함)에 남는다.
 """
 from __future__ import annotations
@@ -109,6 +109,7 @@ def state_text(engine: Engine) -> str:
             f"  지난 사건: {', '.join(sorted(engine.fired)) or '없음'}\n  오늘 요약: {engine.episodes.today_summary or '(아직 없음)'}{RESET}")
 
 
+QUIT = {"/quit", "!종료"}
 PROMPT = f"\n{BOLD}나:{RESET} "
 _session = None
 
@@ -148,7 +149,7 @@ def main() -> None:
 
     show(f"{BOLD}오늘 저녁, 두 달째 따로 만나 온 {engine.card['name']}와 놀이동산에 왔다.{RESET}")
     show(engine.scene["intro"].strip())
-    print(f"{DIM}모드: {args.mode} · /debug /state /quit · 기록 runs/{name}.txt{RESET}")
+    print(f"{DIM}모드: {args.mode} · /debug /state /quit(!종료) · 기록 runs/{name}.txt{RESET}")
     transcript.write(f"모드: {args.mode} · 카드 {args.card} · {datetime.now():%Y-%m-%d %H:%M}")
     if debug:
         print(f"{DIM}{LEGEND}{RESET}")
@@ -185,7 +186,7 @@ def main() -> None:
                 print(state_text(engine))
             elif said:
                 break
-        if said == "/quit":
+        if said in QUIT:
             break
         transcript.write(f"\n나: {said}")
     start = len(engine.log.events)
