@@ -1,0 +1,19 @@
+{"kind": "warmup", "created": 1.175, "first_item": 1.471, "first_text": 1.525, "done": 2.067, "input": 105226, "cached": 105223, "output": 5, "reasoning": 0}
+{"kind": "big-bust", "created": 0.68, "first_item": 1.636, "first_text": 1.946, "done": 2.521, "input": 105250, "cached": 0, "output": 38, "reasoning": 31}
+{"kind": "big-warm", "created": 2.381, "first_item": 2.95, "first_text": 2.957, "done": 3.61, "input": 105226, "cached": 105223, "output": 5, "reasoning": 0}
+{"kind": "tiny", "created": 0.591, "first_item": 1.401, "first_text": 1.402, "done": 2.015, "input": 21, "cached": 0, "output": 5, "reasoning": 0}
+{"kind": "big-bust", "created": 0.757, "first_item": 1.582, "first_text": 2.134, "done": 2.674, "input": 105243, "cached": 0, "output": 50, "reasoning": 43}
+{"kind": "big-warm", "created": 1.205, "first_item": 1.622, "first_text": 1.625, "done": 4.025, "input": 105226, "cached": 105223, "output": 5, "reasoning": 0}
+{"kind": "tiny", "created": 0.987, "first_item": 3.351, "first_text": 3.352, "done": 4.242, "input": 21, "cached": 0, "output": 5, "reasoning": 0}
+{"kind": "big-bust", "created": 0.876, "first_item": 1.755, "done": 2.936, "input": 105246, "cached": 0, "output": 64, "reasoning": 64}
+{"kind": "big-warm", "created": 1.075, "first_item": 1.799, "first_text": 1.802, "done": 2.314, "input": 105226, "cached": 105223, "output": 5, "reasoning": 0}
+{"kind": "tiny", "created": 1.343, "first_item": 2.212, "first_text": 2.213, "done": 2.735, "input": 21, "cached": 0, "output": 5, "reasoning": 0}
+{"kind": "big-bust", "created": 0.805, "first_item": 1.378, "done": 2.342, "input": 105249, "cached": 0, "output": 64, "reasoning": 59}
+{"kind": "big-warm", "created": 0.917, "first_item": 1.488, "first_text": 1.489, "done": 2.102, "input": 105226, "cached": 105223, "output": 5, "reasoning": 0}
+{"kind": "tiny", "created": 0.846, "first_item": 1.618, "first_text": 1.633, "done": 2.225, "input": 21, "cached": 0, "output": 5, "reasoning": 0}
+{"kind": "big-bust", "created": 0.683, "first_item": 1.709, "first_text": 2.276, "done": 2.899, "input": 105245, "cached": 0, "output": 47, "reasoning": 40}
+{"kind": "big-warm", "created": 0.705, "first_item": 1.184, "first_text": 1.205, "done": 1.743, "input": 105226, "cached": 105223, "output": 5, "reasoning": 0}
+{"kind": "tiny", "created": 0.814, "first_item": 1.355, "first_text": 1.361, "done": 1.834, "input": 21, "cached": 0, "output": 5, "reasoning": 0}
+{"kind": "big-bust", "created": 0.925, "first_item": 2.761, "first_text": 3.254, "done": 3.881, "input": 105248, "cached": 0, "output": 53, "reasoning": 46}
+{"kind": "big-warm", "created": 0.876, "first_item": 1.344, "first_text": 1.457, "done": 1.977, "input": 105226, "cached": 105223, "output": 5, "reasoning": 0}
+{"kind": "tiny", "created": 1.761, "first_item": 2.144, "first_text": 2.596, "done": 3.18, "input": 21, "cached": 0, "output": 55, "reasoning": 48}

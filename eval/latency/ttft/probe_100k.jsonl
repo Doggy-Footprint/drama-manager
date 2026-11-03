@@ -1,0 +1,4 @@
+{"kind": "warmup", "created": 2.714, "first_item": 3.546, "first_text": 3.549, "done": 4.043, "input": 105226, "cached": 0, "output": 5, "reasoning": 0}
+{"kind": "big-bust", "created": 1.058, "first_item": 1.865, "done": 2.703, "input": 105248, "cached": 0, "output": 64, "reasoning": 64}
+{"kind": "big-warm", "created": 2.923, "first_item": 3.445, "first_text": 3.458, "done": 4.066, "input": 105226, "cached": 105223, "output": 5, "reasoning": 0}
+{"kind": "tiny", "created": 0.557, "first_item": 1.31, "first_text": 1.317, "done": 1.895, "input": 21, "cached": 0, "output": 5, "reasoning": 0}
