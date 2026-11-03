@@ -81,6 +81,29 @@ def debug_lines(engine: Engine, start: int) -> list[str]:
     return [f"  · {part}" for l in lines if l for part in l.split("\n")]
 
 
+def prompt_tokens(c: dict) -> int:
+    return c["input"] + c["cache_read"] + c["cache_write"]
+
+
+def hit(c: dict) -> str:
+    total = prompt_tokens(c)
+    return f"{100 * c['cache_read'] / total:.0f}%" if total else "-"
+
+
+def usage_lines(engine: Engine, start: int) -> list[str]:
+    """이번 턴의 LLM 호출과 KV 캐시 적중률. 적중률 = 캐시에서 읽은 입력 토큰 / 전체 입력 토큰.
+    토큰 수는 API가 돌려준 usage 값 그대로다(cache_read, cache_creation, 나머지 input)."""
+    calls = [e for e in engine.log.events[start:] if e["kind"] == "llm_call"]
+    if not calls:
+        return []
+    total = {k: sum(c[k] for c in calls) for k in ("input", "cache_read", "cache_write", "output")}
+    lines = [f"  · 이번 턴 LLM {len(calls)}회 · 토큰 {sum(prompt_tokens(c) + c['output'] for c in calls):,}"
+             f" (입력 {prompt_tokens(total):,}, 출력 {total['output']:,}) · 캐시 적중 {hit(total)}"]
+    lines += [f"      {c['label']:<10} 입력 {prompt_tokens(c):>6,} (캐시 읽기 {c['cache_read']:,}, 쓰기 {c['cache_write']:,},"
+              f" 그냥 {c['input']:,}) · 출력 {c['output']:>5,} · 적중 {hit(c)}" for c in calls]
+    return lines
+
+
 def dim(lines: list[str]) -> str:
     return "\n".join(f"{DIM}{l}{RESET}" for l in lines)
 
@@ -169,6 +192,8 @@ def main() -> None:
             print(dim(lines))
         for line in lines:
             transcript.write(line)
+        for line in usage_lines(engine, start):
+            show(line, dimmed=True)
         if engine.state.ended or engine.state.turn >= MAX_TURNS:
             break
         while True:
@@ -193,10 +218,13 @@ def main() -> None:
     show("\n" + conclude(engine))
     for line in debug_lines(engine, start):
         transcript.write(line)
+    for line in usage_lines(engine, start):
+        show(line, dimmed=True)
     if args.mode == "structured":
         show(state_text(engine), dimmed=False)
     calls = [e for e in engine.log.events if e["kind"] == "llm_call"]
-    show(f"{DIM}  호출 {len(calls)}회, 약 ${sum(c['cost_usd'] for c in calls):.3f} · 기록 runs/{name}.txt, runs/{name}.jsonl{RESET}")
+    whole = {k: sum(c[k] for c in calls) for k in ("input", "cache_read", "cache_write", "output")}
+    show(f"{DIM}  전체 호출 {len(calls)}회, 캐시 적중 {hit(whole)}, 약 ${sum(c['cost_usd'] for c in calls):.3f} · 기록 runs/{name}.txt, runs/{name}.jsonl{RESET}")
 
 
 if __name__ == "__main__":
