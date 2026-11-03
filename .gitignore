@@ -6,3 +6,4 @@ __pycache__/
 **/eval/.cache/
 .DS_Store
 *.state.pkl
+docs/interview-*.md

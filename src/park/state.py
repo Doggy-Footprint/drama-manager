@@ -25,11 +25,13 @@ DETAIL_COOLDOWN = 3   # 실제로 쓰인 떡밥은 검색 후보에서 빠진다
 
 
 def josa(word: str, pair: str) -> str:
-    """받침에 맞는 조사를 붙인다. pair는 "이/가", "은/는", "을/를", "과/와", "이다/다"처럼 받침 있을 때/없을 때."""
+    """받침에 맞는 조사를 붙인다. pair는 "이/가", "은/는", "을/를", "과/와", "이다/다", "으로/로"처럼 받침 있을 때/없을 때."""
     with_b, without_b = pair.split("/")
     last = word[-1] if word else ""
-    has_batchim = "가" <= last <= "힣" and (ord(last) - 0xAC00) % 28 != 0
-    return word + (with_b if has_batchim else without_b)
+    batchim = (ord(last) - 0xAC00) % 28 if "가" <= last <= "힣" else 0
+    if pair == "으로/로" and batchim == 8:  # ㄹ 받침은 "로"(서울로, 교실로)
+        batchim = 0
+    return word + (with_b if batchim else without_b)
 
 
 def fill(template: str, values: dict) -> str:
@@ -37,7 +39,7 @@ def fill(template: str, values: dict) -> str:
     def sub(m):
         v = str(values.get(m.group(1), ""))
         return josa(v, m.group(2)) if m.group(2) else v
-    return re.sub(r"\{\{(\w+)\}\}(이/가|은/는|을/를|과/와|이다/다|아/야)?", sub, template)
+    return re.sub(r"\{\{(\w+)\}\}(이/가|은/는|을/를|과/와|이다/다|아/야|으로/로)?", sub, template)
 
 
 def to_min(hhmm: str) -> int:
@@ -63,7 +65,7 @@ def scenarios() -> list[dict]:
         if (d / "world.yaml").exists():
             w, c = load(d.name, "world.yaml"), load(d.name, "character.yaml")
             out.append({"id": d.name, "name": c["name"], **w["scenario"]})
-    return out
+    return sorted(out, key=lambda x: (x.get("order", 99), x["id"]))  # world.yaml의 scenario.order가 작을수록 시작 화면 위에
 
 
 @dataclass
@@ -205,11 +207,13 @@ class World:
         return True, f"이벤트 발생: {event_id}"
 
     def forced_core(self, turn: int) -> list[dict]:
-        """핵심 이벤트는 시작 5분이 지나도 안 일어났으면 코드가 일으킨다."""
+        """핵심 이벤트는 시작 5분이 지나도 안 일어났으면 코드가 일으킨다.
+        한 턴에 시간이 창을 통째로 건너뛰어도(21:58 → 22:25) 놓치지 않게, 이번 턴에 흐른 구간이 창과 겹치면 일으킨다."""
         out = []
+        since = self.minute if self.prev_minute is None else self.prev_minute
         for e in self.data["events"]:
             if e.get("core") and e["id"] not in self.fired and self.minute >= to_min(e["window"][0]) + 5:
-                if self.minute <= to_min(e["window"][1]):
+                if since <= to_min(e["window"][1]):
                     self.fired[e["id"]] = {"turn": turn, "clock": self.clock, "how": e["text"], "forced": True}
                     out.append(e)
         return out

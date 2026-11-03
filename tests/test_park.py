@@ -4,7 +4,7 @@ import random
 import pytest
 
 from park import session as session_mod
-from park.state import Character, Details, Memory, World, to_min
+from park.state import Character, Details, Memory, World, load, scenarios, to_min
 
 
 def test_time_and_battery_only_move_forward():
@@ -36,6 +36,19 @@ def test_core_event_is_forced_after_five_minutes():
     w.minute = to_min("20:05")
     assert [e["id"] for e in w.forced_core(1)] == ["fireworks"]
     assert w.fired["fireworks"]["forced"]
+
+
+def test_core_event_is_forced_even_when_a_turn_jumps_over_its_window():
+    w = World.fresh("hometown")
+    start, end = load("hometown", "world.yaml")["events"][0]["window"]   # blackout 22:00~22:20
+    w.minute = to_min(start) - 2
+    w.advance(30, "idle")                              # 21:58 → 22:28, 창을 통째로 건너뛴다
+    assert to_min(w.clock) > to_min(end)
+    assert [e["id"] for e in w.forced_core(1)] == ["blackout"]
+    w2 = World.fresh("hometown")
+    w2.minute = to_min(end) + 1
+    w2.advance(5, "idle")                              # 창이 이미 지난 뒤 시작한 턴에는 일으키지 않는다
+    assert w2.forced_core(1) == []
 
 
 def test_expansion_adds_location_and_event_by_chance():
@@ -126,6 +139,40 @@ class FakeLLM:
         if label == "dm-episode":
             return {"why": "", "close": False, "until_turn": 0, "title": "", "summary": "", "memories": []}
         raise AssertionError(label)
+
+
+class MixedLanguageLLM(FakeLLM):
+    """캐릭터가 처음엔 일본어를 섞고, 다시 쓰게 하면 rewrites 순서대로 답한다."""
+    def __init__(self, dm, first, rewrites):
+        super().__init__(dm, first)
+        self.rewrites = list(rewrites)
+
+    def json(self, system, user, schema, *, label, effort="low"):
+        if label == "character-guard":
+            self.labels.append(label)
+            self.docs.setdefault("guard", []).append(user)
+            self.calls.append({"label": label, "input": 1, "cached": 0, "output": 1, "seconds": 0})
+            return {**self.character_out, "say": self.rewrites.pop(0)}
+        return super().json(system, user, schema, label=label, effort=effort)
+
+
+def test_guardrail_rewrites_reply_with_foreign_script_then_strips(runs):
+    s = session_mod.Session(scenario="hometown", llm=MixedLanguageLLM(dm(), {**SAY, "say": "(隣に座る) 왔네."}, ["(옆에 앉는다) 왔네."]))
+    entry = s.turn("(계단에 앉는다)")
+    assert entry["reply"] == "(옆에 앉는다) 왔네."
+    assert s.llm.labels.count("character-guard") == 1 and "<rewrite>" in s.llm.docs["guard"][0]
+    assert any("다시 쓰게 함" in n["text"] for n in s.traces[1]["character_applied"])
+    # 두 번 다시 써도 섞여 있으면 그 글자를 지운다
+    s2 = session_mod.Session(scenario="hometown", llm=MixedLanguageLLM(dm(), {**SAY, "say": "まだ 여기 있을게."}, ["まだ 여기 있을게.", "여기 있을게、まだ"]))
+    assert s2.turn("(손을 잡는다)")["reply"] == "여기 있을게"
+    assert s2.llm.labels.count("character-guard") == 2
+
+
+def test_guardrail_strips_foreign_script_from_narration_and_directive(runs):
+    s = session_mod.Session(scenario="hometown", llm=FakeLLM(dm(narration="별이 또렷하다. ⟂", directive="곁에 있고 싶다。確かめたい"), SAY))
+    s.turn("(하늘을 본다)")
+    assert s.log[0]["narration"] == "별이 또렷하다." and s.traces[1]["dm"]["directive"] == "곁에 있고 싶다"
+    assert "確" not in s.traces[1]["character"]["_doc"]
 
 
 def dm(**over):
@@ -277,7 +324,7 @@ def test_dm_charging_flag_is_applied(runs):
     assert "충전 중" in s.llm.docs["character"]
 
 
-@pytest.mark.parametrize("scenario", ["park", "surgeon"])
+@pytest.mark.parametrize("scenario", [x["id"] for x in scenarios()])  # 새 시나리오도 자동으로 검사한다
 def test_every_scenario_fills_prompts_and_runs_a_turn(runs, scenario):
     from park.state import scenarios
     assert scenario in [x["id"] for x in scenarios()]

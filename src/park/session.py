@@ -20,6 +20,19 @@ from .state import BEATS, DEFAULT_SCENARIO, PHONE_USES, Character, Details, Memo
 
 PROMPTS = Path(__file__).resolve().parent / "prompts"
 EPISODE_EVERY = 10
+# 출력 가드레일. 싼 모델은 "한국어로만"이라고 써 둬도 일본어·한자·깨진 기호로 넘어간다(도쿄 맥락이 쌓이면 특히).
+# 프롬프트로는 못 막으니 코드가 본다: 가나, 한자, CJK 문장부호(、。「」【】), 수학 기호류(⟂)
+FOREIGN = re.compile(r"[　-〿぀-ヿㇰ-ㇿ一-鿿｡-ﾟ⟀-⟯⦀-⧿]+")
+LANG_RETRIES = 2
+
+
+def foreign(text: str | None) -> str:
+    """한국어 대사에 섞이면 안 되는 글자들(중복 없이). 없으면 빈 문자열."""
+    return "".join(dict.fromkeys("".join(FOREIGN.findall(text or ""))))
+
+
+def strip_foreign(text: str) -> str:
+    return re.sub(r"\s{2,}", " ", FOREIGN.sub("", text)).strip()
 DM_EFFORT = os.environ.get("RP_DM_EFFORT", "low")  # medium은 판단이 조금 낫지만 턴당 10~30초 걸린다
 
 
@@ -197,7 +210,7 @@ class Session:
                 out = self._character(now, dm, applied["picked_details"], applied["fired_now"], applied["shown_facts"])
                 trace["character"] = out
                 reply = re.sub(r"\s*\n+\s*", " ", out["say"]).strip()
-                trace["character_applied"] = self._apply_character(out, n, applied["picked_details"])
+                trace["character_applied"] = out.get("_guard", []) + self._apply_character(out, n, applied["picked_details"])
             else:
                 trace["character_applied"] = [{"ok": False, "text": f"떡밥 안 쓰임({self.name}에게 닿지 않음): {d['id']}"}
                                               for d in applied["picked_details"]]
@@ -293,6 +306,12 @@ class Session:
                 notes.append({"ok": ok, "text": msg})
             return ok
 
+        # 가드레일: 유저에게 보이는 지문과 캐릭터에게 넘어가는 속마음에서 다른 언어를 지운다(속마음이 캐릭터를 그 언어로 끌고 간다)
+        for key, label in (("narration", "지문"), ("directive", "속마음")):
+            if bad := foreign(dm.get(key)):
+                cleaned = strip_foreign(dm[key])
+                dm[key] = cleaned if cleaned or key != "narration" else None   # 지문이 다 지워지면 없는 것으로
+                notes.append({"ok": False, "text": f"가드레일: {label}에서 한국어가 아닌 글자({bad[:12]})를 지움"})
         # 시간과 배터리. 시작 턴은 도착 시각이 이미 반영돼 있으므로 흐르지 않는다
         if opening and dm["minutes"]:
             notes.append({"ok": False, "text": f"시작 턴이라 +{dm['minutes']}분 → 0분 (도착 시각 {w.clock}이 이미 반영됨)"})
@@ -309,7 +328,7 @@ class Session:
         note(w.move("user", dm["user_location"]))
         char_to = dm["character_location"]
         if was_together and char_to and char_to != w.char_loc and char_to != w.user_loc:
-            notes.append({"ok": False, "text": f"{self.name} 이동 거절: 함께 있던 {josa(self.name, '을/를')} 혼자 {w.loc_name(char_to)}로 보낼 수는 없다({josa(self.name, '이/가')} 정한다)"})
+            notes.append({"ok": False, "text": f"{self.name} 이동 거절: 함께 있던 {josa(self.name, '을/를')} 혼자 {josa(w.loc_name(char_to), '으로/로')} 보낼 수는 없다({josa(self.name, '이/가')} 정한다)"})
             char_to = None
         note(w.move("character", char_to))
         w.together = dm["together"]
@@ -408,7 +427,7 @@ class Session:
         """이번 턴에 새로 생긴 장소로 바로 옮긴다. 위치 필드는 이미 있는 장소만 고를 수 있어서, 새 장소로 가는 이동은 여기서 반영한다."""
         w = self.world
         if who == "character" and w.together:
-            notes.append({"ok": False, "text": f"{self.name} 이동 거절: 함께 있던 {josa(self.name, '을/를')} 혼자 {w.loc_name(loc)}로 보낼 수는 없다"})
+            notes.append({"ok": False, "text": f"{self.name} 이동 거절: 함께 있던 {josa(self.name, '을/를')} 혼자 {josa(w.loc_name(loc), '으로/로')} 보낼 수는 없다"})
             return
         for x in {"both": ["user", "character"], "user": ["user"], "character": ["character"]}.get(who, []):
             ok, msg = w.move(x, loc)
@@ -423,6 +442,21 @@ class Session:
                                    now=now, dm=dm, picked_details=picked, fired_now=fired_now, facts=facts)
         schema = character_schema(list(self.world.locations), [s["id"] for s in self.character.data["secrets"]])
         out = self.llm.json(self.prompt("character"), doc, schema, label="character", effort="low")
+        # 가드레일: 다른 언어가 섞이면 같은 문서 끝에 다시 쓰라는 지시를 붙여 다시 쓰게 한다(앞부분이 같아 캐시는 그대로 탄다)
+        guard = []
+        for i in range(LANG_RETRIES):
+            bad = foreign(out["say"])
+            if not bad:
+                break
+            guard.append({"ok": False, "text": f"가드레일: 대사에 한국어가 아닌 글자({bad[:12]})가 섞여 다시 쓰게 함 ({i + 1}/{LANG_RETRIES})"})
+            retry = render.tag("rewrite", render.t(f"직전에 쓴 say: {out['say']}\n여기에 한국어가 아닌 글자가 섞였다. 같은 뜻과 행동을 한국어로만 다시 쓴다. 외국어 단어도 한국어로 옮긴다."))
+            out = self.llm.json(self.prompt("character"), doc + "\n" + retry, schema, label="character-guard", effort="low")
+        if bad := foreign(out["say"]):
+            out["say"] = strip_foreign(out["say"])
+            guard.append({"ok": False, "text": f"가드레일: 다시 써도 남은 글자({bad[:12]})를 지움"})
+        elif guard:
+            guard.append({"ok": True, "text": "가드레일: 한국어로 다시 씀"})
+        out["_guard"] = guard
         out["_doc"] = doc
         return out
 
@@ -439,7 +473,7 @@ class Session:
                 notes.append({"ok": ok, "text": msg})
             else:
                 self.proposal = move["to"]
-                notes.append({"ok": True, "text": f"{josa(self.name, '이/가')} {self.world.loc_name(move['to'])}로 같이 가자고 했다(다음 턴에 판단)"})
+                notes.append({"ok": True, "text": f"{josa(self.name, '이/가')} {josa(self.world.loc_name(move['to']), '으로/로')} 같이 가자고 했다(다음 턴에 판단)"})
         # 떡밥은 캐릭터가 실제로 쓴 것만 확정한다. 받지 않은 떡밥을 썼다고 한 것은 무시한다
         used = set(out.get("used_details", []))
         for d in picked:
