@@ -16,16 +16,16 @@ from typing import Callable
 
 from . import render
 from .llm import LLM, ROOT
-from .state import BEATS, PHONE_USES, Character, Details, Memory, World
+from .state import BEATS, DEFAULT_SCENARIO, PHONE_USES, Character, Details, Memory, World, fill, josa
 
 PROMPTS = Path(__file__).resolve().parent / "prompts"
-OPENING = "(약속 시각 18:30보다 15분 늦게, 18:45에 정문 광장에 도착한다)"
 EPISODE_EVERY = 10
 DM_EFFORT = os.environ.get("RP_DM_EFFORT", "low")  # medium은 판단이 조금 낫지만 턴당 10~30초 걸린다
 
 
-def prompt(name: str) -> str:
-    return (PROMPTS / f"{name}.md").read_text(encoding="utf-8")
+def prompt(name: str, values: dict) -> str:
+    """프롬프트는 이야기와 상관없이 하나다. 캐릭터 이름, 무대, 흐름은 시나리오 값으로 채운다."""
+    return fill((PROMPTS / f"{name}.md").read_text(encoding="utf-8"), values)
 
 
 # ---------------- 스키마 ----------------
@@ -56,7 +56,7 @@ def detail_pick_schema(ids):
     return obj({"need": S, "picks": {"type": "array", "items": obj({"id": enum(ids), "use_as": S})}})
 
 
-def dm_schema(*, locations, event_ids, detail_ids, secret_ids, grievance_ids, goal_ids):
+def dm_schema(*, name, locations, event_ids, detail_ids, secret_ids, grievance_ids, goal_ids):
     return obj({
         "scene_read": S,
         "minutes": {"type": "integer"},
@@ -66,6 +66,7 @@ def dm_schema(*, locations, event_ids, detail_ids, secret_ids, grievance_ids, go
         "together": {"type": "boolean"},
         "channel": enum(["face", "phone", "none"]),
         "character_phone_use": enum(PHONE_USES),
+        "phone_charging": {"type": "boolean"},
         "offscreen": SN,
         "beat": enum(BEATS),
         "tension": {"type": "integer"},
@@ -81,7 +82,7 @@ def dm_schema(*, locations, event_ids, detail_ids, secret_ids, grievance_ids, go
             "consistency": S}),
         "goal_updates": {"type": "array", "items": obj({"id": enum(goal_ids), "status": enum(["open", "done", "failed", "dropped"]), "why": S})},
         "world_additions": {"type": "array", "items": obj({
-            "source": enum(["유저", "수아"]), "kind": enum(["location", "fact", "past"]), "name": S, "text": S,
+            "source": enum(["유저", name]), "kind": enum(["location", "fact", "past"]), "name": S, "text": S,
             "near": nullable(enum(locations)), "accept": {"type": "boolean"}, "why": S,
             "event_text": S, "affordances": {"type": "array", "items": S}})},
         "show_facts": {"type": "array", "items": S},
@@ -96,9 +97,9 @@ def character_schema(locations, secret_ids):
                 "used_details": {"type": "array", "items": S}, "revealed": {"type": "array", "items": enum(secret_ids)}})
 
 
-def extract_schema(locations):
+def extract_schema(locations, name):
     return obj({"items": {"type": "array", "items": obj({
-        "source": enum(["유저", "수아"]), "kind": enum(["location", "fact", "past"]), "name": S, "text": S,
+        "source": enum(["유저", name]), "kind": enum(["location", "fact", "past"]), "name": S, "text": S,
         "near": nullable(enum(locations))})}})
 
 
@@ -114,15 +115,17 @@ def usage(calls: list[dict]) -> dict:
 # ---------------- 세션 ----------------
 
 class Session:
-    def __init__(self, *, baseline: bool = False, seed: int | None = None, llm: LLM | None = None, tag: str | None = None) -> None:
+    def __init__(self, *, scenario: str = DEFAULT_SCENARIO, baseline: bool = False, seed: int | None = None,
+                 llm: LLM | None = None, tag: str | None = None) -> None:
         self.llm = llm or LLM()
-        self.world = World.fresh()
-        self.details = Details.fresh()
-        self.character = Character.fresh()
+        self.scenario = scenario
+        self.character = Character.fresh(scenario)
+        self.world = World.fresh(scenario, self.character.name)
+        self.details = Details.fresh(scenario)
         self.memory = Memory.fresh(self.character)
         self.rng = random.Random(seed)
         self.n = 0
-        self.proposal: str | None = None   # 수아가 같이 가자고 한 장소. 다음 턴 드라마 매니저가 유저가 따라왔는지 판단한다
+        self.proposal: str | None = None   # 캐릭터가 같이 가자고 한 장소. 다음 턴 드라마 매니저가 유저가 따라왔는지 판단한다
         self.tension_log: list[dict] = []
         self.log: list[dict] = []          # 화면용 전체 대화. {n, clock, user, narration, reply, channel, baseline}
         self.traces: dict[int, dict] = {}
@@ -130,12 +133,17 @@ class Session:
         self.baseline_messages: list[dict] = []
         self.started = False
         stamp = datetime.now().strftime("%m%d_%H%M%S")
-        self.record = ROOT / "runs" / "park" / f"{stamp}{'_' + tag if tag else ''}.jsonl"
+        self.record = ROOT / "runs" / "park" / f"{stamp}_{scenario}{'_' + tag if tag else ''}.jsonl"
         self.record.parent.mkdir(parents=True, exist_ok=True)
 
     @property
     def name(self) -> str:
         return self.character.name
+
+    def prompt(self, name: str) -> str:
+        c, sc = self.character.data, self.world.scenario
+        return prompt(name, {"name": self.name, "place": sc["place"], "setting": sc["setting"], "arc": sc["arc"].strip(),
+                             "profile": c["profile"], "traits": " ".join(c["core"]["traits"]), "speech": c["core"]["speech"]})
 
     # CLI가 턴 사이에 세션을 파일로 들고 있도록. LLM 클라이언트는 빼고, 호출 기록만 남긴다
     def __getstate__(self) -> dict:
@@ -154,7 +162,7 @@ class Session:
     def turn(self, user_text: str | None, emit: Callable[[dict], None] = lambda e: None) -> dict:
         self.n += 1
         n = self.n
-        user_input = user_text or OPENING
+        user_input = user_text or self.world.scenario["opening"]
         self.started = True
         call_start = len(self.llm.calls)
         trace: dict = {"n": n, "clock_before": self.world.clock, "user": user_input, "notes": []}
@@ -191,7 +199,7 @@ class Session:
                 reply = re.sub(r"\s*\n+\s*", " ", out["say"]).strip()
                 trace["character_applied"] = self._apply_character(out, n, applied["picked_details"])
             else:
-                trace["character_applied"] = [{"ok": False, "text": f"떡밥 안 쓰임(수아에게 닿지 않음): {d['id']}"}
+                trace["character_applied"] = [{"ok": False, "text": f"떡밥 안 쓰임({self.name}에게 닿지 않음): {d['id']}"}
                                               for d in applied["picked_details"]]
             base_reply = baseline.result() if baseline else None
 
@@ -222,7 +230,7 @@ class Session:
         if not ev_cands and not fact_cands:
             return [], [], [], []
         doc = render.situation_xml(self.world, self.memory, user_input, n) + "\n" + render.world_candidates_xml(self.world, ev_cands, fact_cands)
-        out = self.llm.json(prompt("retrieve_world"), doc, world_pick_schema(self._all_event_ids()), label="retrieve-world")
+        out = self.llm.json(self.prompt("retrieve_world"), doc, world_pick_schema(self._all_event_ids()), label="retrieve-world")
         ev_ids, fact_ids = {e["id"] for e in ev_cands}, {f["id"] for f in fact_cands}
         return ([p for p in out["picks"] if p["id"] in ev_ids][:4], [p for p in out["facts"] if p["id"] in fact_ids][:6],
                 ev_cands, fact_cands)
@@ -232,20 +240,20 @@ class Session:
         if not cands:
             return {"need": "", "picks": []}
         doc = render.situation_xml(self.world, self.memory, user_input, n) + "\n" + render.details_candidates_xml(self.details, cands)
-        out = self.llm.json(prompt("retrieve_details"), doc, detail_pick_schema(self._all_detail_ids()), label="retrieve-details")
+        out = self.llm.json(self.prompt("retrieve_details"), doc, detail_pick_schema(self._all_detail_ids()), label="retrieve-details")
         ids = {d["id"] for d in cands}
         out["picks"] = [p for p in out["picks"] if p["id"] in ids][:4]
         return out
 
-    # ---- 장면 사실 추출. 지난 턴 수아의 말과 이번 유저 입력에서 새로 생긴 것을 뽑는다. 받을지는 DM이 판단한다 ----
+    # ---- 장면 사실 추출. 지난 턴 캐릭터의 말과 이번 유저 입력에서 새로 생긴 것을 뽑는다. 받을지는 DM이 판단한다 ----
     def _extract(self, user_input: str, n: int) -> list[dict]:
         last = self.memory.turns[-1] if self.memory.turns else None
         doc = "\n".join([
             render.situation_xml(self.world, self.memory, user_input, n),
             render.tag("places", render.t(", ".join(f"{k}={v['name']}" for k, v in self.world.locations.items()))),
-            render.tag("last_suah", render.t(last["reply"] if last and last.get("reply") else "(없음)")),
+            render.tag("last_reply", render.t(last["reply"] if last and last.get("reply") else "(없음)")),
         ])
-        out = self.llm.json(prompt("extract_facts"), doc, extract_schema(list(self.world.locations)), label="extract-facts")
+        out = self.llm.json(self.prompt("extract_facts"), doc, extract_schema(list(self.world.locations), self.name), label="extract-facts")
         return out["items"]
 
     # 스키마의 enum은 전체 id로 고정한다(매 턴 바뀌면 프롬프트 캐시가 깨진다). 후보에 들었는지는 코드가 확인한다
@@ -264,10 +272,10 @@ class Session:
                             proposal=self.proposal)
         c = self.character.data
         schema = dm_schema(
-            locations=list(self.world.locations), event_ids=self._all_event_ids(),
+            name=self.name, locations=list(self.world.locations), event_ids=self._all_event_ids(),
             detail_ids=self._all_detail_ids(), secret_ids=[s["id"] for s in c["secrets"]],
             grievance_ids=[g["id"] for g in c["dynamic"]["grievances"]], goal_ids=[g["id"] for g in c["goals"]])
-        out = self.llm.json(prompt("dm"), doc, schema, label="drama-manager", effort=DM_EFFORT)
+        out = self.llm.json(self.prompt("dm"), doc, schema, label="drama-manager", effort=DM_EFFORT)
         self.traces[n]["dm_doc"] = doc
         return out
 
@@ -286,17 +294,20 @@ class Session:
             notes.append({"ok": False, "text": f"시작 턴이라 +{dm['minutes']}분 → 0분 (도착 시각 {w.clock}이 이미 반영됨)"})
             dm["minutes"], dm["minutes_why"] = 0, "시작 장면"
         before = w.clock
+        if dm["phone_charging"] != w.charging:
+            notes.append({"ok": True, "text": f"{self.name}의 휴대폰 충전 " + ("시작" if dm["phone_charging"] else "끝")})
+        w.charging = dm["phone_charging"]
         for msg in w.advance(dm["minutes"], dm["character_phone_use"]):
             notes.append({"ok": True, "text": msg})
         notes.append({"ok": True, "text": f"시간 {before} → {w.clock} (+{dm['minutes']}분, {dm['minutes_why']})"})
-        # 위치. 함께 있던 수아를 드라마 매니저가 혼자 떠나보내지는 않는다(혼자 자리를 뜰지는 수아가 정한다)
+        # 위치. 함께 있던 캐릭터를 드라마 매니저가 혼자 떠나보내지는 않는다(혼자 자리를 뜰지는 캐릭터가 정한다)
         was_together = w.together
-        note(w.move("유저", dm["user_location"]))
+        note(w.move("user", dm["user_location"]))
         char_to = dm["character_location"]
         if was_together and char_to and char_to != w.char_loc and char_to != w.user_loc:
-            notes.append({"ok": False, "text": f"수아 이동 거절: 함께 있던 수아를 혼자 {w.loc_name(char_to)}로 보낼 수는 없다(수아가 정한다)"})
+            notes.append({"ok": False, "text": f"{self.name} 이동 거절: 함께 있던 {josa(self.name, '을/를')} 혼자 {w.loc_name(char_to)}로 보낼 수는 없다({josa(self.name, '이/가')} 정한다)"})
             char_to = None
-        note(w.move("수아", char_to))
+        note(w.move("character", char_to))
         w.together = dm["together"]
         if w.char_loc != w.user_loc and w.together:
             notes.append({"ok": False, "text": "함께 있다고 했지만 위치가 달라 떨어져 있는 것으로 고쳤다"})
@@ -304,9 +315,9 @@ class Session:
         if was_together and not w.together and w.char_loc == w.user_loc:
             notes.append({"ok": False, "text": f"떨어졌다고 했지만 둘 다 {w.loc_name(w.user_loc)}에 그대로다(같은 장소 안에서 떨어진 것이 아니라면 이동이 빠졌다)"})
         if dm["channel"] == "phone" and not w.phone_on:
-            notes.append({"ok": False, "text": "수아 휴대폰이 꺼져 있어 전화/메시지가 닿지 않는다(channel phone → none)"})
+            notes.append({"ok": False, "text": f"{self.name}의 휴대폰이 꺼져 있어 전화/메시지가 닿지 않는다(channel phone → none)"})
             dm["channel"] = "none"
-        # 곁에서 말하고 떠나는 중이면 수아는 들었다. 처음부터 떨어져 있었을 때만 마주 들을 수 없다
+        # 곁에서 말하고 떠나는 중이면 캐릭터는 들었다. 처음부터 떨어져 있었을 때만 마주 들을 수 없다
         if dm["channel"] == "face" and not w.together and not was_together:
             dm["channel"] = "phone" if w.phone_on else "none"
             notes.append({"ok": False, "text": f"떨어져 있어 channel face → {dm['channel']}"})
@@ -321,7 +332,7 @@ class Session:
         for e in w.forced_core(n):
             fired_now.append({"id": e["id"], "how": e["text"]})
             notes.append({"ok": True, "text": f"핵심 이벤트 {e['id']}를 코드가 일으켰다(시작 5분 경과)"})
-        # 떡밥. 고른 것은 시도로만 남기고, 지문에 담았으면 바로, 수아에게 맡겼으면 수아가 실제로 쓴 뒤에 확정한다
+        # 떡밥. 고른 것은 시도로만 남기고, 지문에 담았으면 바로, 캐릭터에게 맡겼으면 캐릭터가 실제로 쓴 뒤에 확정한다
         valid_det = {p["id"] for p in det_picks.get("picks", [])}
         picked = []
         for d in dm["details"]:
@@ -344,7 +355,7 @@ class Session:
             notes.append({"ok": True, "text": f"특성: {msg}"})
         for g in dm["goal_updates"]:
             note(self.character.set_goal(g["id"], g["status"]))
-        # 대화로 넓혀진 세계(유저의 말, 지난 턴 수아의 말). 장면 사실은 항상 보이게 세계에 두고, 쓸모가 있으면 떡밥 풀에도 넣는다
+        # 대화로 넓혀진 세계(유저의 말, 지난 턴 캐릭터의 말). 장면 사실은 항상 보이게 세계에 두고, 쓸모가 있으면 떡밥 풀에도 넣는다
         additions = []
         for add in dm["world_additions"]:
             who, label = add["source"], add["name"] or add["text"]
@@ -363,7 +374,7 @@ class Session:
                 result["detail"] = self.details.add_fact(add["text"], add["affordances"], n, source=who)
                 notes.append({"ok": True, "text": f"떡밥 풀에도 넣음: {result['detail']}"})
             additions.append({**add, "result": result})
-        # 장면 사실. DM은 검색된 사실만 보고, 그중 수아에게 보일 것을 고른다. 이번 턴에 새로 생긴 사실은 DM이 방금 만든 것이라 함께 보인다
+        # 장면 사실. DM은 검색된 사실만 보고, 그중 캐릭터에게 보일 것을 고른다. 이번 턴에 새로 생긴 사실은 DM이 방금 만든 것이라 함께 보인다
         valid_fact = {p["id"] for p in fact_picks}
         for r in dm["retire_facts"]:
             if r["id"] not in valid_fact:
@@ -383,7 +394,7 @@ class Session:
             user_facts.append({"id": did, **f})
             notes.append({"ok": True, "text": f"유저 디테일 저장: {f['text']}"})
         w.history.append({"turn": n, "clock": w.clock, "char_loc": w.char_loc, "user_loc": w.user_loc,
-                          "together": w.together, "battery": round(w.battery, 1)})
+                          "together": w.together, "battery": round(w.battery, 1), "charging": w.charging})
         return {"notes": notes, "fired_now": fired_now, "picked_details": picked, "additions": additions, "shown_facts": shown_facts,
                 "user_facts": user_facts, "narration": dm["narration"], "channel": dm["channel"]}
 
@@ -392,7 +403,7 @@ class Session:
         doc = render.character_doc(world=self.world, details=self.details, character=self.character, memory=self.memory,
                                    now=now, dm=dm, picked_details=picked, fired_now=fired_now, facts=facts)
         schema = character_schema(list(self.world.locations), [s["id"] for s in self.character.data["secrets"]])
-        out = self.llm.json(prompt("character"), doc, schema, label="character", effort="low")
+        out = self.llm.json(self.prompt("character"), doc, schema, label="character", effort="low")
         out["_doc"] = doc
         return out
 
@@ -402,19 +413,19 @@ class Session:
         move = out.get("move")
         if move and move["to"] != self.world.char_loc:
             if move["alone"]:
-                ok, msg = self.world.move("수아", move["to"])
+                ok, msg = self.world.move("character", move["to"])
                 if ok:
                     self.world.together = False
-                    msg += " (수아가 혼자 자리를 떴다)"
+                    msg += f" ({josa(self.name, '이/가')} 혼자 자리를 떴다)"
                 notes.append({"ok": ok, "text": msg})
             else:
                 self.proposal = move["to"]
-                notes.append({"ok": True, "text": f"수아가 {self.world.loc_name(move['to'])}로 같이 가자고 했다(다음 턴에 판단)"})
-        # 떡밥은 수아가 실제로 쓴 것만 확정한다. 받지 않은 떡밥을 썼다고 한 것은 무시한다
+                notes.append({"ok": True, "text": f"{josa(self.name, '이/가')} {self.world.loc_name(move['to'])}로 같이 가자고 했다(다음 턴에 판단)"})
+        # 떡밥은 캐릭터가 실제로 쓴 것만 확정한다. 받지 않은 떡밥을 썼다고 한 것은 무시한다
         used = set(out.get("used_details", []))
         for d in picked:
             if d["id"] in used:
-                notes.append({"ok": True, "text": self.details.realize(d["id"], n, "수아")[1]})
+                notes.append({"ok": True, "text": self.details.realize(d["id"], n, self.name)[1]})
             else:
                 notes.append({"ok": False, "text": f"떡밥 안 쓰임: {d['id']} (상태 그대로, 다음에 다시 고를 수 있다)"})
         for sid in out.get("revealed", []):
@@ -425,7 +436,7 @@ class Session:
 
     # ---- 에피소드 정리 ----
     def _episode(self) -> dict:
-        out = self.llm.json(prompt("episode"), render.episode_doc(self.memory), EPISODE_SCHEMA, label="dm-episode")
+        out = self.llm.json(self.prompt("episode"), render.episode_doc(self.memory), EPISODE_SCHEMA, label="dm-episode")
         if not out["close"]:
             return {"closed": False, "text": f"묶을 에피소드 없음: {out['why']}", "raw": out}
         ok, msg = self.memory.close_episode(out["until_turn"], out["title"], out["summary"], out["memories"])
@@ -434,7 +445,7 @@ class Session:
     # ---- 기준선: 캐릭터 프롬프트만 ----
     def _baseline(self, user_input: str) -> str:
         self.baseline_messages.append({"role": "user", "content": user_input})
-        text = self.llm.text(prompt("baseline"), self.baseline_messages, label="baseline")
+        text = self.llm.text(self.prompt("baseline"), self.baseline_messages, label="baseline")
         text = re.sub(r"\s*\n+\s*", " ", text)
         self.baseline_messages.append({"role": "assistant", "content": text})
         return text
@@ -443,7 +454,8 @@ class Session:
     def snapshot(self) -> dict:
         c = self.character.data
         return {
-            "n": self.n, "name": self.name, "world": self.world.snapshot(), "baseline": self.baseline_on,
+            "n": self.n, "name": self.name, "scenario": {"id": self.scenario, **self.world.scenario},
+            "world": self.world.snapshot(), "baseline": self.baseline_on,
             "details": [{k: d.get(k) for k in ("id", "seed", "affordances", "status", "uses", "source")} for d in self.details.items],
             "character": {"dynamic": c["dynamic"], "goals": c["goals"],
                           "secrets": [{k: s.get(k) for k in ("id", "mode", "cover", "fact", "status", "opened_turn", "revealed_turn")} for s in c["secrets"]]},

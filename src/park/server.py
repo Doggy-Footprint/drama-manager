@@ -9,8 +9,9 @@ API
   GET  /api/trace?n=3                 n번째 턴의 판단 기록 전체(캐릭터/DM에 들어간 XML 포함)
   GET  /api/runs                      저장된 로그(runs/park/*.jsonl) 목록
   GET  /api/run?file=...              저장된 로그 하나를 화면이 그릴 수 있는 형태로(읽기 전용)
-  POST /api/reset {"baseline": true}  새 세션
-  POST /api/turn  {"text": "..."}     한 턴. text가 비면 시작 턴(수아가 먼저 말한다). 응답은 NDJSON 스트림
+  GET  /api/scenarios                 고를 수 있는 이야기 목록
+  POST /api/reset {"scenario": "park", "baseline": true}  새 세션
+  POST /api/turn  {"text": "..."}     한 턴. text가 비면 시작 턴(캐릭터가 먼저 말한다). 응답은 NDJSON 스트림
 """
 from __future__ import annotations
 
@@ -25,6 +26,7 @@ from urllib.parse import parse_qs, urlparse
 
 from .llm import ROOT
 from .session import Session
+from .state import DEFAULT_SCENARIO, scenarios
 
 WEB = Path(__file__).resolve().parent / "web"
 RUNS = ROOT / "runs" / "park"
@@ -59,8 +61,10 @@ class App:
         self.lock = threading.Lock()
         self.session: Session | None = None
 
-    def reset(self, baseline: bool) -> Session:
-        self.session = Session(baseline=baseline)
+    def reset(self, baseline: bool, scenario: str = DEFAULT_SCENARIO) -> Session:
+        if scenario not in {x["id"] for x in scenarios()}:
+            scenario = DEFAULT_SCENARIO
+        self.session = Session(scenario=scenario, baseline=baseline)
         return self.session
 
 
@@ -95,6 +99,8 @@ class Handler(BaseHTTPRequestHandler):
         elif url.path == "/api/state":
             s = APP.session
             self._json(s.snapshot() if s else {"n": 0, "empty": True})
+        elif url.path == "/api/scenarios":
+            self._json(scenarios())
         elif url.path == "/api/runs":
             self._json(list_runs())
         elif url.path == "/api/run":
@@ -111,7 +117,7 @@ class Handler(BaseHTTPRequestHandler):
         if url.path == "/api/reset":
             body = self._body()
             with APP.lock:
-                s = APP.reset(bool(body.get("baseline")))
+                s = APP.reset(bool(body.get("baseline")), body.get("scenario") or DEFAULT_SCENARIO)
             self._json(s.snapshot())
         elif url.path == "/api/turn":
             body = self._body()

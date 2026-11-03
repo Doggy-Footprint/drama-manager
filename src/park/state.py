@@ -1,23 +1,43 @@
 """월드 모델, 떡밥, 캐릭터 특성, 기억. 꼭 지켜야 할 규칙은 프롬프트가 아니라 여기서 코드로 막는다.
 
-- 시간은 거꾸로 가지 않는다. 배터리는 줄기만 하고, 0이 되면 휴대폰이 꺼진다.
-- 이벤트는 한 번만 일어나고, 정해진 시간 창 안에서만 일어난다. 핵심 이벤트(불꽃놀이)는 시작 5분이 지나면 코드가 일으킨다.
+- 시간은 거꾸로 가지 않는다. 배터리는 쓰면 줄고 충전 중일 때만 오른다. 0이 되면 휴대폰이 꺼지고, 충전으로 다시 켜진다.
+- 이벤트는 한 번만 일어나고, 정해진 시간 창 안에서만 일어난다. 핵심 이벤트는 시작 5분이 지나면 코드가 일으킨다.
+
+이야기(시나리오)마다 scenarios/<id>/ 아래에 world.yaml, character.yaml, details.yaml이 있다.
 - 캐릭터 특성은 dynamic 쪽만 바뀐다. core는 바뀌지 않는다.
 """
 from __future__ import annotations
 
 import copy
 import random
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
 import yaml
 
-DATA = Path(__file__).resolve().parent / "data"
+SCENARIOS = Path(__file__).resolve().parent / "scenarios"
+DEFAULT_SCENARIO = "park"
 PHONE_USES = ["idle", "photos", "searching", "calling"]
 BEATS = ["setup", "complication", "payoff", "breather", "climax", "resolution"]
 EXPANSION_EVENT_CHANCE = 0.2
 DETAIL_COOLDOWN = 3   # 실제로 쓰인 떡밥은 검색 후보에서 빠진다. 처음 3턴, 쓰일 때마다 두 배(3, 6, 12…)
+
+
+def josa(word: str, pair: str) -> str:
+    """받침에 맞는 조사를 붙인다. pair는 "이/가", "은/는", "을/를", "과/와", "이다/다"처럼 받침 있을 때/없을 때."""
+    with_b, without_b = pair.split("/")
+    last = word[-1] if word else ""
+    has_batchim = "가" <= last <= "힣" and (ord(last) - 0xAC00) % 28 != 0
+    return word + (with_b if has_batchim else without_b)
+
+
+def fill(template: str, values: dict) -> str:
+    """프롬프트의 {{key}}를 채운다. {{name}}이/가처럼 바로 뒤에 조사 쌍이 오면 받침에 맞춰 고른다."""
+    def sub(m):
+        v = str(values.get(m.group(1), ""))
+        return josa(v, m.group(2)) if m.group(2) else v
+    return re.sub(r"\{\{(\w+)\}\}(이/가|은/는|을/를|과/와|이다/다|아/야)?", sub, template)
 
 
 def to_min(hhmm: str) -> int:
@@ -29,29 +49,50 @@ def to_clock(minute: int) -> str:
     return f"{minute // 60:02d}:{minute % 60:02d}"
 
 
-def load(name: str):
-    return yaml.safe_load((DATA / name).read_text(encoding="utf-8"))
+PHONE_ON_AGAIN = 3.0  # 꺼진 휴대폰은 충전으로 이만큼(%) 차면 다시 켠다
+
+
+def load(scenario: str, name: str):
+    return yaml.safe_load((SCENARIOS / scenario / name).read_text(encoding="utf-8"))
+
+
+def scenarios() -> list[dict]:
+    """고를 수 있는 이야기 목록(화면의 시작 화면용)."""
+    out = []
+    for d in sorted(SCENARIOS.iterdir()):
+        if (d / "world.yaml").exists():
+            w, c = load(d.name, "world.yaml"), load(d.name, "character.yaml")
+            out.append({"id": d.name, "name": c["name"], **w["scenario"]})
+    return out
 
 
 @dataclass
 class World:
     data: dict
     minute: int
+    char_name: str = "캐릭터"
     prev_minute: int | None = None                 # 이번 턴이 시작된 시각. 시간을 건너뛴 구간의 이벤트를 받기 위해
-    char_loc: str = "gate"
-    user_loc: str = "gate"
+    char_loc: str = ""
+    user_loc: str = ""
     together: bool = True
     battery: float = 0.0
     phone_on: bool = True
     phone_off_at: str | None = None
+    charging: bool = False                         # 보조배터리·충전기에 연결돼 있는지. 드라마 매니저가 정한다
     fired: dict = field(default_factory=dict)      # event id -> {turn, clock, how}
     facts: list = field(default_factory=list)      # 대화로 생긴 장면 사실 {id, text, source, turn, where, active}
     history: list = field(default_factory=list)    # 턴마다 {turn, clock, char_loc, user_loc, together, battery}
 
     @classmethod
-    def fresh(cls) -> "World":
-        data = load("world.yaml")
-        return cls(data=data, minute=to_min(data["start"]), battery=float(data["states"]["battery"]["start"]))
+    def fresh(cls, scenario: str = DEFAULT_SCENARIO, char_name: str = "캐릭터") -> "World":
+        data = load(scenario, "world.yaml")
+        start = data["start_loc"]
+        return cls(data=data, minute=to_min(data["start"]), char_name=char_name, char_loc=start["character"],
+                   user_loc=start["user"], battery=float(data["states"]["battery"]["start"]))
+
+    @property
+    def scenario(self) -> dict:
+        return self.data["scenario"]
 
     # --- 읽기 ---
     @property
@@ -116,15 +157,21 @@ class World:
         minutes = max(0, min(int(minutes), 90))
         self.prev_minute = self.minute
         notes = []
-        rate = self.data["states"]["battery"]["drain_per_min"].get(phone_use, 0.15)
-        if self.phone_on:
-            before = self.battery
-            self.battery = max(0.0, self.battery - rate * minutes)
-            if self.battery <= 0:
-                spent = int(before / rate) if rate else minutes
-                self.phone_on = False
-                self.phone_off_at = to_clock(self.minute + min(spent, minutes))
-                notes.append(f"수아의 휴대폰이 {self.phone_off_at}에 꺼졌다(배터리 0%).")
+        bat = self.data["states"]["battery"]
+        drain = bat["drain_per_min"].get(phone_use, 0.15) if self.phone_on else 0.0
+        net = (bat.get("charge_per_min", 0.0) if self.charging else 0.0) - drain   # 분당 변화. 충전 중이면 쓰면서도 오를 수 있다
+        before = self.battery
+        self.battery = max(0.0, min(100.0, self.battery + net * minutes))
+        if self.phone_on and self.battery <= 0:
+            spent = int(before / -net) if net < 0 else minutes
+            self.phone_on = False
+            self.phone_off_at = to_clock(self.minute + min(spent, minutes))
+            notes.append(f"{self.char_name}의 휴대폰이 {self.phone_off_at}에 꺼졌다(배터리 0%).")
+        elif not self.phone_on and self.battery >= PHONE_ON_AGAIN:
+            self.phone_on, self.phone_off_at = True, None
+            notes.append(f"충전으로 {self.char_name}의 휴대폰이 다시 켜졌다({self.battery:.0f}%).")
+        if self.charging:
+            notes.append(f"충전 중: 배터리 {before:.0f}% → {self.battery:.0f}%")
         self.minute += minutes
         end = to_min(self.data["end"])
         if self.minute > end:
@@ -132,15 +179,17 @@ class World:
         return notes
 
     def move(self, who: str, loc: str | None) -> tuple[bool, str]:
+        """who는 "character" 또는 "user"."""
+        label = self.char_name if who == "character" else "유저"
         if not loc:
             return True, ""
         if loc not in self.locations:
-            return False, f"{who} 이동 거절: 모르는 장소 {loc}"
-        if who == "수아":
+            return False, f"{label} 이동 거절: 모르는 장소 {loc}"
+        if who == "character":
             self.char_loc = loc
         else:
             self.user_loc = loc
-        return True, f"{who} → {self.loc_name(loc)}"
+        return True, f"{label} → {self.loc_name(loc)}"
 
     def fire(self, event_id: str, turn: int, how: str) -> tuple[bool, str]:
         e = self.event(event_id)
@@ -186,7 +235,7 @@ class World:
         return [f for f in self.facts if f["active"]]
 
     def expand(self, add: dict, turn: int, rng: random.Random) -> dict:
-        """대화로 넓혀진 세계(새 장소, 이 공원에 대한 새 사실)를 받는다. 유저든 수아든 받으면 20% 확률로 그 자리에 이벤트를 하나 더한다."""
+        """대화로 넓혀진 세계(새 장소, 이 무대에 대한 새 사실)를 받는다. 유저든 캐릭터든 받으면 20% 확률로 그 자리에 이벤트를 하나 더한다."""
         result = {"accepted": False}
         if not add or not add.get("accept") or add.get("kind") not in ("location", "fact"):
             return result
@@ -216,9 +265,10 @@ class World:
     def snapshot(self) -> dict:
         return {"clock": self.clock, "start": self.data["start"], "end": self.data["end"],
                 "char_loc": self.char_loc, "user_loc": self.user_loc, "together": self.together,
-                "battery": round(self.battery, 1), "phone_on": self.phone_on, "phone_off_at": self.phone_off_at,
+                "battery": round(self.battery, 1), "phone_on": self.phone_on, "phone_off_at": self.phone_off_at, "charging": self.charging,
                 "temperature": self.temperature(),
-                "locations": {k: {"name": v["name"], "crowd": self.crowd(k), "added": "added_turn" in v}
+                "locations": {k: {"name": v["name"], "crowd": self.crowd(k), "added": "added_turn" in v, "xy": v.get("xy"),
+                                  "near": list(v.get("near", {}))}
                               for k, v in self.locations.items()},
                 "events": [{"id": e["id"], "window": e["window"], "text": e["text"], "core": bool(e.get("core")),
                             "added": "added_turn" in e, "fired": self.fired.get(e["id"])} for e in self.data["events"]],
@@ -230,8 +280,8 @@ class Details:
     items: list
 
     @classmethod
-    def fresh(cls) -> "Details":
-        items = load("details.yaml")
+    def fresh(cls, scenario: str = DEFAULT_SCENARIO) -> "Details":
+        items = load(scenario, "details.yaml")
         for d in items:
             d.setdefault("where", [])
             d["status"] = "planted" if d.get("planted") else "unplanted"
@@ -297,8 +347,8 @@ class Character:
     data: dict
 
     @classmethod
-    def fresh(cls) -> "Character":
-        return cls(data=load("character.yaml"))
+    def fresh(cls, scenario: str = DEFAULT_SCENARIO) -> "Character":
+        return cls(data=load(scenario, "character.yaml"))
 
     @property
     def name(self) -> str:

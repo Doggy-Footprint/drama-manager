@@ -1,21 +1,40 @@
 # 물빛공원, 11월 첫째 주 금요일 저녁. 가을 불꽃축제 날이다.
 # 시각은 "HH:MM". 사건과 기억 문장에는 누가 했는지(수아/유저)를 적는다.
 
-park: 물빛공원
-date: 11월 첫째 주 금요일
+# 이야기 설정. 프롬프트와 화면이 이 값으로 채워진다
+scenario:
+  title: 물빛공원 불꽃축제
+  place: 물빛공원                       # "이 ○○에 새로 생긴 장소"처럼 쓰인다
+  setting: "11월 첫째 주 금요일 저녁, 물빛공원 불꽃축제에서 수아와 유저가 데이트 중이다."
+  opening: "(약속 시각 18:30보다 15분 늦게, 18:45에 정문 광장에 도착한다)"
+  appointment: "18:30에 정문 광장에서 만나기로 했다"
+  countdown: {at: "20:00", label: 불꽃놀이}
+  season: 11월 저녁
+  input_hint: "(키링 가게 줄에 선다)"
+  intro:
+    - "11월 첫째 주 금요일 저녁, 물빛공원 불꽃축제"
+    - "약속은 18:30, 정문 광장. 너는 15분 늦었다. 불꽃놀이는 8시."
+    - "수아에게는 말하지 않은 사정이 있다."
+  arc: |
+    - 18:45~19:15 setup: 재료를 깐다. 긴장 2~3. 떡밥을 흘리고, 수아의 목표가 보이게 한다.
+    - 19:15~19:45: 일이 꼬이기 시작한다. 긴장 3~6. 서운함은 말투로만 샌다.
+    - 19:45~20:00: 쌓인 것이 터질 수 있는 때다. 긴장 6~8. 인파, 어둠, 연락 같은 세계의 압박이 갈등을 키운다.
+    - 20:00~20:20 불꽃놀이: 정점. 갈등이 풀리거나, 비밀이 드러나거나, 엇갈린 채로 남는다.
+    - 20:20 이후 resolution: 매듭짓는다.
+
 start: "18:45"
-promised: "18:30"          # 수아와 유저가 정문에서 만나기로 한 시각
 end: "21:30"               # 데모가 다루는 끝 시각
+start_loc: {character: gate, user: gate}
 
 locations:
-  gate:       {name: 정문 광장,  desc: "공원 입구. 축제 안내판과 벤치가 있다. 수아가 기다리던 곳.", near: {lawn: 4, market: 3, store: 2}}
-  market:     {name: 기념품 거리, desc: "천막 가게가 줄지어 선 플리마켓. 수제 키링, 즉석사진 부스, 캐리커처 화가.", near: {gate: 3, foodtrucks: 3, fountain: 5}}
-  foodtrucks: {name: 푸드트럭 존, desc: "어묵, 회오리감자, 츄러스 트럭. 풍선 다트 게임.", near: {market: 3, lawn: 3, riverside: 5}}
-  lawn:       {name: 잔디광장,   desc: "가운데 무대가 있는 넓은 잔디밭. 돗자리 손님이 많다.", near: {gate: 4, foodtrucks: 3, riverside: 4, fountain: 3}}
-  fountain:   {name: 음악분수,   desc: "둥근 분수대. 정해진 시각에 음악과 조명이 나온다.", near: {lawn: 3, market: 5, riverside: 4}}
-  riverside:  {name: 강변 산책로, desc: "강을 따라 난 길. 바람이 차다. 소원등 부스가 있다.", near: {lawn: 4, foodtrucks: 5, fountain: 4, hill: 8}}
-  hill:       {name: 전망 언덕,  desc: "강 건너 불꽃이 정면으로 보이는 언덕. 꼭대기에 벤치 두 개.", near: {riverside: 8}}
-  store:      {name: 공원 편의점, desc: "정문 옆 작은 편의점. 보조배터리 대여기가 있다.", near: {gate: 2}}
+  gate:       {name: 정문 광장, xy: [62, 160],  desc: "공원 입구. 축제 안내판과 벤치가 있다. 수아가 기다리던 곳.", near: {lawn: 4, market: 3, store: 2}}
+  market:     {name: 기념품 거리, xy: [104, 118], desc: "천막 가게가 줄지어 선 플리마켓. 수제 키링, 즉석사진 부스, 캐리커처 화가.", near: {gate: 3, foodtrucks: 3, fountain: 5}}
+  foodtrucks: {name: 푸드트럭 존, xy: [176, 104], desc: "어묵, 회오리감자, 츄러스 트럭. 풍선 다트 게임.", near: {market: 3, lawn: 3, riverside: 5}}
+  lawn:       {name: 잔디광장, xy: [160, 166],   desc: "가운데 무대가 있는 넓은 잔디밭. 돗자리 손님이 많다.", near: {gate: 4, foodtrucks: 3, riverside: 4, fountain: 3}}
+  fountain:   {name: 음악분수, xy: [236, 156],   desc: "둥근 분수대. 정해진 시각에 음악과 조명이 나온다.", near: {lawn: 3, market: 5, riverside: 4}}
+  riverside:  {name: 강변 산책로, xy: [246, 72], desc: "강을 따라 난 길. 바람이 차다. 소원등 부스가 있다.", near: {lawn: 4, foodtrucks: 5, fountain: 4, hill: 8}}
+  hill:       {name: 전망 언덕, xy: [306, 34],  desc: "강 건너 불꽃이 정면으로 보이는 언덕. 꼭대기에 벤치 두 개.", near: {riverside: 8}}
+  store:      {name: 공원 편의점, xy: [28, 186], desc: "정문 옆 작은 편의점. 보조배터리 대여기가 있다.", near: {gate: 2}}
 
 # 장소별 인파. level 1 한산, 2 붐빔, 3 걷기 힘듦. 목록에 없는 시간은 1.
 crowd:
@@ -25,12 +44,13 @@ crowd:
   foodtrucks: [{from: "18:45", to: "19:30", level: 2}]
   gate:      [{from: "20:20", to: "20:50", level: 3}]
 
-# 코드가 분 단위로 바꾸는 수치. 시간은 거꾸로 가지 않고, 배터리는 줄기만 한다.
+# 코드가 분 단위로 바꾸는 수치. 시간은 거꾸로 가지 않는다. 배터리는 쓰면 줄고, 충전 중이면 charge_per_min만큼 오른다.
 states:
   battery:
     owner: 수아
     start: 23              # %. 수아는 퇴근하고 바로 와서 충전을 못 했다
     drain_per_min: {idle: 0.15, photos: 0.6, searching: 0.8, calling: 1.2}
+    charge_per_min: 1.0    # 보조배터리나 충전기에 연결했을 때
   temperature:
     start: 13              # ℃. 해가 진 뒤라 조금씩 떨어진다
     per_hour: -2

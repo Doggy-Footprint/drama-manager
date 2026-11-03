@@ -130,7 +130,7 @@ class FakeLLM:
 
 def dm(**over):
     base = {"scene_read": "", "minutes": 2, "minutes_why": "", "user_location": None, "character_location": None,
-            "together": True, "channel": "face", "character_phone_use": "idle", "offscreen": None, "beat": "setup",
+            "together": True, "channel": "face", "character_phone_use": "idle", "phone_charging": False, "offscreen": None, "beat": "setup",
             "tension": 2, "events": [], "details": [], "reveal": [], "directive": "",
             "character_update": {"mood": None, "attitude": None, "want": None, "grievances": [], "new_grievance": None, "consistency": ""},
             "goal_updates": [], "world_additions": [], "show_facts": [], "retire_facts": [],
@@ -226,3 +226,37 @@ def test_session_survives_pickle_between_cli_turns(runs, monkeypatch):
     rows = [json.loads(x) for x in s2.record.read_text(encoding="utf-8").splitlines()]
     assert s2.record.name.endswith("_cli.jsonl") and [r["trace"]["n"] for r in rows] == [1, 2]
     assert rows[-1]["state"]["n"] == 2   # 웹 로그 뷰어가 마지막 줄의 state로 화면을 그린다
+
+
+def test_charging_raises_battery_and_turns_phone_back_on():
+    w = World.fresh()
+    w.advance(30, "calling")                      # 23% → 0%, 꺼진다
+    assert not w.phone_on
+    w.charging = True
+    notes = w.advance(5, "idle")                  # 꺼진 동안은 쓰지 않으니 충전만 된다
+    assert w.phone_on and w.battery == pytest.approx(5.0) and any("다시 켜졌다" in x for x in notes)
+    w.advance(10, "idle")                         # 켜진 채 충전하면 쓰는 만큼 덜 오른다
+    assert w.battery == pytest.approx(5 + 10 * (1.0 - 0.15))
+    w.charging = False
+    w.advance(10, "idle")
+    assert w.battery == pytest.approx(5 + 8.5 - 1.5)
+
+
+def test_dm_charging_flag_is_applied(runs):
+    s = session_mod.Session(llm=FakeLLM(dm(phone_charging=True, minutes=10), SAY))
+    s.turn("보조배터리 써")
+    assert s.world.charging and s.world.battery > 23
+    assert "충전 중" in s.llm.docs["character"]
+
+
+@pytest.mark.parametrize("scenario", ["park", "surgeon"])
+def test_every_scenario_fills_prompts_and_runs_a_turn(runs, scenario):
+    from park.state import scenarios
+    assert scenario in [x["id"] for x in scenarios()]
+    s = session_mod.Session(scenario=scenario, llm=FakeLLM(dm(), SAY))
+    for name in ("dm", "character", "extract_facts", "retrieve_world", "retrieve_details", "episode", "baseline"):
+        text = s.prompt(name)
+        assert "{{" not in text and (scenario == "park" or "수아" not in text), name
+    s.turn(None)
+    assert s.log[0]["user"] == s.world.scenario["opening"] and s.log[0]["reply"] == SAY["say"]
+    assert s.record.stem.split("_")[2] == scenario

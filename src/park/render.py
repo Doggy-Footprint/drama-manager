@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from html import escape
 
-from .state import Character, Details, Memory, World, to_min
+from .state import Character, Details, Memory, World, josa, to_min
 
 CROWD = {1: "한산", 2: "붐빔", 3: "걷기 힘들 만큼 붐빔"}
 
@@ -32,7 +32,7 @@ def turn_xml(turn: dict) -> str:
     if turn.get("user"):
         body += tag("user", t(turn["user"]), channel=turn.get("channel"))
     if turn.get("reply"):
-        body += tag("suah", t(turn["reply"]))
+        body += tag("reply", t(turn["reply"]))
     return tag("turn", body, n=turn["n"], clock=turn["clock"])
 
 
@@ -75,8 +75,10 @@ def details_for_character(details: Details, picked: list[dict]) -> str:
 
 
 def world_for_character(world: World, dm: dict, fired_now: list[dict], facts: list[dict]) -> str:
-    left = to_min("20:00") - world.minute
-    when = f"{world.clock} (불꽃놀이까지 {left}분)" if left > 0 else world.clock
+    when = world.clock
+    if cd := world.scenario.get("countdown"):
+        left = to_min(cd["at"]) - world.minute
+        when += f" ({cd['label']}까지 {left}분)" if left > 0 else ""
     here = world.locations[world.char_loc]
     if world.together:
         user = "곁에 있다"
@@ -84,14 +86,14 @@ def world_for_character(world: World, dm: dict, fired_now: list[dict], facts: li
         user = f"방금 네 곁에서 이 말을 하고 {world.loc_name(world.user_loc)} 쪽으로 떠나는 중이다"
     else:
         user = f"곁에 없다. 유저는 {world.loc_name(world.user_loc)} 쪽에 있는 것으로 안다"
-    phone = f"켜짐, 배터리 {world.battery:.0f}%" if world.phone_on else f"꺼짐({world.phone_off_at}에 배터리가 다 됐다)"
+    phone = phone_text(world)
     body = [
         tag("time", t(when)),
         tag("you", t(f"{here['name']}. {here['desc']} 인파: {CROWD[world.crowd(world.char_loc)]}")),
         tag("user", t(user)),
         tag("channel", dm.get("channel", "face")),
         tag("phone", t(phone)),
-        tag("weather", t(f"기온 {world.temperature():.0f}℃, 11월 저녁")),
+        tag("weather", t(f"기온 {world.temperature():.0f}℃, {world.scenario.get('season', '')}")),
     ]
     if dm.get("offscreen"):
         body.append(tag("while_apart", t(dm["offscreen"])))
@@ -133,22 +135,29 @@ def characteristic_for_character(character: Character, directive: str) -> str:
     return tag("characteristic", "".join(f"\n  {b}" for b in body) + "\n")
 
 
+def phone_text(world: World) -> str:
+    charging = ", 충전 중" if world.charging else ""
+    if world.phone_on:
+        return f"켜짐, 배터리 {world.battery:.0f}%{charging}"
+    return f"꺼짐({world.phone_off_at}에 배터리가 다 됐다){charging}"
+
+
 # ---------------- 드라마 매니저와 검색기 ----------------
 
 def situation_xml(world: World, memory: Memory, user_input: str, n: int, tail: int = 4) -> str:
     recent = "\n".join(turn_xml(x) for x in memory.turns[-tail:])
-    where = (f"수아와 유저 모두 {world.loc_name(world.char_loc)}" if world.together
-             else f"수아는 {world.loc_name(world.char_loc)}, 유저는 {world.loc_name(world.user_loc)} (떨어져 있음)")
+    name = world.char_name
+    where = (f"{josa(name, '과/와')} 유저 모두 {world.loc_name(world.char_loc)}" if world.together
+             else f"{josa(name, '은/는')} {world.loc_name(world.char_loc)}, 유저는 {world.loc_name(world.user_loc)} (떨어져 있음)")
     return "\n".join([
-        tag("situation", t(f"{world.clock}. {where}. 수아 휴대폰 "
-                           + (f"배터리 {world.battery:.0f}%" if world.phone_on else "꺼짐"))),
+        tag("situation", t(f"{world.clock}. {where}. {name}의 휴대폰 {phone_text(world)}")),
         tag("recent_turns", f"\n{recent}\n"),
         tag("user_input", t(user_input), turn=n),
     ])
 
 
 def fact_xml(world: World, f: dict, **extra) -> str:
-    return tag("fact", t(f["text"]), id=f["id"], source=f["source"], where=world.loc_name(f["where"]) if f["where"] else "공원 전체",
+    return tag("fact", t(f["text"]), id=f["id"], source=f["source"], where=world.loc_name(f["where"]) if f["where"] else "전체",
                since=f"T{f['turn']}", **extra)
 
 
@@ -181,14 +190,16 @@ def dm_doc(*, world: World, details: Details, character: Character, memory: Memo
         for k, v in w.locations.items())
     rates = w.data["states"]["battery"]["drain_per_min"]
     lasts = ", ".join(f"{k}면 약 {int(w.battery / r)}분" for k, r in rates.items()) if w.phone_on else "이미 꺼짐"
+    name = w.char_name
+    phone = (f"켜짐 {w.battery:.0f}% (버티는 시간: {lasts})" if w.phone_on else f"꺼짐 ({w.phone_off_at})") + (", 충전 중" if w.charging else "")
     world_xml = tag("world", "".join([
         f"\n  {tag('clock', w.clock)}",
-        f"\n  {tag('promised', t(w.data['promised'] + ' 정문에서 만나기로 했다'))}",
-        f"\n  {tag('positions', t(f'수아={w.char_loc}, 유저={w.user_loc}, 함께={w.together}'))}",
-        f"\n  {tag('phone', t(('켜짐 ' + f'{w.battery:.0f}% (버티는 시간: {lasts})') if w.phone_on else f'꺼짐 ({w.phone_off_at})'), owner='수아')}",
+        f"\n  {tag('appointment', t(w.scenario['appointment']))}" if w.scenario.get("appointment") else "",
+        f"\n  {tag('positions', t(f'{name}={w.char_loc}, 유저={w.user_loc}, 함께={w.together}'))}",
+        f"\n  {tag('phone', t(phone), owner=name)}",
         f"\n  {tag('temperature', f'{w.temperature():.0f}℃')}",
         f"\n  {tag('places', locs + chr(10) + '  ')}",
-        f"\n  {tag('routes', t(' / '.join(f'{w.loc_name(k)} {m}분' for k, m in sorted(w.routes(w.char_loc).items(), key=lambda x: x[1]))), origin='수아')}",
+        f"\n  {tag('routes', t(' / '.join(f'{w.loc_name(k)} {m}분' for k, m in sorted(w.routes(w.char_loc).items(), key=lambda x: x[1]))), origin=name)}",
         f"\n  {tag('routes', t(' / '.join(f'{w.loc_name(k)} {m}분' for k, m in sorted(w.routes(w.user_loc).items(), key=lambda x: x[1]))), origin='유저')}" if w.user_loc != w.char_loc else "",
         "\n"]))
     timeline = tag("timeline", "".join(
@@ -230,8 +241,8 @@ def dm_doc(*, world: World, details: Details, character: Character, memory: Memo
     proposed = tag("proposed_additions", "".join(
         f"\n  {tag('item', t(x['text']), source=x['source'], kind=x['kind'], name=x['name'], near=x['near'])}" for x in extracted)
         + ("\n" if extracted else ""))
-    prop = tag("proposal", t(f"수아가 {w.loc_name(proposal)}({proposal})로 같이 가자고 했다")) if proposal else ""
-    # 잘 안 바뀌는 것(기억, 수아)을 앞에, 매 턴 바뀌는 것을 뒤에 둬서 앞부분이 캐시되게 한다
+    prop = tag("proposal", t(f"{josa(name, '이/가')} {w.loc_name(proposal)}({proposal})로 같이 가자고 했다")) if proposal else ""
+    # 잘 안 바뀌는 것(기억, 캐릭터)을 앞에, 매 턴 바뀌는 것을 뒤에 둬서 앞부분이 캐시되게 한다
     return "\n".join(x for x in [memory_xml, char_xml, timeline, world_xml, tension, known, candidates, proposed, prop,
                                   tag("user_input", t(user_input), turn=n, clock=w.clock)] if x)
 

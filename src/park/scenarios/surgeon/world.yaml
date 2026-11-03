@@ -1,0 +1,134 @@
+# 한빛대학병원, 11월 셋째 주 금요일 밤. 재헌은 자정까지 온콜(호출 대기)이다.
+# 시각은 "HH:MM". 사건과 기억 문장에는 누가 했는지(재헌/유저)를 적는다.
+
+scenario:
+  title: 한빛대학병원의 밤
+  place: 한빛대학병원과 그 주변
+  setting: "11월 셋째 주 금요일 밤, 한빛대학병원과 그 주변에서 재헌과 유저(하은)가 늦은 저녁을 함께하려 한다. 재헌은 자정까지 호출 대기다."
+  opening: "(약속 시각 20:00이 지나 20:40, 본관 로비 의자에서 기다리고 있다)"
+  appointment: "20:00에 본관 로비에서 만나기로 했다"
+  countdown: null
+  season: 11월 밤
+  input_hint: "(로비 의자에서 일어선다)"
+  intro:
+    - "11월 셋째 주 금요일 밤, 한빛대학병원"
+    - "약속은 20:00, 본관 로비. 그는 40분째 수술실에서 나오지 않았다. 오늘 밤 그는 자정까지 호출 대기다."
+    - "그에게는 아무에게도 말하지 않은 사정이 있다."
+  arc: |
+    - 20:40~21:10 setup: 늦게 나온 재헌, 문 닫는 카페, 어디서 저녁을 먹을지. 긴장 2~3. 떡밥을 흘리고, 재헌이 오늘 저녁만은 지키려 한다는 게 보이게 한다.
+    - 21:10~22:10: 비, 동료, 전화처럼 일과 사람이 끼어든다. 긴장 3~5. 질투나 서운함은 짧아진 말과 더 딱딱해진 존댓말로만 샌다.
+    - 22:10~22:30: 둘만 남는 시간. 가까워지거나, 쌓인 것이 터질 수 있다. 긴장 5~7.
+    - 22:30~22:50 응급 호출: 정점. 재헌은 수술하러 가야 한다. 무엇을 말하고 떠나는지, 유저가 기다리는지가 이야기를 가른다. 숨긴 손 떨림이 가장 무거워지는 때다.
+    - 22:50 이후: 수술과 기다림. 유저가 혼자 보내는 시간, 보호자 대기실, 막차, 첫눈. 수술이 끝나 다시 만나면 resolution.
+
+start: "20:40"
+end: "23:55"
+start_loc: {character: lobby, user: lobby}
+
+locations:
+  lobby:   {name: 본관 로비, xy: [80, 150], desc: "불이 반쯤 꺼진 본관 로비. 안내 데스크와 대기 의자, 21시에 닫는 1층 카페.", near: {store: 1, er: 3, garden: 2, waiting: 3, ward: 3, office: 4, station: 4}}
+  store:   {name: 1층 편의점, xy: [30, 186], desc: "24시간 편의점. 컵라면, 삼각김밥, 휴대폰 충전기와 보조배터리를 판다.", near: {lobby: 1}}
+  er:      {name: 응급실 앞, xy: [150, 190], desc: "구급차 진입로와 응급실 자동문. 늘 불이 환하다.", near: {lobby: 3, waiting: 3, alley: 4}}
+  waiting: {name: 보호자 대기실, xy: [190, 130], desc: "3층 수술실 앞. 수술 현황 전광판과 긴 의자. 늦은 밤에도 사람이 있다.", near: {lobby: 3, er: 3, office: 3}}
+  ward:    {name: 소아병동 놀이방, xy: [140, 70], desc: "5층 소아병동의 불 꺼진 놀이방. 벽에 유저가 아이들과 그린 벽화가 있다.", near: {lobby: 3, office: 2}}
+  office:  {name: 흉부외과 연구실, xy: [240, 78], desc: "7층 재헌의 연구실. 논문 더미와 간이침대, 창가에 붙은 그림들. 충전기가 있다.", near: {ward: 2, waiting: 3, rooftop: 3, lobby: 4}}
+  rooftop: {name: 별관 옥상 정원, xy: [306, 30], desc: "직원만 아는 옥상 정원. 도시 야경이 보인다. 문은 비밀번호로 열리고 23시에 경비가 잠근다.", near: {office: 3}}
+  garden:  {name: 산책 정원, xy: [60, 90], desc: "본관 옆 작은 정원. 벤치와 가로등, 젖은 낙엽.", near: {lobby: 2, alley: 5}}
+  alley:   {name: 병원 뒤 골목, xy: [260, 170], desc: "국밥집, 포장마차, 해장국집이 모인 먹자골목. 의사들이 몰래 끼니를 때우는 곳.", near: {er: 4, garden: 5, station: 3}}
+  station: {name: 정류장·지하철 입구, xy: [320, 200], desc: "병원 앞 버스정류장과 지하철 2번 출구.", near: {alley: 3, lobby: 4}}
+
+# 장소별 인파. level 1 한산, 2 붐빔, 3 걷기 힘듦. 목록에 없는 시간은 1.
+crowd:
+  alley:   [{from: "20:40", to: "22:00", level: 2}]
+  er:      [{from: "22:35", to: "23:30", level: 3}]
+  waiting: [{from: "22:50", to: "23:55", level: 2}]
+  station: [{from: "23:30", to: "23:50", level: 2}]
+
+# 코드가 분 단위로 바꾸는 수치. 시간은 거꾸로 가지 않는다. 배터리는 쓰면 줄고, 충전 중이면 charge_per_min만큼 오른다.
+states:
+  battery:
+    owner: 재헌
+    start: 19              # %. 수술 내내 사물함에 두고 충전을 못 했다
+    drain_per_min: {idle: 0.12, photos: 0.6, searching: 0.8, calling: 1.2}
+    charge_per_min: 1.2
+  temperature:
+    start: 6               # ℃. 밤이 깊을수록 떨어진다
+    per_hour: -1.5
+
+events:
+  - id: code_call
+    core: true
+    where: [any]
+    window: ["22:30", "22:50"]
+    text: "재헌의 호출기와 휴대폰이 동시에 울린다. 응급실: '대동맥 박리 환자, 40대 남성, 10분 뒤 도착합니다. 교수님 집도 필요합니다.'"
+    tags: [절정, 호출, 떠남, 선택]
+  - id: cafe_closing
+    where: [lobby]
+    window: ["20:40", "21:00"]
+    text: "1층 카페 직원이 '마감입니다' 하며 셔터를 반쯤 내린다."
+    tags: [마감, 계획 틀어짐]
+  - id: seojun_mom
+    where: [lobby, garden, ward, store]
+    window: ["20:50", "21:40"]
+    text: "서준이 엄마가 두 사람을 알아보고 다가와 '교수님, 선생님. 서준이 다음 주에 퇴원해요' 하고 고개를 숙인다."
+    tags: [감사, 두 사람의 인연, 지난 수술]
+  - id: colleague_tease
+    where: [lobby, alley, er]
+    window: ["21:00", "22:00"]
+    text: "응급의학과 강민우 교수(재헌의 동기)가 지나가다 '윤재헌이 퇴근을 다 하네? 데이트야?' 하고 웃는다."
+    tags: [놀림, 관계 확인, 동기]
+  - id: doyeon_wave
+    where: [lobby, garden, alley, store]
+    window: ["21:00", "22:20"]
+    text: "소아과 레지던트 이도현이 지나가다 '하은 선생님! 내일 미술 수업 준비 같이 해요' 하고 손을 흔든다."
+    tags: [질투, 다른 남자, 관계 확인]
+  - id: sudden_rain
+    where: [any]
+    window: ["21:15", "21:35"]
+    text: "차가운 비가 갑자기 쏟아진다. 사람들이 처마 밑으로 뛰어든다."
+    tags: [비, 우산, 가까워짐, 발이 묶임]
+  - id: resident_call
+    where: [any]
+    window: ["21:30", "22:10"]
+    text: "재헌의 휴대폰이 울린다. 1년차 레지던트가 '교수님, 802호 환자 혈압이 조금 떨어지는데요…' 하고 묻는다. 전화로 지시하면 될 일이다."
+    tags: [호출, 방해, 일이 먼저, 휴대폰]
+  - id: gukbap_last
+    where: [alley]
+    window: ["21:40", "22:00"]
+    text: "국밥집 할머니가 '오늘은 열 시에 문 닫어, 마지막이여' 하고 외친다."
+    tags: [음식, 마감, 시간 압박]
+  - id: ambulance
+    where: [er, lobby, alley]
+    window: ["22:38", "22:55"]
+    text: "사이렌을 울리며 구급차가 응급실 진입로로 들어온다. 들것 옆에서 환자의 아내가 어린 딸 손을 잡고 뛴다."
+    tags: [환자, 보호자, 긴박함]
+  - id: rooftop_lock
+    where: [rooftop, office]
+    window: ["22:50", "23:05"]
+    text: "경비원이 '옥상 문 잠급니다' 하며 열쇠 꾸러미를 흔든다."
+    tags: [시간 압박, 둘만의 장소]
+  - id: surgery_board
+    where: [waiting, er, lobby]
+    window: ["22:55", "23:55"]
+    text: "수술 현황 전광판에 '수술 중 · 집도 윤재헌'이 뜬다."
+    tags: [기다림, 수술, 이름]
+  - id: waiting_family
+    where: [waiting]
+    window: ["23:00", "23:50"]
+    text: "보호자 대기실 구석에서 환자의 아내가 잠든 딸을 안고 소리 죽여 운다."
+    tags: [보호자, 위로, 기다림]
+  - id: first_snow
+    where: [any]
+    window: ["23:10", "23:55"]
+    text: "비가 그친 자리에 첫눈이 흩날리기 시작한다."
+    tags: [낭만, 첫눈, 고백, 마무리]
+  - id: last_train
+    where: [station, alley, lobby]
+    window: ["23:30", "23:48"]
+    text: "지하철 막차 안내 방송이 흘러나온다. '23시 48분 열차가 마지막입니다.'"
+    tags: [귀가, 시간 압박, 기다릴지]
+  - id: surgery_done
+    where: [waiting, lobby, er]
+    window: ["23:30", "23:55"]
+    text: "수술실 문이 열리고 전광판의 '수술 중'이 '회복실'로 바뀐다."
+    tags: [끝, 재회, 안도]
