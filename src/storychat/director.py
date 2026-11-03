@@ -11,8 +11,8 @@ from .schema import Checkpoint, validate_trigger
 
 PROMPTS = Path(__file__).parent / "prompts"
 DATA = Path(__file__).parent / "data"
-DIRECTOR_PROMPT = "director_v3"
-BASE_TOPICS = ["영화", "회사 일", "앞으로의 계획", "음식", "놀이기구", "지난 추억", "우리 관계"]
+DIRECTOR_PROMPT = "director_v4"
+BASE_TOPICS = ["영화", "회사 일", "둘의 장래", "음식", "놀이기구", "지난 추억", "우리 관계"]
 
 PLAN_SCHEMA = {
     "type": "object",
@@ -60,6 +60,11 @@ ANALYSIS_SCHEMA = {
         "move_to": {"type": ["string", "null"]}, "relationship_shift": {"type": ["string", "null"]},
         "parted": {"type": "boolean"}, "shown_said_quote": {"type": ["string", "null"]},
         "payoff_used_quote": {"type": ["string", "null"]},
+        "hidden_spoken": {"type": "array", "items": {
+            "type": "object",
+            "properties": {"id": {"type": "string"}, "quote": {"type": "string"}},
+            "required": ["id", "quote"],
+        }},
         "new_details": {"type": "array", "items": {
             "type": "object",
             "properties": {
@@ -69,7 +74,7 @@ ANALYSIS_SCHEMA = {
             "required": ["text", "source", "quote", "affordances"],
         }},
     },
-    "required": ["action_type", "move_to", "relationship_shift", "parted", "shown_said_quote", "payoff_used_quote", "new_details"],
+    "required": ["action_type", "move_to", "relationship_shift", "parted", "shown_said_quote", "payoff_used_quote", "hidden_spoken", "new_details"],
 }
 CLOSE_SCHEMA = {
     "type": "object",

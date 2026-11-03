@@ -14,4 +14,4 @@ hidden:
     cover: 요즘 회사 일이 조금 바쁘다.
     fact: 부산 지사로 옮기는 제안을 받았고, 이번 달 안에 답해야 한다. 아직 상대에게 말하지 못했다.
     why_hidden: 먼저 꺼내면 매달리는 것 같아서 자존심이 상하고, 사이가 흔들릴까 봐 무섭다.
-    reveal: {any: [{signal: "topic:앞으로의 계획"}, {all: [{signal: tension}, {signal: "topic:회사 일"}]}]}
+    reveal: {any: [{signal: "topic:둘의 장래"}, {all: [{signal: tension}, {signal: "topic:회사 일"}]}]}

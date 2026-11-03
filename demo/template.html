@@ -94,6 +94,7 @@ th{font-weight:500;color:var(--quiet)}
     <h1>놀이동산 데이트 로그</h1>
     <p class="sum">대본 없는 실행의 실제 대화입니다. 유저는 Sonnet 서브 에이전트, 캐릭터와 드라마 매니저는 Haiku 5.5입니다. 턴을 누르거나 스크롤하면 오른쪽 월드 모델이 그 턴이 끝난 뒤의 상태로 바뀝니다.</p>
   </header>
+  <nav class="tabs" id="attempts" aria-label="시도 선택"></nav>
   <nav class="tabs" id="tabs" aria-label="실행 선택"></nav>
   <p class="sum" id="sum"></p>
   <section style="display:grid;gap:6px" aria-label="하루 전체">
@@ -111,7 +112,8 @@ th{font-weight:500;color:var(--quiet)}
 const DATA=/*__DATA__*/null;
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-let run=DATA.runs[0],cur=1,placeColor={};
+let run=DATA.runs[DATA.runs.length-1],cur=1,placeColor={};
+run=DATA.runs.find(r=>r.attempt===run.attempt);
 const CP={hunger:"배고픔",evening_cold:"저녁 추위",fireworks:"불꽃놀이"};
 const AX={place:"장소",relationship:"관계"};
 const ACT={short_talk:"대화",activity:"활동",move:"이동",meal:"식사"};
@@ -127,6 +129,7 @@ const INLINE={
  checkpoint_fired:e=>["세계 사건",e.inject,"spark"],
  checkpoint_deferred:e=>["사건 지연",`${CP[e.id]||e.id}: 긴장 중이라 미룸`,""],
  hidden_revealed:e=>["히든 열림",e.id,"rose"],
+ hidden_spoken:e=>["히든 말함",`${e.id}: “${e.quote}”`,"rose"],
  memory_recalled:e=>e.smalls.length?["기억 검색",`${e.big} → ${e.smalls.join(", ")}`,""]:null,
  detail_planted:e=>["떡밥 살포",`“${e.quote}”`,"mint"],
  detail_added:e=>["디테일 추가",e.text,""],
@@ -145,8 +148,12 @@ function colors(){
  for(const t of run.turns)if(!(t.place in placeColor))placeColor[t.place]=(n++%5)+1;
 }
 function renderTabs(){
- $("tabs").innerHTML=DATA.runs.map(r=>`<button aria-pressed="${r===run}" data-k="${r.key}">${esc(r.label)}</button>`).join("");
- for(const b of $("tabs").children)b.onclick=()=>{run=DATA.runs.find(r=>r.key===b.dataset.k);cur=run.turns[0]?.turn??1;render();window.scrollTo(0,0)};
+ const pick=r=>{run=r;cur=run.turns[0]?.turn??1;render();window.scrollTo(0,0)};
+ const attempts=[...new Set(DATA.runs.map(r=>r.attempt))];
+ $("attempts").innerHTML=attempts.map(a=>`<button aria-pressed="${a===run.attempt}" data-a="${a}">${esc(a)}</button>`).join("");
+ for(const b of $("attempts").children)b.onclick=()=>pick(DATA.runs.find(r=>r.attempt===b.dataset.a&&r.key.endsWith(run.key.split("/")[1]))||DATA.runs.find(r=>r.attempt===b.dataset.a));
+ $("tabs").innerHTML=DATA.runs.filter(r=>r.attempt===run.attempt).map(r=>`<button aria-pressed="${r===run}" data-k="${r.key}">${esc(r.label)}</button>`).join("");
+ for(const b of $("tabs").children)b.onclick=()=>pick(DATA.runs.find(r=>r.key===b.dataset.k));
 }
 function renderSum(){
  const last=run.turns[run.turns.length-1]?.after;
@@ -193,7 +200,7 @@ function renderWorld(){
    <div class="block"><h2>체크포인트</h2><div class="chips">
      ${Object.entries(CP).map(([k,v])=>`<span class="chip${a.fired.includes(k)?" on":""}">${a.fired.includes(k)?"●":"○"} ${v}</span>`).join("")}
      ${a.fired.filter(k=>!(k in CP)).map(k=>`<span class="chip on">● ${esc(k)}</span>`).join("")}</div></div>
-   <div class="block"><h2>히든</h2>${run.hidden.map(h=>{const open=a.revealed.includes(h.id);return `<div class="lk"><span><span class="chip${open?" open":""}">${open?"열림":"잠김"}</span> ${esc(h.id)}</span><small>${esc(open?h.fact:"평소: "+h.cover)}</small></div>`}).join("")}</div>
+   <div class="block"><h2>히든</h2>${run.hidden.map(h=>{const open=a.revealed.includes(h.id),told=a.spoken.includes(h.id);return `<div class="lk"><span><span class="chip${open?" open":""}">${told?"말함":open?"열림":"잠김"}</span> ${esc(h.id)}</span><small>${esc(open?h.fact:"평소: "+h.cover)}</small></div>`}).join("")}</div>
    <div class="block"><h2>떡밥 원장</h2><div class="ledger"><div><b>${d.seed}</b>대기</div><div><b>${d.planted}</b>살포</div><div><b>${d.paid}</b>회수</div><div><b>${d.expired}</b>소멸</div></div></div>
    <div class="block"><h2>관계 기억</h2><p style="font-size:12.5px">${esc(a.bond)}</p></div>
    ${a.today.length?`<div class="block"><h2>오늘의 에피소드</h2><ul>${a.today.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div>`:""}
@@ -208,7 +215,7 @@ function renderLedger(){
 function renderJudge(){
  const j=run.judge;$("judgeBox").hidden=!j;if(!j)return;
  const list=(rows,fn,none)=>rows.length?`<ul>${rows.map(fn).join("")}</ul>`:`<p class="sum">${none}</p>`;
- $("judge").innerHTML=`<p>${esc(j.summary)}</p><p class="sum">${esc(DATA.judge_model)} 채점. a ${j.a_character}/5, b ${j.b_freshness}/5 (참고용), c 붕괴 ${j.c_breaks.length}건, d 회수 ${j.d_payoffs.length}건</p>
+ $("judge").innerHTML=`<p>${esc(j.summary)}</p><p class="sum">${esc(DATA.judges[run.attempt]?.model)} · ${esc(DATA.judges[run.attempt]?.prompt)} 채점. a ${j.a_character}/5, b ${j.b_freshness}/5 (참고용), c 붕괴 ${j.c_breaks.length}건, d 회수 ${j.d_payoffs.length}건</p>
   <h2>a. 캐릭터답게</h2><p>${esc(j.a_reason)}</p>
   <h2>b. 신선한 순간</h2>${list(j.fresh_moments,m=>`<li>T${m.turn} “${esc(m.quote)}”<br><span class="sum">${esc(m.why)}</span></li>`,"없음")}
   <h2>c. 붕괴</h2>${list(j.c_breaks,m=>`<li>T${m.turn} ${esc(m.type)} “${esc(m.quote)}”<br><span class="sum">${esc(m.why)}</span></li>`,"없음")}

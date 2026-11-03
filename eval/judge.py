@@ -1,7 +1,7 @@
 """실행 기록을 네 기준으로 채점한다. 숫자로 셀 수 있는 것은 로그에서 코드로 센다.
 
-  python eval/judge.py runs/*.jsonl
-  python eval/judge.py --dry runs/*.jsonl   # Judge 없이 로그 집계만
+  python eval/judge.py runs/try2/*.jsonl    # 결과는 같은 폴더의 judge_v2.json
+  python eval/judge.py --dry runs/try2/*.jsonl   # Judge 없이 로그 집계만
 """
 from __future__ import annotations
 
@@ -13,8 +13,8 @@ from pathlib import Path
 import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
-OUT = ROOT / "eval/reports/judge_v1.json"
-PROMPT = yaml.safe_load((ROOT / "eval/prompts/judge_v1.yaml").read_text(encoding="utf-8"))
+JUDGE_PROMPT = "judge_v2"
+PROMPT = yaml.safe_load((ROOT / f"eval/prompts/{JUDGE_PROMPT}.yaml").read_text(encoding="utf-8"))
 SCHEMA = {
     "type": "object",
     "properties": {
@@ -60,6 +60,7 @@ def counts(events: list[dict]) -> dict:
         "tension_turns": sum(1 for e in of("signals") if e["tension"]),
         "branches": [(e["turn"], e["branch"]) for e in of("signals") if e["branch"]],
         "hidden_revealed": [(e["turn"], e["id"]) for e in of("hidden_revealed")],
+        "hidden_spoken": [(e["turn"], e["id"]) for e in of("hidden_spoken")],
         "recalled_smalls": sum(len(e["smalls"]) for e in of("memory_recalled")),
         "compressed": [(e["start"], e["end"], e["title"]) for e in of("episode_compressed")],
         "relationship_updates": len(of("relationship_updated")),
@@ -119,12 +120,12 @@ def main() -> None:
     with ThreadPoolExecutor(6) as pool:
         results = dict(zip((p.stem for p in args.paths), pool.map(lambda p: judge_run(llm, p), args.paths)))
     if llm:
-        OUT.parent.mkdir(parents=True, exist_ok=True)
-        OUT.write_text(json.dumps({"model": llm.model, "runs": results}, ensure_ascii=False, indent=1), encoding="utf-8")
+        out = args.paths[0].parent / f"{JUDGE_PROMPT}.json"
+        out.write_text(json.dumps({"model": llm.model, "runs": results}, ensure_ascii=False, indent=1), encoding="utf-8")
     for name, r in results.items():
         c = r["counts"]
         line = (f"{name}: {c['turns']}턴 {c['last_clock']} 체크포인트{len(c['checkpoints_fired'])} 긴장{c['tension_turns']} "
-                f"reveal{len(c['hidden_revealed'])} 살포{c['details_planted']}/{c['details_total']} "
+                f"reveal{len(c['hidden_revealed'])} 말함{len(c['hidden_spoken'])} 살포{c['details_planted']}/{c['details_total']} "
                 f"회수{c['payoff_paid']}/{c['payoff_injected']} 압축{len(c['compressed'])} 거절{c['refused']}")
         if "judge" in r:
             j = r["judge"]

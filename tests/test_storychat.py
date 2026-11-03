@@ -257,6 +257,7 @@ def test_history_is_real_multiturn_and_moment_not_kept():
 def test_cover_lives_in_hidden_and_seed_has_no_hidden_content():
     engine, _ = make()
     assert all(h["cover"] in engine.system for h in engine.card["hidden"])
+    assert "둘의 장래" in engine.topics and "앞으로의 계획" not in engine.topics
     seeds = " ".join(s.summary for b in engine.episodes.bigs.values() for s in b.smalls)
     assert "후기" not in seeds and "얼버무" not in seeds and "잠들" not in seeds
 
@@ -303,3 +304,22 @@ def test_state_survives_between_calls(tmp_path, monkeypatch):
     assert engine.llm is llm  # 저장 뒤에도 호출 중인 엔진은 그대로다
     restored = __import__("pickle").loads(play.state_path("x").read_bytes())
     assert restored.state.turn == 1 and restored.transcript == engine.transcript and restored.llm is None
+
+
+def test_spoken_hidden_stops_rising_but_stays_known():
+    fact = "후기를 미리 찾아 읽어"
+    tense_movie = {**JUDGE, "tension": True, "topics": ["영화"]}
+    fake = {**ANALYSIS, "hidden_spoken": [{"id": "movies", "quote": "지어낸 인용"}]}
+    real = {**ANALYSIS, "hidden_spoken": [{"id": "movies", "quote": "영화 별로 안 좋아해"}]}
+    hinted_then_said = {"judge": [tense_movie, JUDGE, JUDGE], "analysis": [ANALYSIS, fake, real, ANALYSIS],
+                        "character": ["안녕", "음.", "사실 나 영화 별로 안 좋아해.", "응."]}
+    engine, llm = make(hinted_then_said)
+    engine.step(None)
+    engine.step("영화 얘기만 하면 왜 그래")
+    assert engine.spoken == set()  # 대사에 없는 인용은 인정하지 않는다
+    engine.step("진짜?")
+    assert engine.spoken == {"movies"}
+    engine.step("그랬구나")
+    call = [c for c in llm.calls if c["label"] == "character"][-1]
+    assert "올라오는 것" not in call["messages"][-1]["content"]
+    assert fact in call["system"] and "이미 상대에게 털어놓은 것" in call["system"]

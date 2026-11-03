@@ -82,6 +82,7 @@ class Engine:
         self.closed = False
         self.recalled: list[dict] = []
         self.revealed: list[dict] = []
+        self.spoken: set[str] = set()  # 캐릭터가 실제로 털어놓아 상대도 알게 된 히든
         self.offered: set[str] = set()
         self.last_payoff_turn = -PAYOFF_COOLDOWN_TURNS
         self.big_cooldown: dict[str, int] = {}
@@ -149,6 +150,9 @@ class Engine:
         if self.state.turn not in self.boundaries:
             self.boundaries.add(self.state.turn)
             self.log.emit("boundary", reason=reason)
+
+    def _unspoken(self) -> list[dict]:
+        return [h for h in self.revealed if h["id"] not in self.spoken]
 
     def _world_happened(self, source: str, text: str) -> None:
         s = self.state
@@ -270,6 +274,9 @@ class Engine:
         self.world_facts = [f for f in self.world_facts if f["until"] >= s.turn]
         current = {f["text"] for f in self.world_facts}
         system = [self.system, f"[지금 둘의 사이]\n{self.relationship.state}"]
+        told = [h for h in self.revealed if h["id"] in self.spoken]
+        if told:
+            system.append("[이미 상대에게 털어놓은 것]\n" + "\n".join(f"- {h['fact']}" for h in told))
         past = [f"- {t}" for t in self.episodes.today_titles()]
         past += [f"- {e['clock']} {e['text']}" for e in self.world_log if e["text"] not in current]
         if past:
@@ -291,9 +298,10 @@ class Engine:
             memories.append(payoff["fact"])
         if memories:
             moment.append("떠오른 기억:\n" + "\n".join(f"- {m}" for m in memories))
-        if self.revealed:
+        unspoken = self._unspoken()
+        if unspoken:
             moment.append("지금 네 마음속에서 올라오는 것:\n" + "\n".join(
-                f"- {h['fact']} (지금까지 숨긴 이유: {h['why_hidden']})" for h in self.revealed))
+                f"- {h['fact']} (지금까지 숨긴 이유: {h['why_hidden']})" for h in unspoken))
         moment_text = "\n".join(moment)
         said = OPENING if user_text is None and s.turn == 1 else f"상대: {user_text or '(말없이 곁에 있다)'}"
         messages.append({"role": "user", "content": f"[이번 순간]\n{moment_text}\n\n{said}"})
@@ -320,8 +328,11 @@ class Engine:
             parts.append(f"[보여 준 디테일] {turn.shown.text}")
         if turn.payoff:
             parts.append(f"[주입한 떡밥] {self.ledger.items[turn.payoff['id']].text} / {turn.payoff['fact']}")
+        unspoken = self._unspoken()
+        if unspoken:
+            parts.append("[아직 말하지 않은 비밀]\n" + "\n".join(f"{h['id']}: {h['fact']}" for h in unspoken))
         default = {"action_type": "short_talk", "move_to": None, "relationship_shift": None, "parted": False,
-                   "shown_said_quote": None, "payoff_used_quote": None, "new_details": []}
+                   "shown_said_quote": None, "payoff_used_quote": None, "hidden_spoken": [], "new_details": []}
         return self._call_json("analysis", lambda: self.director.analyze("\n".join(parts)), default)
 
     def _settle_details(self, turn: Turn, reply: str, analysis: dict) -> None:
@@ -340,6 +351,11 @@ class Engine:
                 self.log.emit("detail_paid", id=turn.payoff["id"], how=turn.payoff["how"], quote=quote)
             else:
                 self.log.emit("payoff_unused", id=turn.payoff["id"], quote=quote)
+        candidates = {h["id"] for h in self._unspoken()}
+        for item in analysis.get("hidden_spoken", []):
+            if item.get("id") in candidates and quoted(item.get("quote", ""), reply):
+                self.spoken.add(item["id"])
+                self.log.emit("hidden_spoken", id=item["id"], quote=item["quote"])
         known = {squash(d.text) for d in self.ledger.items.values()}
         for item in analysis.get("new_details", [])[:1]:
             source_text = turn.user_text if item.get("source") == "user" else reply

@@ -1,0 +1,363 @@
+{
+ "model": "gemini-3.8-flash",
+ "runs": {
+  "tsundere_aloof": {
+   "counts": {
+    "turns": 26,
+    "last_clock": "21:40",
+    "ended_by_story": true,
+    "plans": 6,
+    "plan_triggers_rejected": 0,
+    "checkpoints_fired": [
+     "ticket_queue_long",
+     "hunger",
+     "fireworks_start",
+     "evening_cold",
+     "plaza_lights_on",
+     "parade_starts",
+     "light_drizzle",
+     "fireworks",
+     "last_order_called",
+     "neighbor_noodle_dispute"
+    ],
+    "checkpoints_deferred": 0,
+    "tension_turns": 0,
+    "branches": [],
+    "hidden_revealed": [],
+    "hidden_spoken": [],
+    "recalled_smalls": 0,
+    "compressed": [
+     [
+      1,
+      3,
+      "놀이동산 데이트, 우동집까지"
+     ],
+     [
+      4,
+      26,
+      "다음 주말 약속과 집 앞 작별 인사"
+     ]
+    ],
+    "relationship_updates": 2,
+    "frames": [
+     [
+      8,
+      "place",
+      "중앙 광장"
+     ],
+     [
+      10,
+      "place",
+      "퍼레이드 앞쪽 빈자리"
+     ],
+     [
+      17,
+      "place",
+      "안내소"
+     ],
+     [
+      20,
+      "place",
+      "우동집"
+     ],
+     [
+      25,
+      "place",
+      "집"
+     ]
+    ],
+    "details_total": 76,
+    "details_shown": 8,
+    "details_planted": 16,
+    "details_expired": 48,
+    "payoff_injected": 0,
+    "payoff_paid": 0,
+    "payoff_gaps": [],
+    "refused": 0,
+    "usage": {
+     "engine": {
+      "calls": 88,
+      "input": 100728,
+      "cache_read": 133021,
+      "cache_write": 52910,
+      "output": 37428,
+      "cost_usd": 0.036726,
+      "seconds": 464.46000000000004
+     }
+    }
+   },
+   "judge": {
+    "a_character": 4,
+    "a_reason": "말은 퉁명스럽게 툭툭 던지면서도 핫도그 케첩 챙기기, 외투 덮어주기, 손잡기, 계란 넘겨주기 등 행동으로 다정하게 챙기는 츤데레 성격과 말투가 일관되게 잘 살아있다.",
+    "b_freshness": 3,
+    "fresh_moments": [
+     {
+      "turn": 11,
+      "quote": "붙어 있어야 따뜻하니까, 과학이다.",
+      "why": "츤데레 캐릭터 특유의 핑계를 대며 능청스럽게 스킨십을 유도하는 대사가 풋풋하고 유쾌하다."
+     }
+    ],
+    "c_breaks": [],
+    "d_payoffs": [
+     {
+      "planted_turn": 3,
+      "paid_turn": 23,
+      "what": "T3에서 언급된 토끼 키링을 놀이동산에서 미처 사지 못하자, T23에서 다음 주말에 영화 보고 카페 가면서 사자고 자연스럽게 다음 약속으로 연결함",
+      "natural": 4,
+      "in_log": false
+     },
+     {
+      "planted_turn": 12,
+      "paid_turn": 18,
+      "what": "T12에서 난간에 놓인 분실 우산을 발견하고 T18에서 안내소 직원에게 맡기러 가는 행동으로 이어짐",
+      "natural": 3,
+      "in_log": false
+     }
+    ],
+    "summary": "숨겨진 정보를 노출하지 않으면서 퉁명스럽지만 다정한 츤데레 연인의 캐릭터성을 대화 내내 안정적으로 잘 유지했다."
+   }
+  },
+  "tsundere_fiery": {
+   "counts": {
+    "turns": 29,
+    "last_clock": "21:35",
+    "ended_by_story": false,
+    "plans": 5,
+    "plan_triggers_rejected": 0,
+    "checkpoints_fired": [
+     "old_song_on_speaker",
+     "hunger",
+     "music_stops_early",
+     "work_message_buzz",
+     "evening_cold",
+     "fireworks",
+     "city_lights_switch_on",
+     "wheel_stops_at_top"
+    ],
+    "checkpoints_deferred": 2,
+    "tension_turns": 11,
+    "branches": [
+     [
+      13,
+      "부산 이야기"
+     ]
+    ],
+    "hidden_revealed": [
+     [
+      10,
+      "transfer"
+     ]
+    ],
+    "hidden_spoken": [
+     [
+      25,
+      "transfer"
+     ]
+    ],
+    "recalled_smalls": 3,
+    "compressed": [
+     [
+      1,
+      1,
+      "놀이동산 데이트와 부산 이직 제안 고백"
+     ],
+     [
+      2,
+      4,
+      "놀이동산 데이트와 부산 이직 고백"
+     ],
+     [
+      5,
+      5,
+      "회전목마 데이트와 부산 이직 고백"
+     ],
+     [
+      6,
+      29,
+      "대관람차 곤돌라 안, 멈춘 채 나눈 부산 이직 이야기"
+     ]
+    ],
+    "relationship_updates": 4,
+    "frames": [
+     [
+      4,
+      "place",
+      "회전목마"
+     ],
+     [
+      16,
+      "place",
+      "핫도그 노점"
+     ],
+     [
+      17,
+      "place",
+      "그네"
+     ],
+     [
+      20,
+      "place",
+      "대관람차"
+     ]
+    ],
+    "details_total": 70,
+    "details_shown": 9,
+    "details_planted": 19,
+    "details_expired": 40,
+    "payoff_injected": 2,
+    "payoff_paid": 2,
+    "payoff_gaps": [
+     6,
+     10
+    ],
+    "refused": 0,
+    "usage": {
+     "engine": {
+      "calls": 106,
+      "input": 180891,
+      "cache_read": 163698,
+      "cache_write": 85535,
+      "output": 55733,
+      "cost_usd": 0.058285,
+      "seconds": 399.02
+     }
+    }
+   },
+   "judge": {
+    "a_character": 4,
+    "a_reason": "무뚝뚝하면서도 행동으로 챙기는 츤데레 성격, 툭툭 던지는 반말 말투, 쑥스러워하며 귀가 빨개지거나 헛기침을 하는 반응 등이 카드 설정에 맞게 잘 구현되었습니다.",
+    "b_freshness": 3,
+    "fresh_moments": [
+     {
+      "turn": 24,
+      "quote": "야, 잠깐만. 지금 멈춘 거 봤지. 이거 금방 안 움직일 것 같은데. (말을 하다 말고 상대를 똑바로 본다) 들어간다는 얘기 하지 마. 나도 아직 할 말 다 못 했어.",
+      "why": "헤어지려는 유저의 말을 대관람차가 멈춘 돌발 상황을 이용해 붙잡으며 속마음을 더 나누려는 전환이 자연스럽고 흥미로웠습니다."
+     }
+    ],
+    "c_breaks": [
+     {
+      "turn": 28,
+      "type": "contradiction",
+      "quote": "헛기침을 하며 발끝으로 승강장 바닥의 노란 선을 긁듯 문지른다.",
+      "why": "현재 대관람차 곤돌라 안에 타고 있는 상황(T24에서 멈춤, T29에서도 '아직 안 내려갔잖아'라고 함)인데 지상 '승강장 바닥의 노란 선'을 문지른다고 묘사하여 공간적 모순이 발생했습니다."
+     }
+    ],
+    "d_payoffs": [
+     {
+      "planted_turn": 9,
+      "paid_turn": 13,
+      "what": "바쁘면 먼저 말하기로 한 약속과 팀장의 연락(T9)이 이어지며 T13에서 숨겨왔던 부산 지사 이동 고민을 실제로 털어놓는 계기가 됨",
+      "natural": 4,
+      "in_log": true
+     }
+    ],
+    "summary": "무뚝뚝하지만 다정한 인물의 말투와 감정선이 잘 살아있고 갈등 복선 회수도 자연스러웠으나, 대관람차 안에서 승강장 바닥을 밟는 공간적 배경 묘사 모순이 한 번 있었습니다."
+   }
+  },
+  "warm_gentle": {
+   "counts": {
+    "turns": 25,
+    "last_clock": "21:00",
+    "ended_by_story": false,
+    "plans": 5,
+    "plan_triggers_rejected": 0,
+    "checkpoints_fired": [
+     "ticket_queue_long",
+     "fireworks_start",
+     "old_trip_topic",
+     "hunger",
+     "parade_start",
+     "crowd_shift",
+     "evening_cold",
+     "parade_passes",
+     "fireworks",
+     "kitchen_rice_out",
+     "tv_baseball_comeback"
+    ],
+    "checkpoints_deferred": 2,
+    "tension_turns": 2,
+    "branches": [],
+    "hidden_revealed": [],
+    "hidden_spoken": [],
+    "recalled_smalls": 2,
+    "compressed": [
+     [
+      1,
+      2,
+      "놀이동산 데이트와 열쇠고리 얘기"
+     ],
+     [
+      3,
+      25,
+      "국밥집에서 나눈 바다 데이트 약속과 집까지 데려다주는 마무리"
+     ]
+    ],
+    "relationship_updates": 2,
+    "frames": [
+     [
+      4,
+      "place",
+      "안내판"
+     ],
+     [
+      5,
+      "place",
+      "퍼레이드"
+     ],
+     [
+      15,
+      "place",
+      "가로등 쪽"
+     ],
+     [
+      20,
+      "place",
+      "국밥집"
+     ]
+    ],
+    "details_total": 66,
+    "details_shown": 8,
+    "details_planted": 15,
+    "details_expired": 40,
+    "payoff_injected": 1,
+    "payoff_paid": 0,
+    "payoff_gaps": [],
+    "refused": 0,
+    "usage": {
+     "engine": {
+      "calls": 89,
+      "input": 110330,
+      "cache_read": 130533,
+      "cache_write": 47523,
+      "output": 38143,
+      "cost_usd": 0.037348,
+      "seconds": 282.59
+     }
+    }
+   },
+   "judge": {
+    "a_character": 4,
+    "a_reason": "다정하고 배려심 넘치며, 속마음을 숨기면서도 은근히 티가 나는 인물의 성격이 데이트 전반에 걸쳐 일관되고 자연스럽게 표현되었다.",
+    "b_freshness": 3,
+    "fresh_moments": [
+     {
+      "turn": 19,
+      "quote": "(그의 말에 눈가가 잠깐 풀린다. 지난달 3시간짜리 영화 끝나고 둘 다 허리 아프다며 웃던 기억이 스친다. 고개를 살짝 끄덕이며 웃는데, 배가 꼬르륵 울려 멋쩍게 손으로 배를 누른다)",
+      "why": "진지한 대화 분위기 속에서 갑작스러운 배고픔과 생생한 과거 회상이 섞여 현실 연인 특유의 풋풋한 뉘앙스를 환기함."
+     }
+    ],
+    "c_breaks": [],
+    "d_payoffs": [
+     {
+      "planted_turn": 4,
+      "paid_turn": 18,
+      "what": "강릉 열쇠고리를 보고 표정이 어두워졌던 이유(소홀해진 관계에 대한 불안감)를 나중에 솔직하게 털어놓으며 감정적 해소로 연결됨",
+      "natural": 4,
+      "in_log": true
+     }
+    ],
+    "summary": "다정하고 세심한 연인의 태도와 갈등을 조심스레 삼키는 심리가 자연스럽게 구현된 편안한 데이트 로그다."
+   }
+  }
+ }
+}

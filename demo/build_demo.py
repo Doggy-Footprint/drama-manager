@@ -9,22 +9,25 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 STYLE = {"gentle": "다정한 유저", "aloof": "무심한 유저", "fiery": "잘 따지는 유저"}
-INLINE = {"checkpoint_fired", "checkpoint_deferred", "hidden_revealed", "memory_recalled", "detail_planted", "detail_added",
+INLINE = {"checkpoint_fired", "checkpoint_deferred", "hidden_revealed", "hidden_spoken", "memory_recalled", "detail_planted", "detail_added",
           "payoff_injected", "payoff_unused", "detail_paid", "frame_changed", "episode_compressed", "relationship_updated",
           "plan_generated", "refused"}
 
 
-def build_run(path: Path, report: dict | None) -> dict:
+def build_run(path: Path, report: dict | None, attempt: str) -> dict:
     events = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
     meta = next(e for e in events if e["kind"] == "run_meta")
     card = next(e for e in events if e["kind"] == "card")
     turns: dict[int, dict] = {}
     revealed: dict[str, int] = {}
+    spoken: dict[str, int] = {}
     fired: list[str] = []
     for e in events:
         kind, n = e["kind"], e["turn"]
         if kind == "hidden_revealed":
             revealed[e["id"]] = n
+        if kind == "hidden_spoken":
+            spoken[e["id"]] = n
         if kind == "checkpoint_fired":
             fired.append(e["id"])
         if n == 0:
@@ -46,7 +49,8 @@ def build_run(path: Path, report: dict | None) -> dict:
             t["after"] = {"clock": world["clock_text"], "place": world["place"], "relationship": world["relationship"],
                           "hunger": world["hunger"], "temperature": world["temperature"], "bond": e["relationship"],
                           "today": e["today"], "details": counts, "fired": list(fired),
-                          "revealed": [k for k, v in revealed.items() if v <= n]}
+                          "revealed": [k for k, v in revealed.items() if v <= n],
+                          "spoken": [k for k, v in spoken.items() if v <= n]}
         elif kind in INLINE:
             item = {k: v for k, v in e.items() if k not in ("turn",)}
             if kind == "plan_generated":
@@ -57,7 +61,7 @@ def build_run(path: Path, report: dict | None) -> dict:
     end = next((e for e in events if e["kind"] == "run_end"), None)
     ledger = next((e["ledger"] for e in reversed(events) if e["kind"] == "turn_end"), [])
     return {
-        "key": path.stem, "label": f"{card['name']} · {STYLE[meta['style']]}", "name": card["name"], "persona": card["label"],
+        "key": f"{attempt}/{path.stem}", "attempt": attempt, "label": f"{card['name']} · {STYLE[meta['style']]}", "name": card["name"], "persona": card["label"],
         "hidden": [{k: h[k] for k in ("id", "fact", "cover")} for h in card["hidden"]],
         "turns": [turns[k] for k in sorted(turns) if "reply" in turns[k] and "after" in turns[k]],
         "ledger": [{k: d[k] for k in ("id", "text", "status", "source", "planted", "paid")} for d in ledger],
@@ -68,10 +72,13 @@ def build_run(path: Path, report: dict | None) -> dict:
 
 
 def main() -> None:
-    report_file = ROOT / "eval/reports/judge_v1.json"
-    report = json.loads(report_file.read_text(encoding="utf-8")) if report_file.exists() else {"runs": {}}
-    runs = [build_run(p, report["runs"].get(p.stem)) for p in sorted((ROOT / "runs").glob("*.jsonl"))]
-    data = json.dumps({"runs": runs, "judge_model": report.get("model")}, ensure_ascii=False).replace("</", "<\\/")
+    runs, models = [], {}
+    for folder in sorted((ROOT / "runs").glob("try*")):
+        reports = sorted(folder.glob("judge_*.json"))
+        report = json.loads(reports[-1].read_text(encoding="utf-8")) if reports else {"runs": {}}
+        models[folder.name] = {"model": report.get("model"), "prompt": reports[-1].stem if reports else None}
+        runs += [build_run(p, report["runs"].get(p.stem), folder.name) for p in sorted(folder.glob("*.jsonl"))]
+    data = json.dumps({"runs": runs, "judges": models}, ensure_ascii=False).replace("</", "<\\/")
     page = (ROOT / "demo/template.html").read_text(encoding="utf-8").replace("/*__DATA__*/null", data)
     (ROOT / "demo/page.fragment.html").write_text(page, encoding="utf-8")
     full = ('<!doctype html>\n<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" '
