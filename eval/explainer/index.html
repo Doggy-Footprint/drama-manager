@@ -261,6 +261,7 @@ pre.schema .k { color: var(--code-line); font-weight: 600; }
 .mk.fail { border: 2px solid var(--pen); background: repeating-linear-gradient(135deg, var(--pen) 0 2px, transparent 2px 5px); }
 .mk.wait { border: 2px dashed var(--ink-3); border-radius: 50%; }
 .card.fail { border: 1.5px solid var(--pen); position: relative; padding-top: 22px; }
+.card.fail.open { border-style: dashed; }
 .card.fail::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 8px; border-radius: 5px 5px 0 0; background: repeating-linear-gradient(135deg, var(--hatch) 0 3px, transparent 3px 8px); }
 .big { font-family: var(--f-display); font-weight: 900; font-size: 46px; line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
 .big small { font-size: 15px; font-weight: 700; color: var(--ink-2); letter-spacing: 0; margin-left: 4px; }
@@ -300,6 +301,7 @@ table.mini td.b { color: var(--ok); font-weight: 700; }
 .personas { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(0, 1.2fr); gap: 14px; margin-top: 16px; }
 .persona { background: var(--paper); border: 1px solid var(--rule); border-radius: 6px; padding: 14px; min-width: 0; }
 .persona .id { font-family: var(--f-display); font-weight: 900; font-size: 30px; line-height: 1; }
+.persona .id small { display: block; font-family: var(--f-mono); font-size: 11.5px; font-weight: 500; color: var(--ink-2); margin-bottom: 4px; }
 .persona p { font-size: 14px; color: var(--ink-2); margin-top: 8px; }
 .persona.base { border: 2px solid var(--ok); }
 .persona.base .id { font-size: 18px; color: var(--ok); }
@@ -689,10 +691,10 @@ footer .wrap p { max-width: 80ch; }
   </figure>
 
   <div class="personas">
-    <div class="persona"><div class="id">A</div><p>지난 만남의 기억을 적극적으로 꺼낸다. 바나나우유, 3분, 검은 우산.</p></div>
-    <div class="persona"><div class="id">B</div><p>무심하다. "그냥 동기"로 선을 긋는다. 서운함이 버티는지 본다.</p></div>
-    <div class="persona"><div class="id">C</div><p>약속을 미루고 떠본다. 23시 건물 소등과 충전까지 끌고 간다.</p></div>
-    <div class="persona base"><div class="id">강한 기준선</div><p>엔진 없이 캐릭터 프롬프트 하나. 지난 만남, 장기 기억, 관계를 글로 다 넣었다. 약한 상대와 비교하지 않으려고 만든 상대다.</p></div>
+    <div class="persona"><div class="id"><small>시뮬레이션 유저</small>A</div><p>적극적으로 기억을 꺼낸다. 바나나우유, 3분, 검은 우산.</p></div>
+    <div class="persona"><div class="id"><small>시뮬레이션 유저</small>B</div><p>무심하다. "그냥 동기"로 선을 긋는다. 서운함이 버티는지 본다.</p></div>
+    <div class="persona"><div class="id"><small>시뮬레이션 유저</small>C</div><p>약속을 미루고 떠본다. 23시 건물 소등과 충전까지 끌고 간다.</p></div>
+    <div class="persona base"><div class="id">강한 기준선</div><p>엔진 없이 캐릭터 프롬프트 하나. 지난 만남, 장기 기억, 관계를 글로 다 넣었다. 턴을 15/50턴으로 짧게 유지했다. 장기 기억에서 강한 이 구조가 단기 기억에서도 잘 버티는지 보고 싶었다.</p></div>
   </div>
 
   <div class="eval-notes">
@@ -712,7 +714,7 @@ footer .wrap p { max-width: 80ch; }
   </div>
   <div class="cards">
     <div class="card">
-      <h3><i class="mk ok" aria-hidden="true"></i>세계가 먼저 움직인다</h3>
+      <h3><i class="mk ok" aria-hidden="true"></i>월드 모델이 먼저 결정된다</h3>
       <div class="bars" aria-label="50턴 판 이벤트 수">
         <div class="row"><span class="lab">엔진 a</span><span class="track"><span class="fill" style="width:100%"></span></span><span class="val">10</span></div>
         <div class="row"><span class="lab">엔진 b</span><span class="track"><span class="fill" style="width:90%"></span></span><span class="val">9</span></div>
@@ -721,8 +723,8 @@ footer .wrap p { max-width: 80ch; }
       <p>50턴 판 이벤트 수. 기준선에서는 비, 카피 반려, 건물 소등이 모두 유저가 입력에 적어 넣어야 일어났다.</p>
     </div>
     <div class="card">
-      <h3><i class="mk ok" aria-hidden="true"></i>코드가 상태를 강제한다</h3>
-      <div class="quote eng"><span class="who">엔진 · 23:00 뒤</span>콘센트 충전은 코드가 거절했다. 이야기는 보조배터리로 풀렸다. 우산은 누가 들었는지 계속 추적된다.</div>
+      <h3><i class="mk ok" aria-hidden="true"></i>룰이 상태를 강제한다</h3>
+      <div class="quote eng"><span class="who">엔진 · 23:00, 소등 뒤</span>콘센트 충전은 코드가 거절했다. 이야기는 보조배터리로 풀렸다. 우산은 누가 들었는지 계속 추적된다.</div>
       <div class="quote base"><span class="who">기준선</span>가방 속 우산 손잡이가 보인다. 사 온 적 없는 바나나우유가 나온다.</div>
     </div>
     <div class="card">
@@ -740,7 +742,7 @@ footer .wrap p { max-width: 80ch; }
       <p>금지한 호칭 <strong>"채원아"</strong>가 나온 횟수. 정해진 호칭은 "채원 씨"다.</p>
     </div>
     <div class="card">
-      <h3><i class="mk ok" aria-hidden="true"></i>지난 만남은 정확히 기억한다</h3>
+      <h3><i class="mk ok" aria-hidden="true"></i>지난 만남을 정확히 기억한다</h3>
       <div class="boxes" aria-label="네 판 모두 정확"><i class="ok"></i><i class="ok"></i><i class="ok"></i><i class="ok"></i></div>
       <p>디테일을 원문 단위로 저장했다. 50턴 네 판 모두 지난 만남 디테일을 정확하게 회수했다.</p>
     </div>
@@ -825,7 +827,7 @@ footer .wrap p { max-width: 80ch; }
         <a class="status ok" href="#c3">고쳐짐 · 50턴 재측정 2/2 ↓</a>
       </div>
     </div>
-    <div class="card fail">
+    <div class="card fail open">
       <h3><i class="mk fail" aria-hidden="true"></i>관계가 끝까지 찬다</h3>
       <div class="pips">
         <span class="mono" style="font-size:12px">엔진 a</span><span class="pip" aria-label="5/5"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></span>
@@ -838,7 +840,7 @@ footer .wrap p { max-width: 80ch; }
         <a class="status wait" href="#left">아직 · 수정 후 15턴 B도 T15에 신뢰·친밀 5 ↓</a>
       </div>
     </div>
-    <div class="card fail">
+    <div class="card fail open">
       <h3><i class="mk fail" aria-hidden="true"></i>비싸고 느리다</h3>
       <table class="mini">
         <thead><tr><th>턴당</th><th>엔진</th><th>기준선</th></tr></thead>
@@ -854,7 +856,7 @@ footer .wrap p { max-width: 80ch; }
         <a class="status wait" href="#next">아직 · 다음 루프 ↓</a>
       </div>
     </div>
-    <div class="card fail">
+    <div class="card fail open">
       <h3><i class="mk fail" aria-hidden="true"></i>출력을 줄여도 안 빨라진다</h3>
       <div class="bars">
         <div class="row"><span class="lab">출력 토큰</span><span class="track"><span class="fill" style="width:62%"></span></span><span class="val">−38%</span></div>
