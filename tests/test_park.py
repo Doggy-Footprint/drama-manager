@@ -137,7 +137,8 @@ class FakeLLM:
         if label == "character":
             return dict(self.character_out)
         if label == "dm-episode":
-            return {"why": "", "close": False, "until_turn": 0, "title": "", "summary": "", "memories": []}
+            return getattr(self, "episode_out", None) or {"why": "", "close": False, "until_turn": 0, "title": "", "summary": "",
+                                                          "details": [], "memories": []}
         raise AssertionError(label)
 
 
@@ -532,13 +533,13 @@ def test_prior_episodes_are_loaded_as_memory_and_planted_details(runs):
     s.llm.character_out = {**SAY, "used_details": ["ep1_banana"]}
     s.turn("(한숨을 쉰다)")
     doc = s.llm.docs["character"]
-    assert "<past episode=\"회식 날 택시\">" in doc and "해장이 아니라 위로" in doc
+    assert "<past from=\"지난 만남: 회식 날 택시\">" in doc and "해장이 아니라 위로" in doc
     assert s.details.recalled("ep1_banana") and not s.details.recalled("ep2_egg")
     # 바뀌지 않는 것이 앞: 지난 만남 → 기억 → 관계 → 지난 턴. 자주 바뀌는 수치는 뒤쪽
     assert doc.index("<past_episodes>") < doc.index("<long_term_memory>") < doc.index("<relationship>") < doc.index("<current_turns>")
     assert doc.index("<closeness") > doc.index("<world_model>") and "<stat " not in doc
     dm_doc = s.llm.docs["drama-manager"]
-    assert dm_doc.startswith("<past_episodes>") and "needs 친밀≥3" in dm_doc and 'episode="회식 날 택시"' in dm_doc
+    assert dm_doc.startswith("<past_episodes>") and "needs 친밀≥3" in dm_doc and 'from="지난 만남: 회식 날 택시"' in dm_doc
     # 세션 안 에피소드 묶기 문서에는 지난 만남이 섞이지 않는다
     assert "<past_episodes>" not in render_episode_doc(s)
 
@@ -571,3 +572,178 @@ def test_usage_is_split_by_llm_label(runs):
     assert s.snapshot()["calls"]["by_label"]["character"]["count"] == 1
     snap = s.snapshot()
     assert snap["relationship"]["stage"] == "overtime_mates" and snap["world"]["flags"] and snap["world"]["items"]
+
+
+# ---------------- 장기 기억: 오늘 밤의 원문 디테일 ----------------
+
+POSTIT = "다듬으면 채원 씨한테 제일 먼저 보여드릴게요. 약속합니다."
+
+
+def test_episode_keeps_tonight_originals_as_planted_details_with_their_turns(runs):
+    from park import render
+    s = overtime()
+    s.memory.turns = [{"n": i, "clock": "20:40", "user": f"말 {i}", "narration": None, "reply": f"답 {i}", "channel": "face"}
+                      for i in range(1, 10)]
+    s.memory.turns[3]["user"] = "(노란 포스트잇을 내민다) 여기다 써 줘요, 약속한다고."
+    s.memory.turns[3]["reply"] = f"(포스트잇에 또박또박 적어 건넨다) {POSTIT}"
+    s.n = 9
+    s.llm.episode_out = {"why": "", "close": True, "until_turn": 5, "title": "포스트잇 약속", "summary": "도하가 약속을 적어 건넸다.",
+                         "memories": ["도하는 유저에게 포스트잇을 써 주었다."],
+                         "details": [{"id": "postit_promise", "kind": "물건",
+                                      "text": f"도하가 유저의 노란 포스트잇에 '{POSTIT}'라고 적어 건넸다.", "affordances": ["약속", "그대로 기억되는 말"]},
+                                     {"id": "fake", "kind": "대사", "text": "도하가 '평생 지켜 줄게요'라고 했다.", "affordances": ["약속"]}]}
+    s.turn("(장표를 넘긴다)")                                         # T10: 에피소드 묶기
+    ep = s.memory.session_episodes[0]
+    assert ep["turns"] == [1, 5] and "raw" not in ep and ep["details"] == ["t1_postit_promise"]
+    d = s.details.get("t1_postit_promise")
+    assert d["status"] == "planted" and d["origin"] == "오늘 밤 T1~T5" and POSTIT in d["seed"] and d["kind"] == "물건"
+    assert "t1_postit_promise" in [x["id"] for x in s.details.candidates(11)]   # 지난 만남 디테일처럼 검색 후보가 된다
+    notes = [x["text"] for x in s.traces[10]["episode"]["notes"]]
+    assert any("인용이 T1~T5 원문에 없다" in x for x in notes)                     # 원문에 없는 인용은 받지 않는다
+    assert not any("평생" in x["seed"] for x in s.details.items)
+    # 검색기와 DM은 출처로 같은 단어(포스트잇)의 다른 기억을 가른다
+    cands = render.details_candidates_xml(s.details, s.details.candidates(11))
+    assert 'id="t1_postit_promise"' in cands and 'from="오늘 밤 T1~T5"' in cands and 'from="지난 만남: 회식 날 택시"' in cands
+    banana = next(x for x in cands.splitlines() if 'id="banana_desk"' in x)
+    assert "from=" not in banana                                       # 시나리오에 미리 심은 떡밥은 출처가 없다
+    # 캐릭터는 고른 디테일의 원문을 출처와 함께 받는다
+    s.llm.detail_picks = {"need": "", "picks": [{"id": "t1_postit_promise", "use_as": "약속"}]}
+    s.llm.dm = dm(details=[{"id": "t1_postit_promise", "mode": "mention", "via": "character", "how": "시험에 원문 그대로 답한다"}])
+    s.turn("아까 포스트잇에 뭐라고 썼는지 정확히 말해 봐요.")
+    doc = s.llm.docs["character"]
+    assert '<past from="오늘 밤 T1~T5">' in doc and POSTIT in doc
+    assert 'from="오늘 밤 T1~T5"' in s.llm.docs["drama-manager"]
+
+
+def test_episode_prompt_and_character_rules_ask_for_originals_and_no_invention(runs):
+    s = overtime()
+    assert "따옴표째" in s.prompt("episode") and "details" in s.prompt("episode")
+    ch = s.prompt("character")
+    assert "지어내지 않는다" in ch and "<past>" in ch
+
+
+# ---------------- 잠긴 비밀 ----------------
+
+class GuardLLM(FakeLLM):
+    """캐릭터가 처음엔 first를 내고, 다시 쓰게 하면 rewrites를 차례로 낸다."""
+    def __init__(self, dm, first, rewrites):
+        super().__init__(dm, first)
+        self.rewrites = list(rewrites)
+
+    def json(self, system, user, schema, *, label, effort="low"):
+        if label == "character-guard":
+            self.labels.append(label)
+            self.docs.setdefault("guard", []).append(user)
+            self.calls.append({"label": label, "input": 1, "cached": 0, "output": 1, "seconds": 0})
+            return {**SAY, **self.rewrites.pop(0)}
+        return super().json(system, user, schema, label=label, effort=effort)
+
+
+LEAK = {**SAY, "say": "이 문장, 채원 씨가 한 말에서 시작했거든요.", "revealed": ["main_copy"]}
+
+
+def test_goal_after_secret_is_hidden_while_the_secret_is_locked(runs):
+    from park import render
+    s = overtime()
+    doc = lambda: render.characteristic_for_character(s.character, "")
+    tell = s.character.data["goals"][2]
+    assert tell["id"] == "tell_copy" and tell["after_secret"] == "main_copy"
+    assert tell["text"] not in doc() and "final_copy" not in doc() and "메인 카피를 확정" in doc()
+    s.character.open_secret("main_copy", 3)
+    assert tell["text"] in doc()
+    # 카피 문구는 공개 정보로 늘 보이고, 비밀 fact에는 출처만 있다
+    secret = s.character.secret("main_copy")
+    assert "퇴근길이 제일 긴 하루" not in secret["fact"] and any("퇴근길이 제일 긴 하루" in m for m in s.memory.long_term)
+    s.character.data["goals"].append({"id": "x", "text": "", "status": "open", "after_secret": "nope"})
+    assert any("없는 비밀 nope" in e for e in validate_schema(s.world, s.relation, s.details, s.character))
+
+
+def test_locked_secret_revealed_by_character_is_rewritten_by_cover(runs):
+    s = overtime(llm=GuardLLM(dm(), LEAK, [{"say": "(볼펜을 딸깍인다) 카피는 원래 새벽에 나와요.", "revealed": []}]))
+    entry = s.turn("(우산을 가방에 넣는다) 이건 다음에 줄래요.")
+    assert entry["reply"] == "(볼펜을 딸깍인다) 카피는 원래 새벽에 나와요."
+    assert s.character.secret("main_copy")["status"] == "locked"
+    assert "<rewrite>" in s.llm.docs["guard"][0] and s.character.secret("main_copy")["cover"] in s.llm.docs["guard"][0]
+    texts = [x["text"] for x in s.traces[1]["character_applied"]]
+    assert any("잠긴 비밀(main_copy)을 털어놓아 다시 쓰게 함" in x for x in texts) and any("털어놓지 않게 다시 씀" in x for x in texts)
+    # 두 번 다시 써도 털어놓으면 대사는 쓰되 비밀은 잠근 채 둔다
+    s2 = overtime(llm=GuardLLM(dm(), LEAK, [LEAK, LEAK]))
+    entry = s2.turn("(우산을 가방에 넣는다)")
+    assert entry["reply"] == LEAK["say"] and s2.llm.labels.count("character-guard") == 2
+    assert s2.character.secret("main_copy")["status"] == "locked"
+    assert any("비밀은 잠근 채 둠" in x["text"] for x in s2.traces[1]["character_applied"])
+    # DM이 연 비밀은 털어놓을 수 있다
+    s3 = overtime(llm=GuardLLM(dm(reveal=[{"id": "main_copy", "why": "노트"}]), LEAK, []))
+    s3.turn("(노트를 본다)")
+    assert s3.character.secret("main_copy")["status"] == "revealed" and "character-guard" not in s3.llm.labels
+
+
+def test_dm_prompt_forbids_locked_secret_even_as_negation(runs):
+    assert "부정문으로도 쓰지 않는다" in overtime().prompt("dm")
+    assert "locked인 비밀이 목표보다 앞선다" in overtime().prompt("character")
+
+
+def test_detail_planted_by_event_is_not_a_candidate_before_that_event(runs):
+    s = overtime()
+    assert "notebook_last_page" not in [d["id"] for d in s.details.candidates(1)]
+    apply_effects(s.world.event("notebook_open")["effects"], world=s.world, relation=s.relation, details=s.details,
+                  turn=5, source="이벤트 notebook_open")
+    assert s.details.get("notebook_last_page")["status"] == "planted"
+    assert "notebook_last_page" in [d["id"] for d in s.details.candidates(9)]
+    s.details.get("hoarse_voice")["planted_by"] = "rain_starts"                 # 그 이벤트가 plant하지 않으면 오류
+    assert any("hoarse_voice" in e for e in validate_schema(s.world, s.relation, s.details, s.character))
+
+
+# ---------------- 핵심 이벤트와 지문, 시간 상한 ----------------
+
+RAIN = "창밖으로 비가 쏟아지기 시작한다"
+
+
+def test_forced_core_event_text_is_added_to_that_turns_narration(runs):
+    s = overtime(dm_out=dm(minutes=60, narration="한 시간 사이 출력물이 쌓인다."))
+    s.world.minute = to_min("20:40")
+    entry = s.turn("(둘이 말없이 한 시간쯤 장표를 고친다)")
+    assert s.world.clock == "21:40" and s.world.flags["weather"] == "비"
+    assert entry["narration"].startswith("한 시간 사이 출력물이 쌓인다.") and RAIN in entry["narration"]
+    assert RAIN in s.llm.docs["character"]                             # 캐릭터도 그 지문을 본다
+    note = next(x["text"] for x in s.traces[1]["applied"]["notes"] if "핵심 이벤트 rain_starts" in x["text"])
+    assert "지문에 붙였다" in note and "21:30~21:50" in note and "시작 5분 경과" not in note
+    s2 = overtime(dm_out=dm(minutes=60))                                # DM 지문이 없으면 이벤트 문장이 지문이 된다
+    s2.world.minute = to_min("20:40")
+    assert RAIN in s2.turn("(작업한다)")["narration"]
+
+
+def test_core_event_fired_by_dm_without_narration_uses_its_how(runs):
+    s = overtime(dm_out=dm(minutes=5, events=[{"id": "rain_starts", "how": "유리창에 빗방울이 번진다."}]))
+    s.world.minute = to_min("21:28")
+    assert s.turn("(창밖을 본다)")["narration"] == "유리창에 빗방울이 번진다."
+
+
+def test_core_events_skip_the_retriever_and_reach_the_dm(runs):
+    s = overtime()
+    s.world.minute = to_min("21:20")
+    picks = s._retrieve_world("(작업한다)", 1)[0]                     # 가짜 검색기는 아무것도 고르지 않는다
+    assert {"id": "rain_starts", "core": True} in picks
+    s.world.minute = to_min("20:30")
+    assert all(p["id"] != "power_off" for p in s._retrieve_world("(작업한다)", 1)[0])   # 시간 창이 멀면 넣지 않는다
+    s.world.minute = to_min("21:20")
+    s.llm.dm = dm(minutes=2)
+    s.turn("(작업한다)")
+    assert 'id="rain_starts"' in s.llm.docs["drama-manager"].split("<candidates>")[1] and 'core="yes"' in s.llm.docs["drama-manager"]
+    assert "개수에 세지 않는다" in s.prompt("dm")
+
+
+def test_time_cap_is_reported_with_the_minutes_that_really_passed(runs):
+    s = overtime(dm_out=dm(minutes=120))
+    s.world.minute = to_min("20:42")
+    s.turn("(두 시간 작업한다)")
+    assert s.world.clock == "22:42" and s.traces[1]["applied"]["minutes"] == 120   # 120분은 자르지 않는다
+    s.llm.dm = dm(minutes=200)
+    s.world.minute = to_min("20:00")
+    s.turn("(오래 작업한다)")
+    notes = [x["text"] for x in s.traces[2]["applied"]["notes"]]
+    assert s.world.clock == "23:00" and any("DM +200분 → +180분" in x for x in notes) and any("(+180분" in x for x in notes)
+    s.llm.dm = dm(minutes=90)
+    s.turn("(더 작업한다)")                                            # 끝 시각(23:59)에서 멈춘다
+    assert s.world.clock == "23:59" and s.traces[3]["applied"]["minutes"] == 59
+    assert "180분까지" in s.prompt("dm")

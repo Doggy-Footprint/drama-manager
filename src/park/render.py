@@ -108,8 +108,8 @@ def details_for_character(details: Details, picked: list[dict]) -> str:
         d = details.get(p["id"])
         if not d:
             continue
-        if d.get("episode"):  # 지난 만남의 것은 그때의 말과 물건을 정확히 떠올리도록 원문을 함께 준다
-            body = tag("past", t(d["seed"]), episode=d.get("episode_title")) + (tag("use", t(p["how"])) if p.get("how") else "")
+        if d.get("source") in ("지난 만남", "오늘 밤"):  # 그때의 말과 물건을 정확히 떠올리도록 원문을 출처와 함께 준다
+            body = tag("past", t(d["seed"]), **{"from": d.get("origin") or d.get("episode_title")}) + (tag("use", t(p["how"])) if p.get("how") else "")
         elif p["mode"] == "plant":
             body = tag("seed", t(d["seed"])) + (tag("use", t(p["how"])) if p.get("how") else "")
         else:  # 이미 나온 것은 원문을 다시 주지 않는다. 같은 문장을 되풀이하지 않게
@@ -160,7 +160,7 @@ def world_for_character(world: World, dm: dict, fired_now: list[dict], facts: li
 def characteristic_for_character(character: Character, directive: str, relation: Relationship | None = None) -> str:
     d = character.data
     core = [tag("trait", t(x)) for x in d["core"]["traits"]]
-    secrets = []
+    secrets, locked = [], {s["id"] for s in d["secrets"] if s["status"] == "locked"}
     for s in d["secrets"]:
         if s["mode"] == "buried" and s["status"] == "locked":
             core.append(tag("trait", t(s["cover"])))  # 숨기는 게 없는 듯 지낸다. 비밀이라는 표시도 주지 않는다
@@ -170,7 +170,8 @@ def characteristic_for_character(character: Character, directive: str, relation:
     dyn = d["dynamic"]
     now = tag("mood", t(dyn["mood"])) + tag("attitude", t(dyn["attitude"])) + tag("want", t(dyn["want"]))
     griev = "".join(f"\n    {tag('grievance', t(g['text']), intensity=g['intensity'])}" for g in dyn["grievances"])
-    goals = "".join(f"\n    {tag('goal', t(g['text']), status=g['status'])}" for g in d["goals"])
+    # after_secret이 달린 목표는 그 비밀이 잠긴 동안 보이지 않는다(잠긴 비밀이 목표보다 앞선다)
+    goals = "".join(f"\n    {tag('goal', t(g['text']), status=g['status'])}" for g in d["goals"] if g.get("after_secret") not in locked)
     body = [
         tag("profile", t(d["profile"])),
         tag("core", "".join(f"\n    {c}" for c in core) + "\n  "),
@@ -226,8 +227,9 @@ def last_use_attrs(details: Details, did: str) -> dict:
 
 
 def episode_attrs(d: dict) -> dict:
-    """지난 만남의 떡밥이면 어느 만남인지와 종류(물건, 대사, 약속, 농담 등)."""
-    return {"episode": d.get("episode_title"), "kind": d.get("kind")} if d.get("episode") else {}
+    """떡밥이 생긴 때(from: "지난 만남: 제목" 또는 "오늘 밤 T#~T#")와 종류(물건, 대사, 약속, 농담 등).
+    같은 단어(포스트잇)의 다른 기억을 검색기와 DM이 가를 수 있게 한다. 시나리오에 미리 심은 떡밥은 출처가 없다."""
+    return {"from": d.get("origin"), "kind": d.get("kind")}
 
 
 def details_candidates_xml(details: Details, items: list[dict]) -> str:
@@ -273,7 +275,7 @@ def dm_doc(*, world: World, details: Details, character: Character, memory: Memo
         f"\n  {tag('core', ' / '.join(map(t, d['core']['traits'])) + ' / 말투: ' + t(d['core']['speech']))}",
         f"\n  {tag('mood', t(dyn['mood']))}{tag('attitude', t(dyn['attitude']))}{tag('want', t(dyn['want']))}",
         "".join(f"\n  {tag('grievance', t(g['text']), id=g['id'], intensity=g['intensity'])}" for g in dyn["grievances"]),
-        "".join(f"\n  {tag('goal', t(g['text']), id=g['id'], status=g['status'])}" for g in d["goals"]),
+        "".join(f"\n  {tag('goal', t(g['text']), id=g['id'], status=g['status'], after_secret=g.get('after_secret'))}" for g in d["goals"]),
         f"\n  {tag('secrets', secrets + chr(10) + '  ')}",
         "\n"]))
     turns = "\n".join(turn_xml(x) for x in memory.turns)
@@ -288,7 +290,7 @@ def dm_doc(*, world: World, details: Details, character: Character, memory: Memo
     known = tag("planted_details", "".join(f"\n  {tag('detail', t(x['seed']), id=x['id'], **episode_attrs(x), **last_use_attrs(details, x['id']))}" for x in planted) + "\n")
     cand = [
         tag("events", "".join(
-            f"\n    {tag('event', t(w.event(p['id'])['text']), id=p['id'], window='~'.join(w.event(p['id'])['window']), where=','.join(w.event(p['id'])['where']), effects=effects_text(w, w.event(p['id'])))}"
+            f"\n    {tag('event', t(w.event(p['id'])['text']), id=p['id'], window='~'.join(w.event(p['id'])['window']), where=','.join(w.event(p['id'])['where']), core='yes' if w.event(p['id']).get('core') else None, effects=effects_text(w, w.event(p['id'])))}"
             for p in ev_picks) + "\n  "),
         tag("facts", "".join(f"\n    {fact_xml(w, w.fact(p['id']))}" for p in fact_picks) + "\n  "),
         tag("details", "".join(

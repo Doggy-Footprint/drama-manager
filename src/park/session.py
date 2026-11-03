@@ -16,15 +16,15 @@ from typing import Callable
 
 from . import render
 from .llm import LLM, ROOT
-from .state import (BEATS, DEFAULT_SCENARIO, PHONE_USES, Character, Details, Memory, Relationship, World, apply_effects,
-                    fill, josa, load_history, requires_ok, validate_schema)
+from .state import (BEATS, DEFAULT_SCENARIO, MAX_ADVANCE, PHONE_USES, Character, Details, Memory, Relationship, World,
+                    apply_effects, fill, josa, load_history, requires_ok, validate_schema)
 
 PROMPTS = Path(__file__).resolve().parent / "prompts"
 EPISODE_EVERY = 10
 # 출력 가드레일. 싼 모델은 "한국어로만"이라고 써 둬도 일본어·한자·깨진 기호로 넘어간다(도쿄 맥락이 쌓이면 특히).
 # 프롬프트로는 못 막으니 코드가 본다: 가나, 한자, CJK 문장부호(、。「」【】), 수학 기호류(⟂)
 FOREIGN = re.compile(r"[　-〿぀-ヿㇰ-ㇿ一-鿿｡-ﾟ⟀-⟯⦀-⧿]+")
-LANG_RETRIES = 2
+LANG_RETRIES = 2   # 대사 다시 쓰기 최대 횟수(다른 언어, 잠긴 비밀 누설 공통)
 
 
 def foreign(text: str | None) -> str:
@@ -134,7 +134,10 @@ def extract_schema(locations, name):
         "near": nullable(enum(locations))})}})
 
 
+# details는 history.yaml의 episode details와 같은 형식(id, kind, text, affordances). 요약에서 사라질 원문을 남긴다
 EPISODE_SCHEMA = obj({"why": S, "close": {"type": "boolean"}, "until_turn": {"type": "integer"}, "title": S, "summary": S,
+                      "details": {"type": "array", "items": obj({"id": S, "kind": S, "text": S,
+                                                                 "affordances": {"type": "array", "items": S}})},
                       "memories": {"type": "array", "items": S}})
 
 
@@ -161,7 +164,7 @@ class Session:
         self.relation = Relationship.fresh(history) if history else None
         self.details = Details.fresh(scenario, history)
         self.memory = Memory.fresh(self.character, history)
-        if errors := validate_schema(self.world, self.relation, self.details):
+        if errors := validate_schema(self.world, self.relation, self.details, self.character):
             raise ValueError(f"{scenario} 스키마 오류: " + "; ".join(errors))
         self.rng = random.Random(seed)
         self.n = 0
@@ -285,8 +288,10 @@ class Session:
         doc = render.situation_xml(self.world, self.memory, user_input, n) + "\n" + render.world_candidates_xml(self.world, ev_cands, fact_cands)
         out = self.llm.json(self.prompt("retrieve_world"), doc, world_pick_schema(self._all_event_ids()), label="retrieve-world")
         ev_ids, fact_ids = {e["id"] for e in ev_cands}, {f["id"] for f in fact_cands}
-        return ([p for p in out["picks"] if p["id"] in ev_ids][:4], [p for p in out["facts"] if p["id"] in fact_ids][:6],
-                ev_cands, fact_cands, blocked)
+        picks = [p for p in out["picks"] if p["id"] in ev_ids][:4]
+        # 핵심 이벤트는 검색기를 거치지 않고 늘 DM 후보에 든다(개수 제한에도 세지 않는다)
+        picks += [{"id": e["id"], "core": True} for e in ev_cands if e.get("core") and e["id"] not in {p["id"] for p in picks}]
+        return picks, [p for p in out["facts"] if p["id"] in fact_ids][:6], ev_cands, fact_cands, blocked
 
     def _retrieve_details(self, user_input: str, n: int):
         cands = self.details.candidates(n)
@@ -357,7 +362,7 @@ class Session:
         if opening and dm["minutes"]:
             notes.append({"ok": False, "text": f"시작 턴이라 +{dm['minutes']}분 → 0분 (도착 시각 {w.clock}이 이미 반영됨)"})
             dm["minutes"], dm["minutes_why"] = 0, "시작 장면"
-        before = w.clock
+        before, start_min = w.clock, w.minute
         if dm["phone_charging"] and not w.charging:
             ok, why = w.can_charge(self.relation, self.details)
             if not ok:   # 월드 상태와 맞지 않는 충전(전원이 내려간 콘센트 등)은 코드가 거절한다
@@ -368,7 +373,10 @@ class Session:
         w.charging = dm["phone_charging"]
         for msg in w.advance(dm["minutes"], dm["character_phone_use"]):
             notes.append({"ok": True, "text": msg})
-        notes.append({"ok": True, "text": f"시간 {before} → {w.clock} (+{dm['minutes']}분, {dm['minutes_why']})"})
+        spent = w.minute - start_min   # 상한(MAX_ADVANCE)과 끝 시각 때문에 DM이 낸 분보다 짧을 수 있다
+        if spent != dm["minutes"]:
+            notes.append({"ok": False, "text": f"시간 고침: DM +{dm['minutes']}분 → +{spent}분 (한 턴 최대 {MAX_ADVANCE}분, 끝 {w.data['end']})"})
+        notes.append({"ok": True, "text": f"시간 {before} → {w.clock} (+{spent}분, {dm['minutes_why']})"})
         # 위치. 함께 있던 캐릭터를 드라마 매니저가 혼자 떠나보내지는 않는다(혼자 자리를 뜰지는 캐릭터가 정한다)
         was_together = w.together
         note(w.move("user", dm["user_location"]))
@@ -394,17 +402,23 @@ class Session:
         for m in dm.get("item_moves") or []:
             note(w.give(m["id"], m["to"]))
         # 이벤트. 일어나는 순간 전제 조건을 다시 보고, 일어나면 효과를 반영한다
+        # 핵심 이벤트는 유저 화면에 꼭 나와야 하므로, 지문이 없으면 DM의 how를, 코드가 강제했으면 이벤트 문장을 지문에 붙인다
         valid_ev = {p["id"] for p in ev_picks}
-        fired_now = []
+        fired_now, narration = [], dm["narration"]
         for e in dm["events"]:
             if e["id"] not in valid_ev:
                 notes.append({"ok": False, "text": f"이벤트 거절: {e['id']}는 이번 후보가 아니다"})
             elif note(w.fire(e["id"], n, e["how"], gate=self.gate)):
                 fired_now.append({"id": e["id"], "how": e["how"]})
                 self._effects(e["id"], n, notes)
+                if w.event(e["id"]).get("core") and not narration:
+                    narration = e["how"]
+                    notes.append({"ok": True, "text": f"핵심 이벤트 {e['id']}: 지문이 없어 how를 지문으로 씀"})
         for e in w.forced_core(n, gate=self.gate):
             fired_now.append({"id": e["id"], "how": e["text"]})
-            notes.append({"ok": True, "text": f"핵심 이벤트 {e['id']}를 코드가 일으켰다(시작 5분 경과)"})
+            narration = f"{narration} {e['text']}" if narration else e["text"]
+            notes.append({"ok": True, "text": f"핵심 이벤트 {e['id']}를 코드가 일으켜 지문에 붙였다"
+                                              f"(시간 창 {e['window'][0]}~{e['window'][1]}이 열리고 5분이 지나도 DM이 일으키지 않음)"})
             self._effects(e["id"], n, notes)
         if w.charging and not (ok_why := w.can_charge(self.relation, self.details))[0]:
             w.charging = False
@@ -478,7 +492,7 @@ class Session:
         w.history.append({"turn": n, "clock": w.clock, "char_loc": w.char_loc, "user_loc": w.user_loc,
                           "together": w.together, "battery": round(w.battery, 1), "charging": w.charging})
         return {"notes": notes, "fired_now": fired_now, "picked_details": picked, "additions": additions, "shown_facts": shown_facts,
-                "user_facts": user_facts, "narration": dm["narration"], "channel": dm["channel"]}
+                "user_facts": user_facts, "narration": narration, "channel": dm["channel"], "minutes": spent}
 
     def _effects(self, event_id: str, n: int, notes: list) -> None:
         e = self.world.event(event_id)
@@ -523,20 +537,37 @@ class Session:
                                    now=now, dm=dm, picked_details=picked, fired_now=fired_now, facts=facts, relation=self.relation)
         schema = character_schema(list(self.world.locations), [s["id"] for s in self.character.data["secrets"]])
         out = self.llm.json(self.prompt("character"), doc, schema, label="character", effort="low")
-        # 가드레일: 다른 언어가 섞이면 같은 문서 끝에 다시 쓰라는 지시를 붙여 다시 쓰게 한다(앞부분이 같아 캐시는 그대로 탄다)
-        guard = []
+        # 가드레일: 다른 언어가 섞이거나 잠긴 비밀을 털어놓았으면(revealed에 locked 비밀) 같은 문서 끝에 다시 쓰라는 지시를 붙여
+        # 다시 쓰게 한다(앞부분이 같아 캐시는 그대로 탄다)
+        locked = {x["id"]: x for x in self.character.data["secrets"] if x["status"] == "locked"}
+        leaks = lambda o: [sid for sid in o.get("revealed", []) if sid in locked]
+        guard, tried_lang, tried_leak = [], False, False
         for i in range(LANG_RETRIES):
-            bad = foreign(out["say"])
-            if not bad:
+            bad, leak = foreign(out["say"]), leaks(out)
+            if not bad and not leak:
                 break
-            guard.append({"ok": False, "text": f"가드레일: 대사에 한국어가 아닌 글자({bad[:12]})가 섞여 다시 쓰게 함 ({i + 1}/{LANG_RETRIES})"})
-            retry = render.tag("rewrite", render.t(f"직전에 쓴 say: {out['say']}\n여기에 한국어가 아닌 글자가 섞였다. 같은 뜻과 행동을 한국어로만 다시 쓴다. 외국어 단어도 한국어로 옮긴다."))
+            asks = []
+            if bad:
+                tried_lang = True
+                guard.append({"ok": False, "text": f"가드레일: 대사에 한국어가 아닌 글자({bad[:12]})가 섞여 다시 쓰게 함 ({i + 1}/{LANG_RETRIES})"})
+                asks.append("여기에 한국어가 아닌 글자가 섞였다. 같은 뜻과 행동을 한국어로만 다시 쓴다. 외국어 단어도 한국어로 옮긴다.")
+            if leak:
+                tried_leak = True
+                guard.append({"ok": False, "text": f"가드레일: 잠긴 비밀({', '.join(leak)})을 털어놓아 다시 쓰게 함 ({i + 1}/{LANG_RETRIES})"})
+                asks.append("여기서 아직 말할 수 없는 비밀을 털어놓았다. 그 내용은 빼고 cover대로 다시 쓴다. cover: "
+                            + " / ".join(locked[sid]["cover"] for sid in leak))
+            retry = render.tag("rewrite", render.t(f"직전에 쓴 say: {out['say']}\n" + "\n".join(asks)))
             out = self.llm.json(self.prompt("character"), doc + "\n" + retry, schema, label="character-guard", effort="low")
         if bad := foreign(out["say"]):
             out["say"] = strip_foreign(out["say"])
             guard.append({"ok": False, "text": f"가드레일: 다시 써도 남은 글자({bad[:12]})를 지움"})
-        elif guard:
+        elif tried_lang:
             guard.append({"ok": True, "text": "가드레일: 한국어로 다시 씀"})
+        if leak := leaks(out):   # 다시 써도 털어놓으면 대사는 쓰되 비밀 상태는 열지 않는다(DM이 열 때까지 잠긴 채)
+            out["revealed"] = [sid for sid in out["revealed"] if sid not in locked]
+            guard.append({"ok": False, "text": f"가드레일: 다시 써도 잠긴 비밀({', '.join(leak)})을 털어놓음. 대사는 그대로 두고 비밀은 잠근 채 둠"})
+        elif tried_leak:
+            guard.append({"ok": True, "text": "가드레일: 잠긴 비밀을 털어놓지 않게 다시 씀"})
         out["_guard"] = guard
         out["_doc"] = doc
         return out
@@ -570,11 +601,18 @@ class Session:
 
     # ---- 에피소드 정리 ----
     def _episode(self) -> dict:
+        """앞쪽 턴을 요약으로 묶고, 요약에서 사라질 원문 디테일(말, 물건과 그 위의 글, 약속, 정한 것)은 떡밥 풀에 "오늘 밤 T#~T#" 출처로 넣는다."""
         out = self.llm.json(self.prompt("episode"), render.episode_doc(self.memory), EPISODE_SCHEMA, label="dm-episode")
         if not out["close"]:
             return {"closed": False, "text": f"묶을 에피소드 없음: {out['why']}", "raw": out}
         ok, msg = self.memory.close_episode(out["until_turn"], out["title"], out["summary"], out["memories"])
-        return {"closed": ok, "text": msg, "raw": out}
+        result = {"closed": ok, "text": msg, "raw": out, "notes": []}
+        if ok:
+            ep = self.memory.episodes[-1]
+            raw = "\n".join(x.get(k) or "" for x in ep.pop("raw") for k in ("user", "narration", "reply"))
+            ep["details"], notes = self.details.add_episode_details(out.get("details") or [], tuple(ep["turns"]), raw)
+            result["notes"] = [{"ok": a, "text": b} for a, b in notes]
+        return result
 
     # ---- 기준선: 캐릭터 프롬프트만 ----
     def _baseline(self, user_input: str) -> str:
@@ -590,7 +628,7 @@ class Session:
         return {
             "n": self.n, "name": self.name, "scenario": {"id": self.scenario, **self.world.scenario},
             "world": self.world.snapshot(), "baseline": self.baseline_on,
-            "details": [{k: d.get(k) for k in ("id", "seed", "affordances", "status", "uses", "source", "episode", "kind")} for d in self.details.items],
+            "details": [{k: d.get(k) for k in ("id", "seed", "affordances", "status", "uses", "source", "episode", "kind", "origin")} for d in self.details.items],
             "relationship": self.relation.snapshot() if self.relation else None,
             "character": {"dynamic": c["dynamic"], "goals": c["goals"],
                           "secrets": [{k: s.get(k) for k in ("id", "mode", "cover", "fact", "status", "opened_turn", "revealed_turn")} for s in c["secrets"]]},

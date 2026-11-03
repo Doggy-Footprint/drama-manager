@@ -1,7 +1,7 @@
 """월드 모델, 떡밥, 캐릭터 특성, 기억. 꼭 지켜야 할 규칙은 프롬프트가 아니라 여기서 코드로 막는다.
 
 - 시간은 거꾸로 가지 않는다. 배터리는 쓰면 줄고 충전 중일 때만 오른다. 0이 되면 휴대폰이 꺼지고, 충전으로 다시 켜진다.
-- 이벤트는 한 번만 일어나고, 정해진 시간 창 안에서만 일어난다. 핵심 이벤트는 시작 5분이 지나면 코드가 일으킨다.
+- 이벤트는 한 번만 일어나고, 정해진 시간 창 안에서만 일어난다. 핵심 이벤트는 시간 창이 열리고 5분이 지나도 안 일어났으면 코드가 일으킨다.
 
 이야기(시나리오)마다 scenarios/<id>/ 아래에 world.yaml, character.yaml, details.yaml이 있다.
 history.yaml(선택)이 있으면 둘의 지난 만남과 관계 상태로 시작한다.
@@ -24,6 +24,7 @@ PHONE_USES = ["idle", "photos", "searching", "calling"]
 BEATS = ["setup", "complication", "payoff", "breather", "climax", "resolution"]
 EXPANSION_EVENT_CHANCE = 0.2
 DETAIL_COOLDOWN = 3   # 실제로 쓰인 떡밥은 검색 후보에서 빠진다. 처음 3턴, 쓰일 때마다 두 배(3, 6, 12…)
+MAX_ADVANCE = 180     # 한 턴에 흐를 수 있는 최대 분(dm.md에도 적혀 있다)
 
 
 def josa(word: str, pair: str) -> str:
@@ -133,8 +134,10 @@ def apply_effects(effects: dict | None, *, world: "World", relation: "Relationsh
     return [(ok, f"효과({source}): {msg}") for ok, msg in out if msg]
 
 
-def validate_schema(world: "World", relation: "Relationship | None", details: "Details") -> list[str]:
-    """이벤트와 충전 조건이 코드가 아는 어휘와 이 이야기에 있는 id만 쓰는지 본다. 틀린 곳의 목록(없으면 빈 목록)."""
+def validate_schema(world: "World", relation: "Relationship | None", details: "Details",
+                    character: "Character | None" = None) -> list[str]:
+    """이벤트, 충전 조건, 목표의 after_secret, 떡밥의 planted_by가 코드가 아는 어휘와 이 이야기에 있는 id만 쓰는지 본다.
+    틀린 곳의 목록(없으면 빈 목록)."""
     errors = []
     stats = set(relation.stats) if relation else set()
     stages = {s["id"] for s in relation.stages} if relation else set()
@@ -204,6 +207,16 @@ def validate_schema(world: "World", relation: "Relationship | None", details: "D
             errors.append(f"{where}: duration은 양의 정수(분)")
     for i, alt in enumerate(world.data["states"]["battery"].get("charge_from") or []):
         check_req(f"충전 조건 {i + 1}", alt)
+    for d in details.items:   # 이벤트 효과로만 나오는 떡밥: 그 이벤트가 실제로 이 떡밥을 plant해야 한다
+        if pb := d.get("planted_by"):
+            e = world.event(pb)
+            if not e or d["id"] not in ((e.get("effects") or {}).get("plant") or []):
+                errors.append(f"떡밥 {d['id']}: planted_by {pb}가 이 떡밥을 plant하지 않는다")
+    if character:
+        secret_ids = {s["id"] for s in character.data["secrets"]}
+        for g in character.data["goals"]:
+            if g.get("after_secret") and g["after_secret"] not in secret_ids:
+                errors.append(f"목표 {g['id']}: 없는 비밀 {g['after_secret']}")
     return errors
 
 
@@ -383,7 +396,8 @@ class World:
 
     # --- 쓰기(검증 포함). 각 함수는 (성공, 설명)을 돌려준다 ---
     def advance(self, minutes: int, phone_use: str) -> list[str]:
-        minutes = max(0, min(int(minutes), 90))
+        """시간을 앞으로만 MAX_ADVANCE분까지, 끝 시각까지 흘린다. 실제로 흐른 분은 minute - prev_minute이다."""
+        minutes = max(0, min(int(minutes), MAX_ADVANCE))
         self.prev_minute = self.minute
         notes = []
         bat = self.data["states"]["battery"]
@@ -437,7 +451,7 @@ class World:
         return True, f"이벤트 발생: {event_id}"
 
     def forced_core(self, turn: int, gate=None) -> list[dict]:
-        """핵심 이벤트는 시작 5분이 지나도 안 일어났으면 코드가 일으킨다.
+        """핵심 이벤트는 시간 창이 열리고 5분이 지나도 안 일어났으면 코드가 일으킨다.
         한 턴에 시간이 창을 통째로 건너뛰어도(21:58 → 22:25) 놓치지 않게, 이번 턴에 흐른 구간이 창과 겹치면 일으킨다.
         requires가 있으면 맞을 때만 일으킨다."""
         out = []
@@ -531,7 +545,7 @@ class Details:
             for d in ep.get("details", []):
                 items.append({"id": d["id"], "seed": d["text"], "affordances": d["affordances"], "where": [],
                               "status": "planted", "uses": [], "source": "지난 만남", "episode": ep["id"],
-                              "episode_title": ep["title"], "kind": d.get("kind", "")})
+                              "episode_title": ep["title"], "kind": d.get("kind", ""), "origin": f"지난 만남: {ep['title']}"})
         return cls(items=items)
 
     def recalled(self, did: str) -> bool:
@@ -564,9 +578,11 @@ class Details:
         return base * 2 ** (k - 1) if k else 0
 
     def candidates(self, turn: int, base: int = DETAIL_COOLDOWN) -> list[dict]:
-        """아직 거두지 않았고, 쿨다운이 지난 떡밥."""
+        """아직 거두지 않았고, 쿨다운이 지난 떡밥. planted_by가 있는 떡밥은 그 이벤트 효과로 뿌려지기 전엔 후보가 아니다."""
         out = []
         for d in self.items:
+            if d.get("planted_by") and d["status"] == "unplanted":
+                continue
             last = self.last_realized(d["id"])
             if d["status"] != "paid_off" and not (last and turn - last["turn"] < self.cooldown(d["id"], base)):
                 out.append(d)
@@ -599,8 +615,46 @@ class Details:
         did = f"{'u' if source == '유저' else 's'}{turn}_{sum(1 for d in self.items if d['source'] == source)}"
         self.items.append({"id": did, "seed": text, "affordances": affordances, "where": [], "status": "planted",
                            "uses": [{"turn": turn, "mode": "plant", "how": f"{source}가 직접 말함", "realized": True, "by": source}],
-                           "source": source})
+                           "source": source, "origin": f"오늘 밤 T{turn}"})
         return did
+
+    def add_episode_details(self, items: list[dict], span: tuple[int, int], raw: str) -> tuple[list[str], list[tuple[bool, str]]]:
+        """에피소드로 묶은 구간의 원문 디테일(history.yaml의 episode details와 같은 형식)을 뿌린 떡밥으로 넣는다.
+        출처는 "오늘 밤 T#~T#"이다. 따옴표 안의 말이 그 구간 원문(raw)에 없으면 지어낸 것으로 보고 받지 않는다."""
+        a, b = span
+        src = _norm(raw)
+        ids, notes = [], []
+        for i, x in enumerate(items):
+            text = (x.get("text") or "").strip()
+            if not text:
+                continue
+            fake = [q for q in quotes(text) if _norm(q) and _norm(q) not in src]
+            if fake:
+                notes.append((False, f"디테일 거절: 인용이 T{a}~T{b} 원문에 없다 ‘{fake[0][:30]}’"))
+                continue
+            slug = re.sub(r"[^a-z0-9_]", "", (x.get("id") or "").lower())[:24] or f"d{i}"
+            did = f"t{a}_{slug}"
+            while self.get(did):
+                did += "_"
+            self.items.append({"id": did, "seed": text, "affordances": list(x.get("affordances") or []), "where": [],
+                               "status": "planted", "uses": [], "source": "오늘 밤", "span": [a, b],
+                               "kind": x.get("kind", ""), "origin": f"오늘 밤 T{a}~T{b}"})
+            ids.append(did)
+            notes.append((True, f"디테일 저장(오늘 밤 T{a}~T{b}, {x.get('kind', '')}): {did}"))
+        return ids, notes
+
+
+QUOTE = re.compile(r"'([^']+)'|\"([^\"]+)\"|‘([^’]+)’|“([^”]+)”")
+
+
+def quotes(text: str) -> list[str]:
+    """문장 안의 따옴표로 묶인 말들."""
+    return ["".join(g) for g in QUOTE.findall(text)]
+
+
+def _norm(s: str) -> str:
+    """인용 대조용: 한글·영문·숫자만 남긴다(문장부호, 띄어쓰기 차이는 보지 않는다)."""
+    return re.sub(r"[^0-9A-Za-z가-힣]", "", s or "")
 
 
 @dataclass
@@ -818,6 +872,7 @@ class Memory:
         return [e for e in self.episodes if not e.get("prior")]
 
     def close_episode(self, until_turn: int, title: str, summary: str, memories: list[str]) -> tuple[bool, str]:
+        """앞쪽 턴을 요약으로 바꾼다. 묶인 원문 턴은 episodes[-1]["raw"]에 잠깐 남겨, 원문 디테일을 뽑아 대조하는 데 쓴다."""
         closable = [t for t in self.turns[:-self.keep_raw]] if len(self.turns) > self.keep_raw else []
         if not closable or until_turn < closable[0]["n"]:
             return False, "에피소드 보류: 묶을 턴이 없다"
@@ -825,6 +880,6 @@ class Memory:
         span = [t for t in self.turns if t["n"] <= until_turn]
         self.turns = [t for t in self.turns if t["n"] > until_turn]
         self.episodes.append({"title": title, "summary": summary, "turns": [span[0]["n"], span[-1]["n"]],
-                              "clock": [span[0]["clock"], span[-1]["clock"]]})
+                              "clock": [span[0]["clock"], span[-1]["clock"]], "details": [], "raw": span})
         self.long_term.extend(memories)
         return True, f"에피소드 '{title}' (T{span[0]['n']}~T{span[-1]['n']})"

@@ -616,7 +616,7 @@ function renderTab() {
     const cnt = (s) => state.details.filter(d => d.status === s).length;
     body.innerHTML = `<div style="font-size:12px;color:var(--muted);margin-bottom:8px">뿌림 ${cnt("planted")} · 거둠 ${cnt("paid_off")} · 아직 ${cnt("unplanted")} — 트리거 없이 쓸모(affordances)만 적어 두고, DM이 장면에 필요한 쓸모로 고른다. 거두지 못한 떡밥은 디테일로 남는다.</div>
       <div class="dgrid">${ds.map(d => `<div class="det ${d.status}">
-        <div class="top"><span class="id">${esc(d.id)}${d.source === "유저" ? " · 유저가 말함" : ""}${d.episode ? " · 지난 만남(" + esc(d.kind || "") + ")" : ""}</span><span class="st ${d.status}">${{unplanted:"아직",planted:"뿌림",paid_off:"거둠"}[d.status]}</span></div>
+        <div class="top"><span class="id">${esc(d.id)}${d.source === "유저" ? " · 유저가 말함" : ""}${d.kind && d.origin ? " · " + esc(d.origin) + "(" + esc(d.kind) + ")" : ""}</span><span class="st ${d.status}">${{unplanted:"아직",planted:"뿌림",paid_off:"거둠"}[d.status]}</span></div>
         <div>${esc(d.seed)}</div><div class="aff">쓸모: ${esc((d.affordances || []).join(", "))}</div>
         ${d.uses && d.uses.length ? `<div class="uses">${d.uses.map(u => `<span class="${u.realized === false ? "use-try" : ""}" title="${u.realized === false ? "DM이 골랐지만 대사·지문에 나오지 않음" : esc(u.by || "")}">T${u.turn} <span class="mode ${u.mode}">${u.mode}</span></span>`).join(" ")}</div>` : ""}
       </div>`).join("")}</div>`;
