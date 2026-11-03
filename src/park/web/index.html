@@ -556,7 +556,7 @@ function renderTab() {
   }
 }
 
-// README의 "아이디어" 절. 목록(-, 들여쓴 -)과 **굵게**, `코드`만 그린다
+// docs/demo-prep.md의 "Next IDEA" 절. 목록(-, 들여쓴 -)과 **굵게**, `코드`만 그린다
 let IDEAS = null;
 async function renderIdeas(body) {
   if (IDEAS === null) {
@@ -571,9 +571,9 @@ async function renderIdeas(body) {
     if (m && !m[1]) items.push({ head: m[2], sub: [] });
     else if (m && items.length) items[items.length - 1].sub.push(m[2]);
   }
-  body.innerHTML = items.length ? `<div style="font-size:12px;color:var(--muted);margin-bottom:8px">데모 뒤에 이어 갈 방향. README의 "아이디어" 절과 같다.</div>
+  body.innerHTML = items.length ? `<div style="font-size:12px;color:var(--muted);margin-bottom:8px">데모 뒤에 이어 갈 방향. docs/demo-prep.md의 "Next IDEA" 절과 같다.</div>
     <div class="ideas">${items.map(it => `<div class="idea"><div>${inline(it.head)}</div>${it.sub.length ? `<ul>${it.sub.map(x => `<li>${inline(x)}</li>`).join("")}</ul>` : ""}</div>`).join("")}</div>`
-    : `<div class="empty">README에 아이디어가 없다.</div>`;
+    : `<div class="empty">docs/demo-prep.md에 Next IDEA가 없다.</div>`;
 }
 
 function renderHeader() {
