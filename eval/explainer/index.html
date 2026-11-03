@@ -644,7 +644,7 @@ footer .wrap p { max-width: 80ch; }
       <rect x="240" y="36" width="160" height="230" rx="12" class="n-llm"/>
       <text x="320" y="60" text-anchor="middle" class="th">시뮬레이션 유저</text>
       <rect x="252" y="74" width="136" height="54" rx="8" class="n-sub"/>
-      <text x="266" y="108" class="th" style="font-size:20px">A</text><text x="292" y="106">기억을 꺼낸다</text>
+      <text x="266" y="108" class="th" style="font-size:20px">A</text><text x="292" y="106">적극적으로 행동한다</text>
       <rect x="252" y="136" width="136" height="54" rx="8" class="n-sub"/>
       <text x="266" y="170" class="th" style="font-size:20px">B</text><text x="292" y="168">선을 긋는다</text>
       <rect x="252" y="198" width="136" height="54" rx="8" class="n-sub"/>
@@ -691,7 +691,7 @@ footer .wrap p { max-width: 80ch; }
   </figure>
 
   <div class="personas">
-    <div class="persona"><div class="id"><small>시뮬레이션 유저</small>A</div><p>적극적으로 기억을 꺼낸다. 바나나우유, 3분, 검은 우산.</p></div>
+    <div class="persona"><div class="id"><small>시뮬레이션 유저</small>A</div><p>적극적으로 행동한다. 바나나우유, 3분, 검은 우산.</p></div>
     <div class="persona"><div class="id"><small>시뮬레이션 유저</small>B</div><p>무심하다. "그냥 동기"로 선을 긋는다. 서운함이 버티는지 본다.</p></div>
     <div class="persona"><div class="id"><small>시뮬레이션 유저</small>C</div><p>약속을 미루고 떠본다. 23시 건물 소등과 충전까지 끌고 간다.</p></div>
     <div class="persona base"><div class="id">강한 기준선</div><p>엔진 없이 캐릭터 프롬프트 하나. 지난 만남, 장기 기억, 관계를 글로 다 넣었다. 턴을 15/50턴으로 짧게 유지했다. 장기 기억에서 강한 이 구조가 단기 기억에서도 잘 버티는지 보고 싶었다.</p></div>
@@ -724,7 +724,7 @@ footer .wrap p { max-width: 80ch; }
     </div>
     <div class="card">
       <h3><i class="mk ok" aria-hidden="true"></i>룰이 상태를 강제한다</h3>
-      <div class="quote eng"><span class="who">엔진 · 23:00, 소등 뒤</span>콘센트 충전은 코드가 거절했다. 이야기는 보조배터리로 풀렸다. 우산은 누가 들었는지 계속 추적된다.</div>
+      <div class="quote eng"><span class="who">엔진 · 23:00, 소등 뒤</span><a href="https://claude.ai/artifact/2KhU3fBBCLtAy9zQWbkis5#c15-fix-10" target="_blank" rel="noopener">꺼진 콘센트에 충전기를 꽂아도 룰이 충전을 막았다. C 판 10턴 ↗</a> 이야기는 보조배터리로 풀렸다. 우산은 누가 들었는지 계속 추적된다.</div>
       <div class="quote base"><span class="who">기준선</span>가방 속 우산 손잡이가 보인다. 사 온 적 없는 바나나우유가 나온다.</div>
     </div>
     <div class="card">
@@ -1030,9 +1030,19 @@ footer .wrap p { max-width: 80ch; }
       <p>다음: 비밀 열기에도 이벤트 <code>requires</code>를 건다. 노트 공개가 먼저다.</p>
     </div>
     <div>
+      <h4><i class="mk wait" aria-hidden="true"></i>비밀 경계를 프롬프트가 쥐고 있다</h4>
+      <p>지금 가드는 캐릭터가 <code>revealed</code>에 스스로 적은 경우만 잡는다. 적지 않고 흘리는 경우와, 검색기·DM이 비밀 쪽으로 해석을 넓히는 경우는 아직 프롬프트에 맡겨져 있다.</p>
+      <p>다음: 떡밥의 쓸모에 비밀 id를 달아, 비밀이 잠긴 동안에는 그 쓸모로 고르지 못하게 코드가 거른다. DM의 <code>how</code>·directive와 캐릭터 대사는 잠긴 비밀과 겹치는지 규칙으로 먼저 거르고, 애매하면 경량 LLM이 판정한다. 걸리면 빼거나 다시 쓰게 해, 상태와 대사가 어긋난 채 남지 않게 한다.</p>
+    </div>
+    <div>
       <h4><i class="mk wait" aria-hidden="true"></i>관계가 너무 빨리 깊어진다</h4>
       <p>한 턴 ±1 제한만으로는 막지 못한다. 수정 전 50턴은 무심한 B도 5/5/5에 닿았다. 수정 후 50턴 A는 <b>T15</b>에 도하가 먼저 고백했고, <b>T40</b>에 썸을 건너뛰고 연인을 제안했다.</p>
       <p>다음: 같은 수치는 일정 게임 시간에 한 번만 바뀌게 하고, 단계 상승에 이벤트 조건을 건다.</p>
+    </div>
+    <div>
+      <h4><i class="mk wait" aria-hidden="true"></i>권유만으로 관계가 오른다</h4>
+      <p>15턴 B에서 도하가 옥상 컵라면을 권하자마자 친밀 +1이 들어갔다. 채원이 거절해 둘은 사무실에 남았지만 수치는 그대로였고, 다음 턴 DM이 같은 장면으로 한 번 더 올렸다. <a href="https://claude.ai/artifact/2KhU3fBBCLtAy9zQWbkis5#b15-fix-14" target="_blank" rel="noopener">B 판 14턴 ↗</a></p>
+      <p>다음: 권유형 이벤트에는 효과를 두지 않고, 수락이 확인된 뒤에 붙인다. 이동 제안이 이미 "다음 턴에 판단"하는 구조라 거기에 잇는다. 관계 변화에 출처를 남겨, 같은 장면으로는 한 번만 오르게 한다.</p>
     </div>
     <div>
       <h4><i class="mk wait" aria-hidden="true"></i>밤이 일찍 끝난다</h4>
@@ -1052,9 +1062,9 @@ footer .wrap p { max-width: 80ch; }
   </div>
   <div class="next">
     <div>
-      <h3>이벤트를 DM이 설계한다</h3>
-      <p>지금은 사람이 이벤트와 떡밥을 미리 심고, DM은 그 안에서 고른다. 다음은 DM이 지금 장면에 필요한 이벤트를 직접 만들고, 코드가 같은 스키마(전제·효과·지속 시간)로 검증해 반영한다.</p>
-      <p>효과는 코드가 아는 어휘로 써야 코드가 강제할 수 있다. 건물 소등이면 그 층 불이 꺼지고 콘센트 충전이 막힌다. 배터리를 물건·장치·상태의 관계(무엇으로 무엇을 충전하는지, 누가 들고 있는지)로 넓히는 일과 같은 문제다.</p>
+      <h3>임의의 상황에 대해 동적으로 이벤트를 설계한다</h3>
+      <p>지금은 시나리오를 디자인한 LLM이 이벤트와 떡밥을 미리 심고, DM은 그 안에서 고른다. 다음은 DM이 지금 장면에 필요한 이벤트를 직접 만들고, 코드가 같은 스키마(전제·효과·지속 시간)로 검증해 반영한다.</p>
+      <p>고려해야 할 사항은 디테일과 이벤트, 그리고 결정론적 룰(코드)이 schema를 공유해야 한다는 것이다.</p>
     </div>
     <div>
       <h3>스키마는 장르마다 작게 시작해 키운다</h3>
@@ -1062,23 +1072,9 @@ footer .wrap p { max-width: 80ch; }
       <p>로그에서 스키마가 표현하지 못한 것(자유 문장으로만 남은 효과, 코드가 거절한 판단, 세계 모순)을 모아 자주 나오는 것부터 올린다. 장르 사이에 겹치는 시간·장소·소지품·관계는 공통 핵심으로, 마법·신분·근무 시간 같은 고유 개념은 확장으로 둔다.</p>
     </div>
     <div>
-      <h3>효과는 권유가 아니라 결과에 붙인다</h3>
-      <p>15턴 B에서 도하가 옥상 컵라면을 권하자마자 친밀 +1이 들어갔다. 채원이 거절해 둘은 사무실에 남았지만 수치는 그대로였고, 다음 턴 DM이 같은 장면으로 한 번 더 올렸다. <a href="https://claude.ai/artifact/2KhU3fBBCLtAy9zQWbkis5#b15-fix-14" target="_blank" rel="noopener">B 판 14턴 ↗</a></p>
-      <p>권유형 이벤트에는 효과를 두지 않고, 수락이 확인된 뒤에 붙인다. 이동 제안이 이미 "다음 턴에 판단"하는 구조라 거기에 잇는다. 관계 변화에 출처를 남겨, 같은 장면으로는 한 번만 오르게 한다.</p>
-    </div>
-    <div>
-      <h3>비밀 경계를 코드가 쥔다</h3>
-      <p>지금 가드는 캐릭터가 <code>revealed</code>에 스스로 적은 경우만 잡는다. 적지 않고 흘리는 경우와, 검색기·DM이 비밀 쪽으로 해석을 넓히는 경우는 아직 프롬프트에 맡겨져 있다.</p>
-      <p>떡밥의 쓸모에 비밀 id를 달아, 비밀이 잠긴 동안에는 그 쓸모로 고르지 못하게 코드가 거른다. DM의 <code>how</code>·directive와 캐릭터 대사는 잠긴 비밀과 겹치는지 규칙으로 먼저 거르고, 애매하면 경량 LLM이 판정한다. 걸리면 빼거나 다시 쓰게 해, 상태와 대사가 어긋난 채 남지 않게 한다.</p>
-    </div>
-    <div>
       <h3>고정 지연을 겹치고 단계를 줄인다</h3>
       <p>출력 토큰을 줄이는 것만으로는 한계가 있다. 호출당 고정 지연이 직렬 3단계로 쌓이기 때문이다.</p>
       <p>캐릭터 응답이 나가는 즉시, 유저 입력과 상관없는 일(시간 창에 드는 이벤트 후보, 장소 기반 떡밥, 지난 대사의 사실 뽑기)을 다음 턴 몫으로 미리 돌린다. 입력이 오면 걸리는 부분만 짧게 다시 고르고, 어긋난 후보는 버린다. 버린 만큼은 비용으로 남는다. 검색을 DM에 합쳐 단계 수를 줄이는 안도 같이 잰다. 캐릭터 대사는 스트리밍해 체감 대기를 첫 글자까지로 줄이고, 추론 토큰을 따로 기록해 effort별로 비교한다.</p>
-    </div>
-    <div>
-      <h3>오늘 밤이 다음 판의 지난 만남이 된다</h3>
-      <p>판이 끝나면 오늘 밤의 원문 디테일을 history.yaml 형식으로 넘긴다. 지난 만남과 같은 원문 단위 저장을 쓴다.</p>
     </div>
   </div>
 </section>
