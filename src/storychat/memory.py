@@ -5,8 +5,12 @@ import re
 from dataclasses import asdict, dataclass, field
 
 KEEP_RAW_TURNS = 10      # 이만큼 지나야 '지나간 이야기' 후보가 된다
+MIN_SEGMENT_TURNS = 3     # 작은 사건마다 조각나지 않도록 에피소드의 최소 길이
 RAW_BUDGET_TURNS = 24    # 이보다 원문이 길면 살아 있어도 가장 오래된 구간을 압축한다
 ALIVE_RECHECK_TURNS = 5
+
+
+GESTURE = re.compile(r"\([^)]*\)")
 
 
 def squash(text: str) -> str:
@@ -14,9 +18,9 @@ def squash(text: str) -> str:
 
 
 def quoted(quote: str, source: str) -> bool:
-    """인용이 원문에 있는가. 띄어쓰기와 문장부호 차이는 무시한다."""
-    q = squash(quote)
-    return len(q) >= 2 and q in squash(source)
+    """인용이 원문에 있는가. 띄어쓰기, 문장부호, 사이에 끼어든 괄호 몸짓의 차이는 무시한다."""
+    q = squash(GESTURE.sub("", quote or ""))
+    return len(q) >= 2 and (q in squash(source) or q in squash(GESTURE.sub("", source or "")))
 
 
 @dataclass

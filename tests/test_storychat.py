@@ -180,7 +180,7 @@ def test_relationship_shift_needs_branch():
 
 def test_compress_is_retrospective_and_keeps_recent_raw():
     n = KEEP_RAW_TURNS + 6
-    summary = {"alive": False, "title": "정문에서 만남", "summary": "정문에서 만났다.", "relationship": "새 설명"}
+    summary = {"title": "정문에서 만남", "summary": "정문에서 만났다.", "relationship": "새 설명"}
     engine, llm = make({"judge": [JUDGE] * n, "analysis": [ANALYSIS] * n, "compress": [summary]})
     engine.step(None)
     for i in range(2, 5):
@@ -200,13 +200,12 @@ def test_compress_is_retrospective_and_keeps_recent_raw():
 
 
 def test_alive_segment_is_postponed():
-    summary = {"alive": True, "title": "t", "summary": "s", "relationship": "r"}
     n = KEEP_RAW_TURNS + 4
-    engine, llm = make({"judge": [JUDGE] * n, "analysis": [ANALYSIS] * n, "compress": [summary]})
-    engine.boundaries.add(2)
-    for i in range(KEEP_RAW_TURNS + 2):
+    engine, llm = make({"judge": [JUDGE] * n, "analysis": [ANALYSIS] * n, "alive": [{"alive": True}]})
+    engine.boundaries.add(4)
+    for i in range(KEEP_RAW_TURNS + 3):
         engine.step(None if i == 0 else f"말{i}")
-    assert len(prompts(llm, "compress")) == 1 and engine.raw_start == 1
+    assert len(prompts(llm, "alive")) == 1 and not prompts(llm, "compress") and engine.raw_start == 1
     assert engine.compress_after > engine.state.turn
 
 
@@ -323,3 +322,44 @@ def test_spoken_hidden_stops_rising_but_stays_known():
     call = [c for c in llm.calls if c["label"] == "character"][-1]
     assert "올라오는 것" not in call["messages"][-1]["content"]
     assert fact in call["system"] and "이미 상대에게 털어놓은 것" in call["system"]
+
+
+def test_quote_may_skip_gesture_between_sentences():
+    reply = "...부산 지사. 이번 달 안에 답해야 된대. (숨을 내쉰다) 나 아직 말 안 했어."
+    assert quoted("이번 달 안에 답해야 된대. 나 아직 말 안 했어.", reply)
+    assert quoted("(숨을 내쉰다) 나 아직", reply)
+    assert not quoted("나 이미 말했어", reply)
+
+
+def test_payoff_is_also_considered_when_world_just_changed():
+    engine, llm = make({"judge": [JUDGE, JUDGE], "analysis": [{**ANALYSIS, "shown_said_quote": "사람들 많다"}, ANALYSIS, ANALYSIS],
+                        "character": ["저기 사람들 많다.", "응.", "응."], "payoff": [{"detail_id": None, "how": "dialogue", "fact": ""}]})
+    engine.last_seed_turn = -5
+    engine.step(None)
+    engine.step("응")
+    assert prompts(llm, "payoff") == []  # 평온하고 세계도 그대로면 살피지 않는다
+    engine.state.clock = parse_hhmm("19:00")
+    engine.step("춥다")
+    assert len(prompts(llm, "payoff")) == 1
+
+
+def test_plan_knows_what_already_happened():
+    engine, llm = make({"judge": [JUDGE], "analysis": [{**ANALYSIS, "action_type": "move", "move_to": "광장"}]})
+    engine.world_log.append({"turn": 1, "clock": "17:40", "id": "parade", "text": "퍼레이드가 시작된다."})
+    engine.step(None)
+    plan = prompts(llm, "plan")[-1]
+    assert "퍼레이드가 시작된다." in plan and "불꽃이 터지기" in plan
+
+
+def test_short_segments_wait_and_compress_sees_only_recent_talk():
+    summary = {"title": "t", "summary": "s", "relationship": "r"}
+    n = KEEP_RAW_TURNS + 8
+    engine, llm = make({"judge": [JUDGE] * n, "analysis": [ANALYSIS] * n, "alive": [{"alive": False}], "compress": [summary]})
+    engine.boundaries |= {2, 3, 4}
+    for i in range(KEEP_RAW_TURNS + 3):
+        engine.step(None if i == 0 else f"말{i}")
+    alive = next(c["prompt"] for c in llm.calls if c["label"] == "alive")
+    written = next(c["prompt"] for c in llm.calls if c["label"] == "compress")
+    assert engine.raw_start == 4  # T2, T3 경계는 건너뛰고 최소 길이를 채운 T4에서 자른다
+    assert f"말{KEEP_RAW_TURNS + 2}" in alive and "말5" not in alive  # 판단은 최근 대화만 본다
+    assert "말2" in written and "말3" not in written  # 요약은 그 구간만 본다

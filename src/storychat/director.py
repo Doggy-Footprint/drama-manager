@@ -11,7 +11,7 @@ from .schema import Checkpoint, validate_trigger
 
 PROMPTS = Path(__file__).parent / "prompts"
 DATA = Path(__file__).parent / "data"
-DIRECTOR_PROMPT = "director_v4"
+DIRECTOR_PROMPT = "director_v6"
 BASE_TOPICS = ["영화", "회사 일", "둘의 장래", "음식", "놀이기구", "지난 추억", "우리 관계"]
 
 PLAN_SCHEMA = {
@@ -82,11 +82,11 @@ CLOSE_SCHEMA = {
                    "relationship": {"type": "string"}},
     "required": ["last_title", "last_summary", "oneline", "relationship"],
 }
+ALIVE_SCHEMA = {"type": "object", "properties": {"alive": {"type": "boolean"}}, "required": ["alive"]}
 COMPRESS_SCHEMA = {
     "type": "object",
-    "properties": {"alive": {"type": "boolean"}, "title": {"type": "string"}, "summary": {"type": "string"},
-                   "relationship": {"type": "string"}},
-    "required": ["alive", "title", "summary", "relationship"],
+    "properties": {"title": {"type": "string"}, "summary": {"type": "string"}, "relationship": {"type": "string"}},
+    "required": ["title", "summary", "relationship"],
 }
 
 
@@ -164,8 +164,8 @@ class Director:
         prompt = f"큰 에피소드: {big_title}\n작은 에피소드:\n{smalls}\n\n최근 대화:\n{transcript}"
         return list(self.llm.json(self.prompts["drill_system"], prompt, DRILL_SCHEMA, label="drill").get("ids", []))
 
-    def payoff(self, planted: str, transcript: str) -> dict:
-        prompt = f"살포된 디테일:\n{planted}\n\n최근 대화:\n{transcript}"
+    def payoff(self, planted: str, transcript: str, events: str = "") -> dict:
+        prompt = f"이미 일어난 사건:\n{events or '없음'}\n\n살포된 디테일:\n{planted}\n\n최근 대화:\n{transcript}"
         return self.llm.json(self.prompts["payoff_system"], prompt, PAYOFF_SCHEMA, label="payoff")
 
     def close(self, relationship: str, episodes: str, remaining: str, events: str) -> dict:
@@ -176,7 +176,12 @@ class Director:
     def analyze(self, text: str) -> dict:
         return self.llm.json(self.prompts["analysis_system"], text, ANALYSIS_SCHEMA, label="analysis")
 
-    def compress(self, relationship: str, segment: str, later: str, events: str = "") -> dict:
+    def alive(self, segment: str, recent: str) -> bool:
+        prompt = f"[지난 구간]\n{segment}\n\n[최근 대화]\n{recent}"
+        return bool(self.llm.json(self.prompts["alive_system"], prompt, ALIVE_SCHEMA, label="alive").get("alive"))
+
+    def compress(self, relationship: str, segment: str, events: str = "") -> dict:
+        """뒤의 대화를 주지 않아 요약이 구간 밖으로 넘어갈 수 없다."""
         prompt = (f"현재 관계 설명: {relationship}\n\n이 구간에 세계에 일어난 일:\n{events or '없음'}\n\n"
-                  f"정리할 구간:\n{segment}\n\n그 뒤의 대화:\n{later}")
+                  f"정리할 구간:\n{segment}")
         return self.llm.json(self.prompts["compress_system"], prompt, COMPRESS_SCHEMA, label="compress")

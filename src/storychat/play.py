@@ -13,7 +13,7 @@ import pickle
 from pathlib import Path
 
 from .director import DIRECTOR_PROMPT, load_data, load_prompt
-from .engine import Engine, EventLog
+from .engine import CHARACTER_PROMPT, Engine, EventLog
 from .llm import GENERATION_EFFORT, GENERATION_MODEL, ClaudeLLM
 from .schema import hhmm
 
@@ -97,7 +97,7 @@ def main() -> None:
     elif args.command == "start":
         log = EventLog(RUNS / f"{args.name}.jsonl")
         log.emit("run_meta", card=args.card, style=args.style, model=GENERATION_MODEL, effort=GENERATION_EFFORT, max_turns=MAX_TURNS,
-                 user_source="claude-sonnet-5-5 subagent", prompts={"character": "character_v1", "director": DIRECTOR_PROMPT, "user": USER_PERSONA})
+                 user_source="claude-sonnet-5-5 subagent", prompts={"character": CHARACTER_PROMPT, "director": DIRECTOR_PROMPT, "user": USER_PERSONA})
         engine = Engine(ClaudeLLM(on_call=lambda call: log.emit("llm_call", **call)), args.card, log=log)
         print(advance(engine, args.name, None))
     elif args.command == "say":

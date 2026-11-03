@@ -12,7 +12,7 @@ from pathlib import Path
 
 from . import world as w
 from .director import BASE_TOPICS, Director, load_data, load_prompt
-from .memory import (ALIVE_RECHECK_TURNS, KEEP_RAW_TURNS, RAW_BUDGET_TURNS, DetailLedger, EpisodeStore,
+from .memory import (ALIVE_RECHECK_TURNS, KEEP_RAW_TURNS, MIN_SEGMENT_TURNS, RAW_BUDGET_TURNS, DetailLedger, EpisodeStore,
                      RelationshipMemory, quoted, squash)
 from .schema import FRAME_AXES, Checkpoint, TriggerContext, evaluate, hhmm, parse_hhmm, topics_in, validate_trigger
 
@@ -24,6 +24,8 @@ PAYOFF_COOLDOWN_TURNS = 5
 NO_REPLY = "(응답 없음)"
 OPENING = "(방금 만났다. 네가 먼저 말을 건넨다)"
 ANALYSIS_CONTEXT_MESSAGES = 8
+COMPRESS_RECENT_MESSAGES = 6
+CHARACTER_PROMPT = "character_v3"
 
 
 class EventLog:
@@ -61,7 +63,8 @@ class Engine:
         self.log = log or EventLog()
         self.director = Director(llm)
         self.card = load_data("cards", f"{card}.yaml")
-        self.rules = load_prompt("character_v1")["rules"].strip()
+        character = load_prompt(CHARACTER_PROMPT)
+        self.rules, self.format_line = character["rules"].strip(), character["format"]
         seed = load_data("seed.yaml")
         self.history_text = seed["public_history"].strip()
         self.episodes = EpisodeStore(seed["episodes"])
@@ -107,9 +110,12 @@ class Engine:
         spoken = "\n".join(f"- {d.text}" for d in self.ledger.planted()) or "없음"
         s = self.state
         axes = "\n".join(f"{a.label}: {getattr(s, a.name)}" for a in FRAME_AXES)
-        return (f"프레임\n{axes}\n현재 시각: {hhmm(s.clock)}\n"
+        happened = "\n".join(f"- {e['clock']} {e['text']}" for e in self.world_log) or "없음"
+        schedule = "\n".join(f"- {c.inject}" for c in w.WORLD_CHECKPOINTS if c.id not in self.fired) or "없음"
+        return (f"프레임\n{axes}\n현재 시각: {hhmm(s.clock)}, 날씨: {s.temperature}\n"
                 f"인물: {self.card['public'].strip()}\n둘의 지난 시간: {self.history_text}\n"
-                f"현재 사이: {self.relationship.state}\n이미 나온 디테일:\n{spoken}")
+                f"현재 사이: {self.relationship.state}\n이미 일어난 사건:\n{happened}\n"
+                f"세계 시간표에 남은 사건:\n{schedule}\n이미 나온 디테일:\n{spoken}")
 
     def _make_plan(self, changed: list[str]) -> None:
         self.plan_count += 1
@@ -206,7 +212,7 @@ class Engine:
             self.log.emit("memory_recalled", big=big_id, smalls=found)
 
     def _pick_payoff(self, judgement, user_text: str | None) -> dict | None:
-        if not (judgement.tension or judgement.branch):
+        if not (judgement.tension or judgement.branch or self.new_facts):
             return None
         turn = self.state.turn
         if turn - self.last_payoff_turn < PAYOFF_COOLDOWN_TURNS:
@@ -216,7 +222,8 @@ class Engine:
         if not ready:
             return None
         listing = "\n".join(f"- {d.id}: {d.text} (쓰임새: {', '.join(d.affordances)})" for d in ready)
-        raw = self._call_json("payoff", lambda: self.director.payoff(listing, self._recent(user_text)), {})
+        events = "\n".join(f"- {e['clock']} {e['text']}" for e in self.world_log if not e["id"].startswith("frame:"))
+        raw = self._call_json("payoff", lambda: self.director.payoff(listing, self._recent(user_text), events), {})
         detail_id = raw.get("detail_id")
         if detail_id not in {d.id for d in ready}:
             self.log.emit("payoff_none", candidates=[d.id for d in ready], proposed=detail_id)
@@ -304,7 +311,7 @@ class Engine:
                 f"- {h['fact']} (지금까지 숨긴 이유: {h['why_hidden']})" for h in unspoken))
         moment_text = "\n".join(moment)
         said = OPENING if user_text is None and s.turn == 1 else f"상대: {user_text or '(말없이 곁에 있다)'}"
-        messages.append({"role": "user", "content": f"[이번 순간]\n{moment_text}\n\n{said}"})
+        messages.append({"role": "user", "content": f"[이번 순간]\n{moment_text}\n\n{said}\n\n{self.format_line}"})
         return "\n\n".join(system), messages, moment_text
 
     # ── 2단계: 캐릭터 ────────────────────────────────────────
@@ -331,6 +338,9 @@ class Engine:
         unspoken = self._unspoken()
         if unspoken:
             parts.append("[아직 말하지 않은 비밀]\n" + "\n".join(f"{h['id']}: {h['fact']}" for h in unspoken))
+        recorded = [d.text for d in self.ledger.items.values() if d.status != "seed"]
+        if recorded:
+            parts.append("[이미 기록된 디테일]\n" + "\n".join(f"- {t}" for t in recorded))
         default = {"action_type": "short_talk", "move_to": None, "relationship_shift": None, "parted": False,
                    "shown_said_quote": None, "payoff_used_quote": None, "hidden_spoken": [], "new_details": []}
         return self._call_json("analysis", lambda: self.director.analyze("\n".join(parts)), default)
@@ -353,9 +363,13 @@ class Engine:
                 self.log.emit("payoff_unused", id=turn.payoff["id"], quote=quote)
         candidates = {h["id"] for h in self._unspoken()}
         for item in analysis.get("hidden_spoken", []):
-            if item.get("id") in candidates and quoted(item.get("quote", ""), reply):
+            if item.get("id") not in candidates:
+                continue
+            if quoted(item.get("quote", ""), reply):
                 self.spoken.add(item["id"])
                 self.log.emit("hidden_spoken", id=item["id"], quote=item["quote"])
+            else:
+                self.log.emit("hidden_rejected", id=item["id"], reason=f"대사에 없는 인용: {item.get('quote')!r}")
         known = {squash(d.text) for d in self.ledger.items.values()}
         for item in analysis.get("new_details", [])[:1]:
             source_text = turn.user_text if item.get("source") == "user" else reply
@@ -389,7 +403,7 @@ class Engine:
         over = s.turn - self.raw_start + 1 > RAW_BUDGET_TURNS
         if s.turn < self.compress_after and not over:
             return
-        later = sorted(b for b in self.boundaries if b > self.raw_start)
+        later = sorted(b for b in self.boundaries if b >= self.raw_start + MIN_SEGMENT_TURNS)
         end = later[0] if later else None
         if end is None:
             if not over:
@@ -400,19 +414,20 @@ class Engine:
             return
         fmt = lambda m: f"{'상대' if m['role'] == 'user' else '나'}: {m['text']}"
         segment = "\n".join(fmt(m) for m in self.transcript if m["turn"] < end)
-        after = "\n".join(fmt(m) for m in self.transcript if m["turn"] >= end)
+        after = "\n".join(fmt(m) for m in [m for m in self.transcript if m["turn"] >= end][-COMPRESS_RECENT_MESSAGES:])
         events = "\n".join(f"- {e['clock']} {e['text']}" for e in self.world_log if self.raw_start <= e["turn"] < end)
-        raw = self._call_json("compress", lambda: self.director.compress(self.relationship.state, segment, after, events), None)
-        if raw is None:
-            return
-        if raw.get("alive") and not over:
+        alive = self._call_json("alive", lambda: self.director.alive(segment, after), False)
+        if alive and not over:
             self.compress_after = s.turn + ALIVE_RECHECK_TURNS
             self.log.emit("compress_postponed", start=self.raw_start, end=end - 1)
+            return
+        raw = self._call_json("compress", lambda: self.director.compress(self.relationship.state, segment, events), None)
+        if raw is None:
             return
         episode = self.episodes.add_today(raw["title"], raw["summary"], (self.raw_start, end - 1))
         self.transcript = [m for m in self.transcript if m["turn"] >= end]
         self.log.emit("episode_compressed", id=episode.id, title=episode.title, summary=episode.summary,
-                      start=self.raw_start, end=end - 1, forced=over and bool(raw.get("alive")))
+                      start=self.raw_start, end=end - 1, forced=over and alive)
         self.raw_start = end
         if raw.get("relationship") and squash(raw["relationship"]) != squash(self.relationship.state):
             self.relationship.update(raw["relationship"], episode.id, s.turn)
