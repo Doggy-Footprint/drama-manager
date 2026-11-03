@@ -581,6 +581,7 @@ const DATA = /*__DATA__*/null;
 
   // ------------------------------------------------ 상태와 라우팅
   const state = { view: "home", runId: null, pairId: null, n: null, hl: null, filt: store.get("ot-filt", { turns: "all", kind: "all", persona: "all" }) };
+  if (DATA.demo) state.filt = Object.assign({}, state.filt, { turns: "all", kind: "all" });
 
   function parseHash() {
     const h = decodeURIComponent((location.hash || "").replace(/^#/, ""));
@@ -669,7 +670,7 @@ const DATA = /*__DATA__*/null;
       return `<div class="grp-h">${esc(g)}</div>${body}`;
     }).join("");
     const runs = `<section aria-labelledby="h-runs"><div class="sec-h"><h2 id="h-runs">판</h2><span>${RUNS.length}개 · 엔진 ${RUNS.filter((r) => r.kind === "engine").length}, 기준선 ${RUNS.filter((r) => r.kind === "baseline").length}</span></div>
-      <div class="filters">${segF("turns", "턴", [["all", "전체"], ["15", "15턴"], ["50", "50턴"]])}${segF("kind", "종류", [["all", "전체"], ["engine", "엔진"], ["baseline", "기준선"]])}${segF("persona", "채원", [["all", "전체"], ["A", "A"], ["B", "B"], ["C", "C"]])}</div>
+      <div class="filters">${DATA.demo ? "" : segF("turns", "턴", [["all", "전체"], ["15", "15턴"], ["50", "50턴"]]) + segF("kind", "종류", [["all", "전체"], ["engine", "엔진"], ["baseline", "기준선"]])}${segF("persona", "채원", [["all", "전체"], ["A", "A"], ["B", "B"], ["C", "C"]])}</div>
       ${cards}</section>`;
 
     v.innerHTML = intro + `<div class="home-grid">${hl}${runs}</div>`;
@@ -717,7 +718,8 @@ const DATA = /*__DATA__*/null;
       ["kind", "종류", [["engine", "엔진"], ["baseline", "기준선"]]],
       ["persona", "채원", Object.keys(P).map((x) => [x, x])]];
     if (GROUPS.length > 1) dims.unshift(["group", "묶음", GROUPS.map((g) => [g, g])]);
-    return `<div class="filters">${dims.map(([key, label, opts]) => `<span class="seg-g"><span class="seg-l">${label}</span><span class="seg" role="group" aria-label="${label}">${opts.map(([val, txt]) => {
+    const shownDims = DATA.demo ? dims.filter(([key]) => key === "persona") : dims;
+    return `<div class="filters">${shownDims.map(([key, label, opts]) => `<span class="seg-g"><span class="seg-l">${label}</span><span class="seg" role="group" aria-label="${label}">${opts.map(([val, txt]) => {
       const want = Object.assign({ group: r.group, turns: r.turns, kind: r.kind, persona: r.persona }, { [key]: val });
       const exact = RUNS.find((x) => x.group === want.group && String(x.turns) === String(want.turns) && x.kind === want.kind && x.persona === want.persona);
       return `<button type="button" data-sw="${key}" data-v="${esc(val)}" aria-pressed="${String(r[key]) === String(val)}" class="${exact ? "" : "miss"}" title="${exact ? esc(exact.label) : "이 조합의 판이 없어 가장 가까운 판으로 간다"}">${esc(txt)}</button>`;
@@ -916,7 +918,7 @@ const DATA = /*__DATA__*/null;
   function summaryBlocks(S) {
     const known = new Set(["table", "labels", "buckets", "long_memory", "per_run"]);
     const out = [];
-    if (S.table && Array.isArray(S.table.rows) && S.table.rows.length && S.table.rows[0].cells) out.push(`<div><h3>엔진과 기준선 지표</h3>${metricTable(S.table)}</div>`);
+    if (S.table && Array.isArray(S.table.rows) && S.table.rows.length && S.table.rows[0].cells) out.push(`<div><h3>${DATA.demo ? "엔진 지표 · 수정 후 15턴" : "엔진과 기준선 지표"}</h3>${metricTable(S.table)}</div>`);
     else if (S.table) out.push(`<div><h3>표</h3>${renderAny(S.table)}</div>`);
     if (Array.isArray(S.long_memory)) out.push(`<div><h3>장기 기억 시험 (수작업 판정)</h3>${memoryTable(S.long_memory)}</div>`);
     if (S.labels) out.push(`<div><h3>LLM 호출별 턴당 평균 <span style="font-weight:400;color:var(--muted);font-size:13px">입력 k / 출력 k / 호출당 초</span></h3>${labelTable(S.labels)}</div>`);
@@ -953,6 +955,7 @@ const DATA = /*__DATA__*/null;
   const lastPair = store.get("ot-pair", null); if (lastPair && BY[lastPair]) $("#nav-pair").href = "#pair-" + lastPair;
   if (!PAIRS.length) $("#nav-pair").hidden = true;
   $("#brand-title").textContent = SC.title;
+  if (DATA.demo) { $(".brand span").textContent = "플레이 로그 · 수정 후 15턴"; if (!BY[$("#nav-run").getAttribute("href").slice(1)] && RUNS[0]) $("#nav-run").href = "#" + RUNS[0].id; }
   const topEl = $(".top");
   const setTop = () => document.documentElement.style.setProperty("--toph", topEl.offsetHeight + "px");
   setTop();

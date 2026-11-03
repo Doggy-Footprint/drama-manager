@@ -15,7 +15,7 @@
 | `review/*.before.*` | 수정 후 판을 넣기 전의 집계 |
 | `latency/` | 출력 토큰과 지연 분석. `load.py`(호출 모으기), `beforeafter.py`·`ba_clean.py`(f8acd89 전후), `regress.py`(`시간 = a + b·출력` 회귀, `uv run --no-project --with numpy`), `crit.py`(임계 경로), `visible*.py`(보이는 JSON 대비 추론 토큰, `--with tiktoken`) |
 | `baseline_chat.py` | 기준선 단독 대화. `PYTHONPATH=src .venv/bin/python eval/baseline_chat.py new 이름 [--no-memory]`, `say 이름 "말"`. 로그는 `runs/park/baseline/` |
-| `web/build.py`, `web/template.html` | 로그 뷰어 빌드. `RUNS`에 판을 추가하고 `python3 build.py`(레포 위치는 `BUNKER_REPO`). 생성물 `web/index.html`(약 1.2MB)은 게시된 뷰어 v3와 같은 파일이다 |
+| `web/build.py`, `web/template.html` | 로그 뷰어 빌드. `RUNS`에 판을 추가하고 `python3 build.py`(레포 위치는 `BUNKER_REPO`). 생성물 `web/index.html`(약 1.2MB, 13판)은 뷰어 v3와 같은 파일이다. `python3 build.py --demo`는 수정 후 15턴 A·B·C만 담은 `web/demo.html`을 만든다. 지금 게시된 뷰어(v4, 면접 데모용)가 이 파일이다 |
 
 스크립트는 원래 세션 임시 폴더에서 돌렸다. 경로가 안 맞으면 레포 루트 기준으로 고친다.
 

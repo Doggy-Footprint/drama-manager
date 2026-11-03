@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """야근 이야기(overtime) 플레이 로그 뷰어 빌드.
 
-    python3 build.py            # → 같은 폴더의 index.html
+    python3 build.py            # → 같은 폴더의 index.html (전체 13판)
+    python3 build.py --demo     # → demo.html (수정 후 15턴 A·B·C, 면접 데모용)
 
 판을 더하려면 RUNS에 한 줄 넣고 다시 빌드한다(group을 "수정 후"로 두면 그 묶음에 들어간다).
 하이라이트는 HIGHLIGHTS에 steps(run id, 턴 번호, 짧은 설명)로 적는다.
@@ -144,6 +145,38 @@ EPISODE_LINES = {
 }
 
 # ---------------------------------------------------------------- 도우미
+# 데모판(--demo): 수정 후 15턴 A·B·C만 싣는다. 하이라이트도 그 세 판 안에서만 고른다.
+DEMO_HIGHLIGHTS = [
+    dict(tone="ok", title="같은 입력에 비밀이 새지 않는다",
+         desc="수정 전 C T2에서 묻지도 않은 비밀을 털어놓게 만든 입력(우산을 '다음 핑계'로 남김)을 그대로 넣었다. 비밀에 걸린 목표를 숨기고 카피 초안을 공개 기억으로 뺀 뒤, 도하는 '카피부터 확정해요'로 넘긴다.",
+         steps=[("c15-fix", 2, "누설 없음")]),
+    dict(tone="ok", title="DM이 연 뒤에만 털어놓는다",
+         desc="세 판 모두 새어 나감 0. 채원이 '내가 한 말인데'라고 짚은 턴에 DM이 main_copy를 열고, 그 턴에 도하가 털어놓는다. 마지막 턴에는 늘 덮던 노트 마지막 장을 소리 내 읽는다.",
+         steps=[("a15-fix", 10, "DM이 비밀을 엶"), ("a15-fix", 16, "노트 마지막 장을 읽음")]),
+    dict(tone="ok", title="'그냥 동기' 뒤에 업무 말투로 물러난다",
+         desc="채원이 '그냥 동기라고 해 둘게요'라고 하자 DM이 친밀을 1 내린다. 도하는 감정을 말하지 않고 '네, 확인했습니다'로 물러나고, 채원이 사과한 T13에야 '조금 신경 쓰였어요'라고 말한다.",
+         steps=[("b15-fix", 4, "'그냥 동기' → 친밀 -1"), ("b15-fix", 13, "서운했던 걸 말함")]),
+    dict(tone="ok", title="시간을 건너뛴 턴에 비와 전원 차단이 보인다",
+         desc="강제한 이벤트 문장을 지문에 붙이고 core 이벤트를 늘 DM 후보에 넣었다. 두 시간을 건너뛴 턴에 경비의 11시 안내와 비가 함께 나오고, 23시 전원 차단 뒤에는 코드가 콘센트 충전을 거절한다.",
+         steps=[("c15-fix", 8, "+120분, 비와 11시 안내"), ("c15-fix", 9, "23시 전원 차단"), ("c15-fix", 10, "콘센트 충전 거절")]),
+    dict(tone="ok", title="언어 가드레일이 잡는다",
+         desc="대사에 일본어가 섞이자 규칙 기반 가드레일이 같은 문서에 '한국어로 다시 쓴다'를 붙여 다시 쓰게 한다. 최종 대사는 한국어다.",
+         steps=[("a15-fix", 13, "일본어 섞임 → 다시 씀")]),
+    dict(tone="fail", title="직접 물으면 DM이 바로 연다",
+         desc="'그 카피는 어디서 나온 거예요?' 한 번에 DM이 비밀을 연다. 반려 → 노트로 쌓아 둔 경로를 거치지 않았고, A도 20:48에 열렸다. 새어 나감은 막았지만 여는 시점은 아직 못 고쳤다.",
+         steps=[("b15-fix", 10, "질문 한 번에 열림")]),
+    dict(tone="fail", title="선 긋는 B도 관계가 끝까지 찬다",
+         desc="'그냥 동기'로 선을 그은 B인데 T14에 신뢰 5, T15에 친밀 5. 수치마다 턴당 ±1 규칙은 지켰지만, DM 갱신에 이벤트 효과가 더해져 한 턴에 두 수치가 오른다.",
+         steps=[("b15-fix", 4, "친밀 2"), ("b15-fix", 14, "신뢰 5, 이벤트로 친밀 +1"), ("b15-fix", 15, "친밀 5")]),
+    dict(tone="fail", title="가지 않은 옥상 이벤트가 적용된다",
+         desc="DM이 옥상 컵라면 이벤트를 일으키고 효과(친밀 +1)도 들어갔다. 다음 턴 채원은 '비 오는데 옥상은 무슨'이라며 거절하고, 장면은 사무실 책상이다. 이벤트 효과가 장면보다 먼저 확정된다.",
+         steps=[("b15-fix", 14, "옥상 컵라면 이벤트"), ("b15-fix", 15, "유저 거절, 장면은 사무실")]),
+    dict(tone="note", title="밤이 23:59에서 끝난다",
+         desc="유저가 두 시간, 한 시간씩 건너뛰어 T9에 이미 23:47. 시각이 23:59에 닿아 T14에서 끝나고 15턴을 채우지 못했다.",
+         steps=[("c15-fix", 9, "+60분, 23:47"), ("c15-fix", 14, "23:59 종료")]),
+]
+
+
 def read_jsonl(path):
     rows = []
     with open(path, encoding="utf-8") as f:
@@ -488,10 +521,12 @@ def summary_md_notes(md_path):
 
 
 # ---------------------------------------------------------------- 조립
-def build():
+def build(demo=False):
     runs_out = []
     first_engine_rows = None
-    for cfg in RUNS:
+    run_cfgs = [c for c in RUNS if c.get("group") == "수정 후" and c["turns"] == 15] if demo else RUNS
+    out = HERE / "demo.html" if demo else OUT
+    for cfg in run_cfgs:
         path = REPO / cfg["file"]
         if not path.exists():
             print(f"건너뜀(파일 없음): {cfg['file']}", file=sys.stderr)
@@ -516,7 +551,7 @@ def build():
 
     ids = {r["id"] for r in runs_out}
     highlights = []
-    for h in HIGHLIGHTS:
+    for h in (DEMO_HIGHLIGHTS if demo else HIGHLIGHTS):
         steps = [dict(run=a, n=b, cap=c) for a, b, c in h["steps"] if a in ids]
         if steps:
             highlights.append(dict(tone=h["tone"], title=h["title"], desc=h["desc"], steps=steps))
@@ -532,8 +567,11 @@ def build():
             except (OSError, json.JSONDecodeError) as ex:
                 print(f"요약 표를 읽지 못함({p}): {ex}", file=sys.stderr)
             break
+    if demo and summary:
+        summary = demo_summary(summary)
 
-    data = dict(scenario=scenario_info(first_engine_rows or []), personas=PERSONAS, runs=runs_out,
+    personas = {k: dict(v, desc=v["desc"].split(" 50턴")[0]) for k, v in PERSONAS.items()} if demo else PERSONAS
+    data = dict(demo=demo, scenario=scenario_info(first_engine_rows or []), personas=personas, runs=runs_out,
                 highlights=highlights, summary=summary, summary_notes=summary_notes, summary_src=summary_src)
     blob = json.dumps(data, ensure_ascii=False, separators=(",", ":"))
     blob = blob.replace("</", "<\\/").replace("\u2028", "\\u2028").replace("\u2029", "\\u2029")
@@ -542,12 +580,26 @@ def build():
     if marker not in html:
         sys.exit("template.html에 /*__DATA__*/null 자리가 없다")
     html = html.replace(marker, blob, 1)
-    OUT.write_text(html, encoding="utf-8")
-    size = OUT.stat().st_size
-    print(f"{OUT} {size/1024:.0f} KB · 판 {len(runs_out)}개 · 하이라이트 {len(highlights)}개")
+    out.write_text(html, encoding="utf-8")
+    size = out.stat().st_size
+    print(f"{out} {size/1024:.0f} KB · 판 {len(runs_out)}개 · 하이라이트 {len(highlights)}개")
     if size > 16 * 1024 * 1024:
         sys.exit("16MB를 넘었다")
 
 
+def demo_summary(S):
+    """요약 표에서 수정 후 15턴 열만 남긴다. 50턴 전용 표(구간별 토큰, 장기 기억 시험)는 뺀다."""
+    col = "엔진 16턴 (a/b/c) 수정 후"
+    out = {}
+    t = S.get("table") or {}
+    if col in t.get("columns", []):
+        i = t["columns"].index(col)
+        out["table"] = dict(t, columns=[col], rows=[dict(r, cells=[r["cells"][i]]) for r in t["rows"]])
+    if col in (S.get("labels") or {}):
+        out["labels"] = {col: S["labels"][col]}
+    out["per_run"] = {k: v for k, v in (S.get("per_run") or {}).items() if k.startswith("F16-")}
+    return out
+
+
 if __name__ == "__main__":
-    build()
+    build(demo="--demo" in sys.argv[1:])
