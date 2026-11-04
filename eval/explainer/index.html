@@ -350,6 +350,14 @@ table.mini td.b { color: var(--ok); font-weight: 700; }
 .remeasure { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 8px 20px; align-items: center; font-size: 14.5px; }
 .remeasure .ok-line { display: inline-flex; gap: 8px; align-items: center; }
 .remeasure a { font-family: var(--f-mono); font-size: 13px; }
+.recall { grid-column: 1 / -1; }
+.recall h4 { margin: 0 0 10px; font-family: var(--f-mono); font-size: 12.5px; letter-spacing: 0.06em; font-weight: 600; color: var(--ink); }
+.steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; }
+.steps li { border-top: 2px solid var(--ink); padding-top: 8px; display: grid; gap: 6px; align-content: start; min-width: 0; font-size: 13.5px; color: var(--ink-2); }
+.steps li.hit { border-top-color: var(--ok); }
+.steps .t { font-family: var(--f-mono); font-size: 11.5px; color: var(--ink-3); }
+.steps b { color: var(--ink); font-size: 15px; font-weight: 900; }
+.steps .memtrace { margin-top: 2px; }
 .memtrace { display: grid; gap: 8px; margin-top: 10px; }
 .memtrace .rec { font-size: 13.5px; border: 1px solid var(--rule); border-radius: 4px; padding: 8px 10px; background: var(--lane); }
 .memtrace .rec .src { font-family: var(--f-mono); font-size: 11px; color: var(--ink-3); display: block; }
@@ -380,6 +388,7 @@ footer .wrap p { max-width: 80ch; }
   .personas { grid-template-columns: 1fr 1fr; }
   .case { grid-template-columns: 1fr 1fr; }
   .case .score { grid-column: 1 / -1; }
+  .steps { grid-template-columns: 1fr 1fr; }
 }
 @media (max-width: 760px) {
   .loop { grid-template-columns: 1fr; gap: 22px; }
@@ -391,7 +400,7 @@ footer .wrap p { max-width: 80ch; }
 }
 @media (max-width: 620px) {
   body { font-size: 15px; }
-  .mem, .cards, .left-over, .next, .personas, .case { grid-template-columns: 1fr; }
+  .mem, .cards, .left-over, .next, .personas, .case, .steps { grid-template-columns: 1fr; }
   .tubes { grid-template-columns: repeat(4, 1fr); }
   .tubes span:nth-child(n+5) { display: none; }
   .score { grid-template-columns: 1fr; }
@@ -1012,11 +1021,26 @@ footer .wrap p { max-width: 80ch; }
         <div class="rec good"><span class="src">디테일 · 오늘 밤(T8이 든 구간)</span>"다듬으면 채원 씨한테 제일 먼저 보여드릴게요. 약속합니다."</div>
       </div>
     </div>
+    <div class="recall">
+      <h4>B 판 trace · 포스트잇 문구가 압축을 건너는 길</h4>
+      <ol class="steps">
+        <li><span class="t">T3 · 20:34</span><b>처음 나온다</b><span>유저가 마무리 한 줄을 포스트잇에 써 달라고 하자 도하가 적어 건넨다. T4~T34에는 문구가 다시 나오지 않는다.</span>
+          <div class="memtrace"><div class="rec"><span class="src">도하 · T3</span>‘오늘의 끝에, 내일을 바꿀 한 걸음.’</div></div></li>
+        <li><span class="t">T10 · 에피소드 압축</span><b>요약은 문구를 버린다</b><span>T1~T5를 에피소드로 묶는다. 그 뒤 T1~T5 원문은 어떤 프롬프트에도 들어가지 않는다.</span>
+          <div class="memtrace"><div class="rec bad"><span class="src">요약 · 오늘 밤 T1~T5</span>도하는 포스트잇에 <s>마무리 문구를</s> 적어 건넸다</div></div></li>
+        <li><span class="t">T10 · 같은 호출</span><b>디테일은 원문째 남는다</b><span>요약에서 사라질 말을 따옴표째 뽑는다. 코드가 T1~T5 원문과 대조한 뒤 출처를 달아 떡밥 풀에 넣는다.</span>
+          <div class="memtrace"><div class="rec good"><span class="src">t1_closingline · 오늘 밤 T1~T5 · 물건</span>도하는 포스트잇에 ‘오늘의 끝에, 내일을 바꿀 한 걸음.’이라고 적어 유저에게 건넸다.</div></div></li>
+        <li class="hit"><span class="t">T35 · 22:50 · 32턴 뒤</span><b>검색기가 디테일을 고른다</b><span>"정확히 뭐였죠?" 이때 프롬프트의 원문은 T21~T34뿐이다. 검색기가 "포스트잇 문장 확인"으로 <code>t1_closingline</code>을 고르고, DM이 언급으로 넘긴다.</span>
+          <div class="memtrace"><div class="rec good"><span class="src">도하 · T35</span>‘오늘의 끝에, 내일을 바꿀 한 걸음.’이라고 적었어요.</div></div></li>
+        <li class="hit"><span class="t">T46 · 23:22 · 국밥집</span><b>한 번 더 꺼낸다</b><span>T40 압축에서 T35에 다시 말한 문구가 <code>t21_postit</code>(오늘 밤 T21~T35)으로 저장됐다. "도하 씨 기억으로요"에 검색기가 이것을 고른다.</span>
+          <div class="memtrace"><div class="rec good"><span class="src">도하 · T46</span>‘오늘의 끝에, 내일을 바꿀 한 걸음.’ 제가 포스트잇에 그렇게 적어 드렸어요.</div></div></li>
+      </ol>
+    </div>
     <div class="remeasure">
       <span class="ok-line"><i class="mk ok" aria-hidden="true"></i>오프라인 확인: 같은 로그로 다시 묶자 포스트잇 문구가 원문 그대로 남았다. T36 질문에 검색기가 옳은 기억을 골랐다.</span>
       <!-- SLOT:memory-after-note START (50턴 실측 결과 한 문장으로 교체) -->
-      <span class="ok-line"><i class="mk ok" aria-hidden="true"></i>50턴 실측: B는 43턴 뒤 T46에 포스트잇을 보지 않고 "오늘의 끝에, 내일을 바꿀 한 걸음."을 그대로 말했다. 검색기가 고른 것은 지난 만남이 아니라 "오늘 밤 T21~T35" 디테일이다.</span>
-      <span class="pending-chip">한계: 질문과 문구가 수정 전과 같지 않다. A의 문구 "PT 따면 밥"은 짧고 장면 사실에도 남아 있었다.</span>
+      <span class="ok-line"><i class="mk ok" aria-hidden="true"></i>50턴 실측: B는 T3 원문이 프롬프트에 없는 T35에 문구를 그대로 말했다. 검색기가 고른 것은 지난 만남이 아니라 "오늘 밤 T1~T5" 디테일이다.</span>
+      <span class="pending-chip">한계: 질문과 문구가 수정 전과 같지 않다. 판당 1회다.</span>
       <!-- SLOT:memory-after-note END -->
     </div>
   </article>
