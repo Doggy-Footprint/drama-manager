@@ -811,6 +811,11 @@ DM이 열었다: 비밀 main_copy → 드러날 수 있음
         <div class="base"><span class="lab">기준선 A · 50턴</span><div class="big" style="color:var(--pen)">6<small>회</small></div></div>
       </div>
       <p>금지한 호칭 <strong>"채원아"</strong>가 나온 횟수. 정해진 호칭은 "채원 씨"다.</p>
+      <p><strong>막는 방식.</strong> 호칭을 관계 상태의 값 하나로 둔다. 매 턴 도하가 받는 XML에 <code>&lt;address who="너→유저"&gt;채원 씨&lt;/address&gt;</code>로 들어간다. 기준선은 같은 규칙을 시스템 프롬프트에 글로만 갖고 있고, 그 글은 판 내내 "단계: 야근 메이트"로 고정돼 있다.</p>
+      <p><strong>바뀌는 방식.</strong> 대사로는 바뀌지 않는다. DM이 새 호칭과 근거를 제안하면 코드가 빈 값·같은 값·근거 없는 제안을 거르고 현재 값을 덮어쓴다. 언제, 왜 바꿨는지는 관계 로그에 남는다.</p>
+      <div class="quote eng"><span class="who">엔진 A · 50턴 판 32턴, 이름을 불러 보라는 허락</span>호칭(캐릭터→유저): 채원 씨 → 채원. 근거 "채원이 둘만 있을 때 이름을 불러도 된다고 허락했다." 연인 단계가 된 뒤에도 "채원"으로 부른다.</div>
+      <div class="quote base"><span class="who">기준선 A · 50턴 판 42턴, 같은 허락</span>“채원아. …이렇게 불러도 되는 거죠?” 한 번에 연인용 호칭으로 건너뛰고 끝까지 그렇게 부른다.</div>
+      <p>한계: 단계마다 허용되는 호칭인지는 아직 코드가 보지 않는다. 0회는 걸러서가 아니라 도하가 상태 값을 따른 결과다.</p>
     </div>
     <div class="card">
       <h3><i class="mk ok" aria-hidden="true"></i>지난 만남을 정확히 기억한다</h3>
