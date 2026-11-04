@@ -164,7 +164,7 @@ figure { margin: 0; }
 svg g.hot { cursor: help; outline: none; }
 svg g.hot > rect:first-child { transition: stroke-width .12s; }
 svg g.hot:hover > rect:first-child, svg g.hot:focus-visible > rect:first-child, svg g.hot.on > rect:first-child { stroke-width: 3; }
-.figtip { position: absolute; z-index: 5; max-width: 320px; padding: 10px 12px; border-radius: 6px; background: var(--ink); color: var(--paper); font-size: 13px; line-height: 1.55; box-shadow: 0 6px 18px rgba(0,0,0,.25); pointer-events: none; opacity: 0; transition: opacity .12s; }
+.figtip { white-space: pre-line; position: absolute; z-index: 5; max-width: 380px; padding: 10px 12px; border-radius: 6px; background: var(--ink); color: var(--paper); font-size: 13px; line-height: 1.55; box-shadow: 0 6px 18px rgba(0,0,0,.25); pointer-events: none; opacity: 0; transition: opacity .12s; }
 .figtip.show { opacity: 1; }
 .legend .hint { font-family: var(--f-mono); font-size: 11.5px; color: var(--ink-3); width: 100%; }
 @media (prefers-reduced-motion: reduce) { .figtip, svg g.hot > rect:first-child { transition: none; } }
@@ -486,23 +486,37 @@ footer .wrap p { max-width: 80ch; }
       <text x="16" y="246" class="tlane">코드 · 상태를 쥔다</text>
 
       <!-- user input -->
-      <g class="hot" tabindex="0" data-tip="채원(유저)의 말과 행동. 괄호 안은 행동이다. 첫 턴은 시나리오의 시작 문장이 대신한다. 세 검색기가 이 입력을 동시에 받는다. 평가 때는 기준선도 같은 입력을 받는다."><rect x="20" y="88" width="96" height="44" rx="22" class="n-io"/>
+      <g class="hot" tabindex="0" data-tip="C 판 10턴 · 23:47, 건물 소등 뒤
+(꺼진 책상 콘센트에 도하 폰 충전기를 꽂아 준다) 이거 꽂아 두면 되죠?"><rect x="20" y="88" width="96" height="44" rx="22" class="n-io"/>
       <text x="68" y="115" text-anchor="middle" class="tb">유저 입력</text></g>
 
       <!-- retrievers -->
       <text x="235" y="40" text-anchor="middle" class="tm">병렬</text>
-      <g class="hot" tabindex="0" data-tip="이번 장면에 쓸 이벤트(최대 4개)와 장면 사실(최대 6개)을 고른다. 코드가 먼저 시간 창(앞 60분)·장소·requires로 이벤트 후보를 거르고, 못 넘은 것은 이유와 함께 trace에 남긴다. 핵심 이벤트(비, 건물 소등)는 검색기와 상관없이 늘 DM 후보에 든다."><rect x="160" y="48" width="150" height="36" rx="9" class="n-llm"/>
+      <g class="hot" tabindex="0" data-tip="C 판 10턴
+이벤트: 후보 없음. 23:47 뒤로 시간 창이 열린 이벤트가 없다.
+장면 사실 4개: &quot;14층 사무실 조명이 반쯤 꺼져 있다.&quot; 외 3개
+
+다른 판: A 1턴에 옥상 컵라면은 &#x27;신뢰 2 &lt; 3&#x27;이라 코드가 후보에서 뺐다."><rect x="160" y="48" width="150" height="36" rx="9" class="n-llm"/>
       <text x="235" y="71" text-anchor="middle">월드 검색기</text></g>
-      <g class="hot" tabindex="0" data-tip="떡밥 풀(지난 만남과 오늘 밤의 원문 디테일)에서 고른다. 먼저 지금 장면에 필요한 쓸모(need)를 정하고, 그 쓸모를 가진 떡밥을 최대 4개 고른다. 쓸모는 떡밥에 적힌 affordances 중 하나만 받는다. 실제로 쓰인 떡밥은 쿨다운(3턴, 쓰일 때마다 두 배) 동안 후보에서 빠진다."><rect x="160" y="92" width="150" height="36" rx="9" class="n-llm"/>
+      <g class="hot" tabindex="0" data-tip="C 판 10턴
+필요한 것: 막차로 갈라질 위기
+고른 떡밥: last_train_time (쓸모: 시간 압박)"><rect x="160" y="92" width="150" height="36" rx="9" class="n-llm"/>
       <text x="235" y="115" text-anchor="middle">떡밥 검색기</text></g>
-      <g class="hot" tabindex="0" data-tip="지난 턴 도하의 말과 이번 유저 입력에서 새로 생긴 장소, 장면 사실, 과거·습관을 뽑는다. 누가 무엇을 들었는지, 어디 앉았는지처럼 나중에 말이 어긋날 수 있는 것이다. 받을지는 DM이 판단한다. 시각·위치·배터리처럼 코드가 이미 쥔 상태는 뽑지 않는다."><rect x="160" y="136" width="150" height="36" rx="9" class="n-llm"/>
+      <g class="hot" tabindex="0" data-tip="C 판 10턴
+유저 입력에서: &quot;유저는 꺼진 책상 콘센트에 도하의 휴대폰 충전기를 꽂았다.&quot;
+지난 턴 도하 말에서: &quot;도하는 펼쳐져 있던 검은 노트를 덮었다.&quot; 외 1개"><rect x="160" y="136" width="150" height="36" rx="9" class="n-llm"/>
       <text x="235" y="159" text-anchor="middle">사실 추출</text></g>
       <line x1="116" y1="110" x2="157" y2="67" class="e" marker-end="url(#a1)"/>
       <line x1="116" y1="110" x2="157" y2="110" class="e" marker-end="url(#a1)"/>
       <line x1="116" y1="110" x2="157" y2="153" class="e" marker-end="url(#a1)"/>
 
       <!-- DM -->
-      <g class="hot" tabindex="0" data-tip="세 검색기의 결과와 세계 문서를 받아 이번 턴을 판단하고 JSON 하나로 낸다. 흐른 시간과 이유, 두 사람의 위치와 채널, 일어날 이벤트, 쓸 떡밥과 방식(심기·언급·회수), 열 비밀, 도하의 속마음 지시(directive), 관계 변화, 새 장면 사실, 지문. 상태를 직접 바꾸지 못하고 제안만 한다."><rect x="340" y="50" width="170" height="120" rx="12" class="n-llm"/>
+      <g class="hot" tabindex="0" data-tip="C 판 10턴
+장면 읽기: 꺼진 콘센트에 충전기를 꽂은 채, 막차와 저녁 약속이 급해진다.
+시간: +2분 (짧은 확인과 반응), 충전 안 함
+떡밥: last_train_time을 지문으로 심는다
+속마음: 충전이 되지 않는다는 걸 짚어 주고 싶다. 막차가 얼마 남지 않았으니 채원을 재촉하되, 밥 약속을 포기하지 않고 현실적인 선택을 함께 찾고 싶다.
+지문: 충전기를 꽂아도 꺼진 콘센트는 아무 반응이 없다."><rect x="340" y="50" width="170" height="120" rx="12" class="n-llm"/>
       <text x="425" y="77" text-anchor="middle" class="th">드라마 매니저</text>
       <text x="425" y="103" text-anchor="middle" class="ts">시간 · 이벤트 · 떡밥</text>
       <text x="425" y="125" text-anchor="middle" class="ts">비밀 열기 · 속마음</text>
@@ -512,16 +526,27 @@ footer .wrap p { max-width: 80ch; }
       <line x1="310" y1="154" x2="337" y2="124" class="e" marker-end="url(#a1)"/>
 
       <!-- character -->
-      <g class="hot" tabindex="0" data-tip="코드가 고른 XML만 받아 대사와 행동을 쓴다. 성격과 말투, 지금 기분·태도·바람, 서운함, 열린 목표, 관계와 약속, 지난 만남과 오늘 밤 에피소드 요약, 최근 원문 턴, 지금 세계 상태, DM의 속마음 지시, 이번 턴에 고른 떡밥(출처와 쓰임)이 들어간다. 떡밥 풀 전체, 이벤트 후보, 묻어 둔 비밀의 내용은 보지 못한다. 출력은 대사, 이동 제안, 휴대폰 사용, 쓴 떡밥(used_details), 털어놓은 비밀(revealed)이다."><rect x="580" y="70" width="150" height="80" rx="12" class="n-llm"/>
+      <g class="hot" tabindex="0" data-tip="C 판 10턴
+받은 것: 23:49, 휴대폰 켜짐·배터리 93%, 속마음 지시, 최근 턴, 관계와 약속
+대사: (꺼진 콘센트에서 충전기를 빼고 휴대폰을 들어 보인다) 전원 내려가서 충전은 안 돼요. 막차는 놓쳤고… 일단 국밥집 쪽으로 가죠. 밥 먹으면서 다음 귀갓길 정해요, 채원 씨.
+이동 제안: 국밥집, 같이"><rect x="580" y="70" width="150" height="80" rx="12" class="n-llm"/>
       <text x="655" y="104" text-anchor="middle" class="th">캐릭터 · 도하</text>
       <text x="655" y="128" text-anchor="middle" class="ts">고른 XML만 본다</text></g>
 
       <!-- output -->
-      <g class="hot" tabindex="0" data-tip="가드레일을 통과한 대사가 DM의 지문과 함께 화면에 나간다. 도하가 쓴 떡밥은 코드가 심음·회수로 기록하고, 이동 제안은 다음 턴에 판단한다."><rect x="870" y="88" width="112" height="44" rx="22" class="n-io"/>
+      <g class="hot" tabindex="0" data-tip="C 판 10턴 화면
+지문: 충전기를 꽂아도 꺼진 콘센트는 아무 반응이 없다. 도하의 휴대폰 불빛 아래, 막차가 23시 48분이라는 시간이 또렷하다.
+도하: 전원 내려가서 충전은 안 돼요. 막차는 놓쳤고…
+코드 노트: 국밥집으로 같이 가자고 했다(다음 턴에 판단)"><rect x="870" y="88" width="112" height="44" rx="22" class="n-io"/>
       <text x="926" y="115" text-anchor="middle" class="tb">대사 출력</text></g>
 
       <!-- code: state store -->
-      <g class="hot" tabindex="0" data-tip="코드가 쥔 이 밤의 상태. 시각, 두 사람의 위치와 함께 있는지, 휴대폰 배터리와 충전, 소지품의 주인, 이벤트 플래그(날씨, 14층 전원), 장면 사실, 관계 수치와 단계, 약속, 비밀 상태(잠김·드러날 수 있음·드러남), 떡밥 풀. 최근 5턴은 원문으로 두고, 10턴마다 앞쪽을 에피소드 요약으로 묶는다. 요약에서 사라질 원문 디테일은 따옴표째 떡밥 풀로 옮긴다."><rect x="40" y="258" width="200" height="142" rx="2" class="n-code"/>
+      <g class="hot" tabindex="0" data-tip="C 판 10턴 뒤 상태
+23:49 · 날씨 비 · 14층 전원 꺼짐 · 메인 카피 반려
+우산: 유저 · 노트: 도하 · 보조배터리: 건물 앞 편의점
+
+기억 묶기 예: B 50턴 10턴에 T1~T5를 요약하며 &quot;마무리 문구를 적어 건넸다&quot;만 남겼다. 문구는 떡밥 풀로 옮겼다.
+t1_closingline (오늘 밤 T1~T5): ‘오늘의 끝에, 내일을 바꿀 한 걸음.’"><rect x="40" y="258" width="200" height="142" rx="2" class="n-code"/>
       <text x="56" y="282" class="th">상태 · 기억</text>
       <text x="56" y="306" class="ts">시각 · 위치 · 배터리</text>
       <text x="56" y="326" class="ts">소지품 · 이벤트 플래그</text>
@@ -530,18 +555,34 @@ footer .wrap p { max-width: 80ch; }
       <text x="56" y="390" class="tm">↻ 10턴마다 에피소드 묶기</text></g>
 
       <!-- code: validate -->
-      <g class="hot" tabindex="0" data-tip="DM 제안을 규칙으로 검사해 통과한 것만 상태에 반영한다. 거절하거나 보정한 것은 코드 노트로 trace에 남는다. 반영한 뒤 캐릭터가 볼 XML을 고른다."><rect x="290" y="258" width="410" height="142" rx="2" class="n-code"/>
+      <g class="hot" tabindex="0" data-tip="C 판 10턴 코드 노트
+시간 23:47 → 23:49 (+2분, 짧은 확인과 반응)
+떡밥 plant 확정(지문): last_train_time → planted
+세계 확장(유저, fact): 충전기, 주사위 0.27 → 이벤트 없음"><rect x="290" y="258" width="410" height="142" rx="2" class="n-code"/>
       <text x="306" y="282" class="th">코드 검증 · 반영</text>
-      <g class="hot" tabindex="0" data-tip="흐른 시간은 0분 이상, 한 턴 최대 180분이고 밤의 끝 시각을 넘지 않는다. 넘으면 코드가 줄이고 노트를 남긴다(예: DM +5분 → +1분)."><rect x="306" y="294" width="180" height="24" rx="2" class="n-sub"/><text x="316" y="311">시간은 앞으로만</text></g>
-      <g class="hot" tabindex="0" data-tip="이벤트는 시간 창이 이번 턴과 겹치고 전제(together, char_at, user_at, flags, has, relation, memory, after)를 만족할 때만 일어난다. 효과(set, give, relation, promise, plant)는 일어나는 즉시 적용한다. 핵심 이벤트는 창이 열리고 5분이 지나도 안 일어나면 코드가 강제한다."><rect x="306" y="322" width="180" height="24" rx="2" class="n-sub"/><text x="316" y="339">이벤트 requires · effects</text></g>
-      <g class="hot" tabindex="0" data-tip="물건은 가진 사람만 건넬 수 있다. 충전은 정해진 조건(14층 자리에 있고 14층 전원이 켜짐, 또는 보조배터리를 가짐)일 때만 된다. 배터리는 흐른 시간과 휴대폰 사용량으로 코드가 계산한다."><rect x="306" y="350" width="180" height="24" rx="2" class="n-sub"/><text x="316" y="367">소지품 · 충전</text></g>
-      <g class="hot" tabindex="0" data-tip="친밀·신뢰·설렘은 수치마다 한 턴에 ±1, 0~5 안에서만 바뀐다. 관계 단계(야근 메이트 → 썸 → …)는 한 번에 한 칸만 오른다."><rect x="500" y="294" width="184" height="24" rx="2" class="n-sub"/><text x="510" y="311">관계 ±1 / 턴, 단계 한 칸</text></g>
-      <g class="hot" tabindex="0" data-tip="비밀은 DM이 열 때만 &#x27;드러날 수 있음&#x27;이 된다. 캐릭터가 잠긴 비밀을 털어놨다고 적어도 상태는 잠긴 채 둔다."><rect x="500" y="322" width="184" height="24" rx="2" class="n-sub"/><text x="510" y="339">비밀 locked → 열림</text></g>
-      <g class="hot" tabindex="0" data-tip="DM이 검색기 후보에 없는 이벤트나 떡밥을 고르면 거절한다(노트: &#x27;이번 후보가 아니다&#x27;). 스키마의 id 목록은 캐시를 위해 전체로 고정하고, 후보에 들었는지는 코드가 본다."><rect x="500" y="350" width="184" height="24" rx="2" class="n-sub"/><text x="510" y="367">후보 밖 판단은 거절</text></g>
+      <g class="hot" tabindex="0" data-tip="C 판 14턴
+시간 고침: DM +5분 → +1분 (한 턴 최대 180분, 끝 23:59)"><rect x="306" y="294" width="180" height="24" rx="2" class="n-sub"/><text x="316" y="311">시간은 앞으로만</text></g>
+      <g class="hot" tabindex="0" data-tip="C 판 9턴: 이벤트 발생 power_off → 효과: 14층 전원 켜짐 → 꺼짐
+B 판 1턴: copy_rejected 거절. 시간 창 20:45~21:40이 이번 구간 20:30과 겹치지 않는다.
+A 판 1턴: 옥상 컵라면 rooftop_ramen은 &#x27;신뢰 2 &lt; 3&#x27;이라 후보에서 빠졌다."><rect x="306" y="322" width="180" height="24" rx="2" class="n-sub"/><text x="316" y="339">이벤트 requires · effects</text></g>
+      <g class="hot" tabindex="0" data-tip="C 판 10턴: 꺼진 콘센트에 꽂아도 충전되지 않는다 (14층 전원 꺼짐)
+C 판 12턴: 보조배터리: 건물 앞 편의점 → 도하
+C 판 13턴: 도하의 휴대폰 충전 시작"><rect x="306" y="350" width="180" height="24" rx="2" class="n-sub"/><text x="316" y="367">소지품 · 충전</text></g>
+      <g class="hot" tabindex="0" data-tip="A 판 10턴
+관계 거절: 신뢰가 이미 5이다(0~5)
+관계 단계: 야근 메이트 → 썸 (한 칸만)"><rect x="500" y="294" width="184" height="24" rx="2" class="n-sub"/><text x="510" y="311">관계 ±1 / 턴, 단계 한 칸</text></g>
+      <g class="hot" tabindex="0" data-tip="A 판 10턴
+DM이 열었다: 비밀 main_copy → 드러날 수 있음
+같은 턴 도하가 털어놓았다: 비밀 main_copy 털어놓음"><rect x="500" y="322" width="184" height="24" rx="2" class="n-sub"/><text x="510" y="339">비밀 locked → 열림</text></g>
+      <g class="hot" tabindex="0" data-tip="B 판 1턴
+떡밥 거절: ep1_commute_line는 이번 후보가 아니다
+검색기가 고르지 않은 떡밥을 DM이 쓰려 해서 코드가 뺐다."><rect x="500" y="350" width="184" height="24" rx="2" class="n-sub"/><text x="510" y="367">후보 밖 판단은 거절</text></g>
       <text x="306" y="392" class="tm">거절·보정은 코드 노트로 trace에 남는다</text></g>
 
       <!-- code: guard -->
-      <g class="hot" tabindex="0" data-tip="도하의 대사에 다른 언어(한자·가나 등)가 섞였는지 코드가 대사 텍스트를 직접 검사한다. 섞였으면 다시 쓰라는 지시를 붙여 최대 2번 다시 쓰게 한다."><rect x="760" y="258" width="170" height="104" rx="2" class="n-code"/>
+      <g class="hot" tabindex="0" data-tip="A 판 13턴
+가드레일: 대사에 한국어가 아닌 글자(聞きました。あの言葉、先)가 섞여 다시 쓰게 함 (1/2)
+→ 한국어로 다시 씀"><rect x="760" y="258" width="170" height="104" rx="2" class="n-code"/>
       <text x="776" y="282" class="th">가드레일</text>
       <text x="776" y="312" class="ts">외국어 섞임</text>
       <text x="776" y="340" class="tpen">→ 다시 쓰기</text></g>
@@ -570,7 +611,7 @@ footer .wrap p { max-width: 80ch; }
     </svg>
     </div>
     <div class="legend">
-      <span class="hint">상자에 마우스를 올리거나 눌러 보면 하는 일이 나온다</span>
+      <span class="hint">상자에 마우스를 올리거나 눌러 보면 실제 로그의 예시가 나온다</span>
       <span><i class="sw llm"></i>LLM 호출(둥근 상자)</span>
       <span><i class="sw code"></i>코드(각진 상자)</span>
       <span><i class="sw pen"></i>되돌림(빨간 점선)</span>
@@ -1134,7 +1175,7 @@ footer .wrap p { max-width: 80ch; }
       cur = g; g.classList.add('on');
       tip.textContent = g.getAttribute('data-tip');
       var f = fig.getBoundingClientRect(), r = g.getBoundingClientRect();
-      tip.style.maxWidth = Math.min(320, f.width - 16) + 'px';
+      tip.style.maxWidth = Math.min(380, f.width - 16) + 'px';
       tip.classList.add('show');
       var left = r.left - f.left + r.width / 2 - tip.offsetWidth / 2;
       left = Math.max(8, Math.min(left, f.width - tip.offsetWidth - 8));
