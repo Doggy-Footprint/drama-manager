@@ -456,7 +456,7 @@ footer .wrap p { max-width: 80ch; }
 
   <figure class="slide">
     <div class="scroll-x">
-    <svg viewBox="0 0 1000 420" role="img" aria-label="한 턴의 흐름. 유저 입력이 세 검색기로 병렬로 들어가고, 드라마 매니저가 판단을 JSON으로 제안하면 코드가 검증해 상태에 반영한다. 캐릭터는 코드가 고른 XML만 받고, 가드레일이 외국어나 잠긴 비밀 누설을 잡으면 다시 쓰게 한다.">
+    <svg viewBox="0 0 1000 420" role="img" aria-label="한 턴의 흐름. 유저 입력이 세 검색기로 병렬로 들어가고, 드라마 매니저가 판단을 JSON으로 제안하면 코드가 검증해 상태에 반영한다. 캐릭터는 코드가 고른 XML만 받고, 가드레일이 외국어 섞임을 잡으면 다시 쓰게 한다. 비밀이 열렸는지는 코드 검증에서 쥔다.">
       <defs>
         <marker id="a1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="f-ink"/></marker>
         <marker id="a1c" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="f-code"/></marker>
@@ -526,9 +526,8 @@ footer .wrap p { max-width: 80ch; }
       <!-- code: guard -->
       <rect x="760" y="258" width="170" height="104" rx="2" class="n-code"/>
       <text x="776" y="282" class="th">가드레일</text>
-      <text x="776" y="306" class="ts">외국어 섞임</text>
-      <text x="776" y="326" class="ts">잠긴 비밀 누설</text>
-      <text x="776" y="348" class="tpen">→ 다시 쓰기</text>
+      <text x="776" y="312" class="ts">외국어 섞임</text>
+      <text x="776" y="340" class="tpen">→ 다시 쓰기</text>
 
       <!-- edges between lanes -->
       <line x1="425" y1="170" x2="425" y2="254" class="e" marker-end="url(#a1)"/>
@@ -910,7 +909,7 @@ footer .wrap p { max-width: 80ch; }
       <div class="after" data-state="ok">
         <span class="cap">재측정</span>
         <span class="num">0/0/0</span>
-        <span class="what">15턴 재실행. C T2와 같은 입력에도 누설 없음. 다시 쓰기 가드는 한 번도 발동하지 않았다. 목표 숨김과 데이터 분리에서 이미 막혔다</span>
+        <span class="what">15턴 재실행. C T2와 같은 입력에도 누설 없음. 자기 신고 검사는 한 번도 걸리지 않았다. 목표 숨김과 데이터 분리에서 막혔다</span>
       </div>
     </div>
     <div class="col cause">
@@ -928,7 +927,7 @@ footer .wrap p { max-width: 80ch; }
         <li><span>목표에 <code>after_secret</code>. 비밀이 잠긴 동안 목표를 숨긴다. <span class="ref">→ 1</span></span></li>
         <li><span>카피 초안을 공개 기억으로 분리했다. <span class="ref">→ 2</span></span></li>
         <li><span>프롬프트를 다시 썼다. "locked인 비밀이 목표보다 앞선다." DM은 부정문으로도 쓰지 않는다. <span class="ref">→ 1, 3</span></span></li>
-        <li><span>잠긴 비밀을 털어놓으면 다시 쓰게 하는 가드. <span class="ref">→ 4</span></span></li>
+        <li><span>캐릭터가 잠긴 비밀을 털어놨다고 적어도 상태는 잠긴 채 둔다. 자기 신고라 대사 누설은 막지 못한다. <span class="ref">→ 4</span></span></li>
         <li><span>이벤트가 심어야 나오는 떡밥(<code>planted_by</code>).</span></li>
       </ul>
     </div>
