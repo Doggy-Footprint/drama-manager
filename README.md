@@ -1,6 +1,6 @@
 # drama-manager
 
-캐릭터 하나와 하룻밤을 보내는 RP 엔진. **LLM은 판단하고 서술하고, 상태는 코드가 쥔다.**
+캐릭터와 진행하는 RP 엔진. **LLM은 판단하고 서술하고, 상태는 코드가 쥔다.**
 
 기억을 전부 넣은 강한 기준선(단일 LLM)과 나란히 돌리고, 평가로 실패를 찾고, 턴 trace로 원인을 짚고, 고친 뒤 다시 쟀다.
 자세한 설명과 그림은 [`ref/README.html`](ref/README.html), 평가 기록은 [`eval/README.md`](eval/README.md).
